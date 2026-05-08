@@ -35,7 +35,9 @@
                 <div class="bg-cream-100 rounded-xl p-3 mb-3 text-sm">
                     <div class="text-[10px] text-ink-400 mb-1">المحتوى المُبلَّغ:</div>
                     @if($post->is_anonymous)
-                        <span class="a-pill pill-coral mb-2 inline-block">🤫 مجهول</span>
+                        <span class="a-pill pill-coral mb-2 inline-block">🤫 مجهول · حقيقي:
+                            <a href="{{ route('admin.users', ['q' => $post->user?->username]) }}" class="underline font-bold">{{ $post->user?->username ?? '—' }}</a>
+                        </span>
                     @else
                         <span class="text-ink-500 text-xs">{{ $post->user?->username }} ·</span>
                     @endif

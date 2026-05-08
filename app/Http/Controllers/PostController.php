@@ -23,7 +23,7 @@ class PostController extends Controller
             abort(404);
         }
 
-        $post->load(['user:id,username,avatar_seed,avatar_url,verification_tier', 'zone:id,name']);
+        $post->load(['user:id,username,avatar_seed,avatar_url,verification_tier', 'zone:id,name', 'poll']);
 
         // Top-level comments only — replies render recursively via the partial
         $comments = $post->comments()
@@ -83,14 +83,23 @@ class PostController extends Controller
         RateLimiter::hit($key, 60);
 
         $data = $request->validate([
-            'category'     => ['required', 'in:'.implode(',', array_keys(Post::CATEGORIES))],
-            'title'        => ['nullable', 'string', 'max:180'],
-            'body'         => ['required', 'string', 'min:3', 'max:2000'],
-            'zone_id'      => ['nullable', 'exists:zones,id'],
-            'is_anonymous' => ['nullable', 'boolean'],
+            'category'        => ['required', 'in:'.implode(',', array_keys(Post::CATEGORIES))],
+            'title'           => ['nullable', 'string', 'max:180'],
+            'body'            => ['required', 'string', 'min:3', 'max:2000'],
+            'zone_id'         => ['nullable', 'exists:zones,id'],
+            'is_anonymous'    => ['nullable', 'boolean'],
+            'image'           => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'poll_question'   => ['nullable', 'string', 'max:200'],
+            'poll_options'    => ['nullable', 'array', 'max:4'],
+            'poll_options.*'  => ['nullable', 'string', 'max:80'],
         ]);
 
         $isAnon = (bool) ($data['is_anonymous'] ?? false);
+
+        $imageUrl = null;
+        if ($request->hasFile('image')) {
+            $imageUrl = \App\Services\ImageUploader::store($request->file('image'), 'posts');
+        }
 
         $post = Post::create([
             'user_id'      => Auth::id(),
@@ -100,11 +109,33 @@ class PostController extends Controller
             'category'     => $data['category'],
             'title'        => $data['title'] ?? null,
             'body'         => $data['body'],
+            'image_url'    => $imageUrl,
             'status'       => 'active',
         ]);
 
         $post->recomputeHotScore();
         $post->save();
+
+        // Hashtags from title + body
+        \App\Models\Hashtag::syncForPost($post, ($data['title'] ?? '').' '.$data['body']);
+
+        // Optional poll
+        if (! empty($data['poll_question']) && ! empty($data['poll_options'])) {
+            $opts = collect($data['poll_options'])
+                ->map(fn ($o) => trim((string) $o))
+                ->filter()
+                ->take(4)
+                ->values()
+                ->all();
+            if (count($opts) >= 2) {
+                \App\Models\Poll::create([
+                    'post_id'   => $post->id,
+                    'question'  => trim($data['poll_question']),
+                    'options'   => $opts,
+                    'closes_at' => now()->addDays(7),
+                ]);
+            }
+        }
 
         BadgeService::onPost(Auth::user());
         \App\Services\AdminNotificationService::onPostCreated($post->fresh()->load(['user.zone']));

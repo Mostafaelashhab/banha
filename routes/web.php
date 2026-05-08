@@ -46,6 +46,13 @@ Route::get('/directory',                     [DirectoryController::class, 'index
 Route::get('/directory/business/{business}', [DirectoryController::class, 'show'])->name('directory.show');
 Route::get('/directory/c/{category}',        [DirectoryController::class, 'category'])->name('directory.category');
 
+// Public marketplace + search + hashtag pages
+Route::get('/market',                  [\App\Http\Controllers\ListingController::class, 'index'])->name('marketplace.index');
+Route::get('/market/{listing}',        [\App\Http\Controllers\ListingController::class, 'show'])->name('marketplace.show')->whereNumber('listing');
+Route::get('/search',                  [\App\Http\Controllers\SearchController::class, 'index'])->name('search');
+Route::get('/tag/{tag}',               [\App\Http\Controllers\HashtagController::class, 'show'])->name('hashtag.show');
+Route::get('/tags',                    [\App\Http\Controllers\HashtagController::class, 'trending'])->name('hashtag.trending');
+
 // Authenticated app routes
 Route::middleware('auth')->group(function () {
     // Activation (after signup)
@@ -78,6 +85,21 @@ Route::middleware('auth')->group(function () {
     Route::post('/comments/{comment}/reply',  [\App\Http\Controllers\CommentController::class, 'reply'])->name('comments.reply');
     Route::post('/comments/{comment}/report', [\App\Http\Controllers\CommentController::class, 'report'])->name('comments.report');
     Route::delete('/comments/{comment}',      [\App\Http\Controllers\CommentController::class, 'destroy'])->name('comments.destroy');
+
+    // Marketplace owner actions
+    Route::get('/market/new',              [\App\Http\Controllers\ListingController::class, 'create'])->name('marketplace.create');
+    Route::post('/market',                 [\App\Http\Controllers\ListingController::class, 'store'])->name('marketplace.store');
+    Route::delete('/market/{listing}',     [\App\Http\Controllers\ListingController::class, 'destroy'])->name('marketplace.destroy');
+    Route::post('/market/{listing}/sold',  [\App\Http\Controllers\ListingController::class, 'markSold'])->name('marketplace.sold');
+
+    // Bookmarks + Notifications inbox
+    Route::post('/bookmark',           [\App\Http\Controllers\BookmarkController::class, 'toggle'])->name('bookmark.toggle');
+    Route::get('/saved',               [\App\Http\Controllers\BookmarkController::class, 'index'])->name('bookmark.index');
+    Route::get('/notifications',       [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/count', [\App\Http\Controllers\NotificationController::class, 'unreadCount'])->name('notifications.count');
+
+    // Polls
+    Route::post('/polls/{poll}/vote', [\App\Http\Controllers\PollController::class, 'vote'])->name('polls.vote');
 
     Route::get('/me',                 [ProfileController::class, 'show'])->name('profile.me');
     Route::post('/me/profile',        [ProfileSettingsController::class, 'updateProfile'])->name('profile.update');

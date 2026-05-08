@@ -21,7 +21,14 @@
         <div class="a-card p-4">
             <div class="flex items-start gap-3 mb-2">
                 <span class="a-pill {{ $p->is_anonymous ? 'pill-coral' : 'bg-cream-200 text-ink-500' }}">
-                    {{ $p->is_anonymous ? '🤫 مجهول' : ($p->user?->username ?? '—') }}
+                    @if($p->is_anonymous)
+                        🤫 مجهول · <span class="text-[10px]">حقيقي:</span>
+                        <a href="{{ route('admin.users', ['q' => $p->user?->username]) }}" class="font-bold underline">
+                            {{ $p->user?->username ?? '—' }}
+                        </a>
+                    @else
+                        {{ $p->user?->username ?? '—' }}
+                    @endif
                 </span>
                 <span class="a-pill bg-cream-200 text-ink-500">{{ \App\Models\Post::CATEGORIES[$p->category] ?? $p->category }}</span>
                 @if($p->zone)<span class="a-pill bg-cream-200 text-ink-500">{{ $p->zone->name }}</span>@endif

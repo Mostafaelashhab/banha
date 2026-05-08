@@ -633,6 +633,51 @@ function showShareToast(text) {
     }, 2200);
 }
 
+// ─── Bookmark toggle (AJAX) ──────────────────────────────────
+document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-bookmark]');
+    if (!btn) return;
+    e.preventDefault();
+    if (btn.dataset.busy === '1') return;
+    btn.dataset.busy = '1';
+
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
+    const wasSaved = btn.dataset.saved === '1';
+    btn.dataset.saved = wasSaved ? '0' : '1';
+    btn.classList.toggle('text-coral-500', !wasSaved);
+
+    const svg = btn.querySelector('svg');
+    if (svg) {
+        if (!wasSaved) { svg.setAttribute('fill', 'currentColor'); svg.removeAttribute('stroke'); }
+        else { svg.setAttribute('fill', 'none'); svg.setAttribute('stroke', 'currentColor'); }
+    }
+
+    try {
+        const res = await fetch('/bookmark', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': csrf,
+                'Accept': 'application/json',
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: 'type=' + encodeURIComponent(btn.dataset.type) + '&id=' + encodeURIComponent(btn.dataset.id),
+            credentials: 'same-origin',
+        });
+        if (!res.ok) throw new Error('bookmark failed');
+    } catch (err) {
+        // rollback
+        btn.dataset.saved = wasSaved ? '1' : '0';
+        btn.classList.toggle('text-coral-500', wasSaved);
+        if (svg) {
+            if (wasSaved) { svg.setAttribute('fill', 'currentColor'); svg.removeAttribute('stroke'); }
+            else { svg.setAttribute('fill', 'none'); svg.setAttribute('stroke', 'currentColor'); }
+        }
+    } finally {
+        delete btn.dataset.busy;
+    }
+});
+
 // ─── Sub-type picker: toggle "other" custom field ────────────
 document.addEventListener('change', (e) => {
     const radio = e.target.closest('[data-subtype-picker] input[type="radio"][name="sub_type"]');

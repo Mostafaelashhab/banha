@@ -18,6 +18,16 @@ class PushService
 
     public static function sendToUser(int $userId, array $payload): array
     {
+        // Persist to inbox (so user can review history even without push permission)
+        \App\Models\Notification::create([
+            'user_id'    => $userId,
+            'type'       => $payload['tag'] ?? 'general',
+            'title'      => mb_substr($payload['title'] ?? '', 0, 200),
+            'body'       => mb_substr($payload['body']  ?? '', 0, 300),
+            'url'        => $payload['url']   ?? null,
+            'created_at' => now(),
+        ]);
+
         $subs = PushSubscription::where('user_id', $userId)->get();
         return self::sendToSubscriptions($subs, $payload);
     }

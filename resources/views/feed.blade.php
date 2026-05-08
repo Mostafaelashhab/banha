@@ -8,11 +8,13 @@
         <div class="flex gap-2 px-4 w-max">
             @php
                 $chips = [
-                    ['route' => route('alerts.index'),    'icon' => 'bolt',        'label' => 'تنبيهات', 'tone' => 'blush'],
+                    ['route' => route('marketplace.index'),'icon' => 'tag',         'label' => 'بيع وشراء','tone' => 'coral'],
+                    ['route' => route('alerts.index'),    'icon' => 'bolt',        'label' => 'تنبيهات',  'tone' => 'blush'],
                     ['route' => route('prices.index'),    'icon' => 'tag',         'label' => 'أسعار',    'tone' => 'mint'],
                     ['route' => route('directory.index'), 'icon' => 'bag',         'label' => 'الدليل',   'tone' => 'coral'],
                     ['route' => route('zones'),           'icon' => 'map-pin',     'label' => 'المناطق', 'tone' => 'honey'],
-                    ['route' => route('discover'),        'icon' => 'flame',       'label' => 'اكتشف',   'tone' => 'coral'],
+                    ['route' => route('hashtag.trending'),'icon' => 'flame',       'label' => 'هاشتاجات', 'tone' => 'coral'],
+                    ['route' => route('bookmark.index'),  'icon' => 'heart',       'label' => 'محفوظاتي','tone' => 'blush'],
                     ['route' => route('directory.category','food'),     'icon' => 'utensils',    'label' => 'مطاعم',   'tone' => 'coral'],
                     ['route' => route('directory.category','medical'),  'icon' => 'stethoscope', 'label' => 'دكاترة',  'tone' => 'mint'],
                     ['route' => route('directory.category','craftsmen'),'icon' => 'more',        'label' => 'صنايعية','tone' => 'honey'],

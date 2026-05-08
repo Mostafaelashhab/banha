@@ -45,7 +45,17 @@
         @if($post->title)
             <h2 class="text-2xl font-black text-ink-950 mb-2 leading-tight">{{ $post->title }}</h2>
         @endif
-        <p class="text-ink-950 text-[16px] leading-loose whitespace-pre-line">{{ $post->body }}</p>
+        <p class="text-ink-950 text-[16px] leading-loose whitespace-pre-line">{!! \App\Support\TextRenderer::renderHashtags($post->body) !!}</p>
+
+        @if($post->image_url)
+            <img src="{{ $post->image_url }}" alt="" class="mt-3 w-full rounded-2xl object-contain max-h-[600px] bg-cream-100">
+        @endif
+
+        @if($post->poll)
+            <div class="mt-4">
+                @include('partials.poll', ['poll' => $post->poll])
+            </div>
+        @endif
 
         <footer class="mt-5 flex items-center gap-1 text-ink-500 pt-4 border-t border-ink-950/5" data-vote-block
                 data-post-id="{{ $post->id }}"
@@ -71,8 +81,14 @@
             </span>
 
             @auth
+                @php $isSaved = \App\Models\Bookmark::exists_(auth()->id(), 'post', $post->id); @endphp
+                <button type="button" class="ms-auto p-2 rounded-full hover:bg-cream-200 transition {{ $isSaved ? 'text-coral-500' : 'text-ink-400' }}"
+                        data-bookmark data-type="post" data-id="{{ $post->id }}" data-saved="{{ $isSaved ? '1' : '0' }}"
+                        aria-label="حفظ">
+                    <x-icon name="heart" :filled="$isSaved" class="w-4 h-4"/>
+                </button>
                 @if($post->user_id === auth()->id())
-                    <form method="POST" action="{{ route('posts.destroy', $post) }}" class="ms-auto"
+                    <form method="POST" action="{{ route('posts.destroy', $post) }}"
                           data-confirm="حذف البوست؟"
                           data-confirm-body="هيتمسح خالص ومش هيرجع تاني."
                           data-confirm-action="احذف"
@@ -85,7 +101,7 @@
                 @else
                     <button type="button"
                             data-report="{{ route('posts.report', $post) }}"
-                            class="ms-auto p-2 rounded-full hover:bg-cream-200 hover:text-blush-500 transition text-ink-400"
+                            class="p-2 rounded-full hover:bg-cream-200 hover:text-blush-500 transition text-ink-400"
                             aria-label="بلّغ">
                         <x-icon name="flag" class="w-4 h-4"/>
                     </button>

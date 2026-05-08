@@ -6,9 +6,11 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
-#[Fillable(['user_id', 'zone_id', 'is_anonymous', 'anon_seed', 'category', 'title', 'body', 'status'])]
+#[Fillable(['user_id', 'zone_id', 'is_anonymous', 'anon_seed', 'category', 'title', 'body', 'image_url', 'status'])]
 class Post extends Model
 {
     public const CATEGORIES = [
@@ -66,5 +68,15 @@ class Post extends Model
     public function scopeActive(Builder $q): Builder
     {
         return $q->where('status', 'active');
+    }
+
+    public function hashtags(): BelongsToMany
+    {
+        return $this->belongsToMany(Hashtag::class, 'hashtag_post');
+    }
+
+    public function poll(): HasOne
+    {
+        return $this->hasOne(Poll::class);
     }
 }

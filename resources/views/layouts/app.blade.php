@@ -32,7 +32,21 @@
             </a>
 
             <div class="flex items-center gap-2">
+                <a href="{{ route('search') }}" class="w-9 h-9 rounded-full bg-white border border-ink-950/8 grid place-items-center text-ink-500 hover:text-ink-950 transition" aria-label="بحث">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="w-4 h-4">
+                        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                </a>
                 @auth
+                    @php $unread = \App\Models\Notification::where('user_id', auth()->id())->whereNull('read_at')->count(); @endphp
+                    <a href="{{ route('notifications.index') }}" class="relative w-9 h-9 rounded-full bg-white border border-ink-950/8 grid place-items-center text-ink-500 hover:text-ink-950 transition" aria-label="إشعارات">
+                        <x-icon name="bell" class="w-4 h-4"/>
+                        @if($unread > 0)
+                            <span class="absolute -top-0.5 -end-0.5 min-w-[18px] h-[18px] rounded-full bg-coral-500 text-white text-[10px] font-extrabold grid place-items-center px-1">
+                                {{ $unread > 9 ? '9+' : $unread }}
+                            </span>
+                        @endif
+                    </a>
                     <a href="{{ route('profile.me') }}" class="block">
                         <x-avatar :user="auth()->user()" size="md"/>
                     </a>

@@ -40,7 +40,10 @@
         @if($post->title)
             <h3 class="font-extrabold text-ink-950 mb-1.5 leading-tight">{{ $post->title }}</h3>
         @endif
-        <p class="text-ink-950 text-[15px] leading-relaxed whitespace-pre-line">{{ Str::limit($post->body, 280) }}</p>
+        <p class="text-ink-950 text-[15px] leading-relaxed whitespace-pre-line">{!! \App\Support\TextRenderer::renderHashtags(\Illuminate\Support\Str::limit($post->body, 280)) !!}</p>
+        @if($post->image_url)
+            <img src="{{ $post->image_url }}" alt="" loading="lazy" class="mt-3 w-full rounded-2xl object-cover max-h-[420px]">
+        @endif
     </a>
 
     {{-- actions --}}
