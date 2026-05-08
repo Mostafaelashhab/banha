@@ -28,7 +28,7 @@
                 @foreach($users as $u)
                     <a href="{{ route('profile.show', $u->username) }}" class="flex items-center gap-2 p-2 rounded-xl hover:bg-cream-100 transition">
                         <x-avatar :user="$u" size="sm"/>
-                        <span class="text-sm font-bold text-ink-950">@@{{ $u->username }}</span>
+                        <span class="text-sm font-bold text-ink-950">{{ '@'.$u->username }}</span>
                         <x-verified-badge :tier="$u->verification_tier ?? 'none'"/>
                     </a>
                 @endforeach
