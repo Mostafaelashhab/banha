@@ -85,7 +85,7 @@ class AlertController extends Controller
             'lng'         => ['nullable', 'numeric', 'between:-180,180'],
         ]);
 
-        Alert::create([
+        $alert = Alert::create([
             'user_id'     => Auth::id(),
             'zone_id'     => $data['zone_id'],
             'type'        => $data['type'],
@@ -97,7 +97,44 @@ class AlertController extends Controller
 
         BadgeService::onAlertSubmit(Auth::user());
 
-        return redirect()->route('alerts.index')->with('flash', 'تنبيهك اتنشر — شكراً.');
+        // Push to zone subscribers (excluding the author)
+        if ($alert->zone_id) {
+            $alert->load('zone:id,name');
+            $meta = $alert->typeMeta();
+            PushService::sendToZone($alert->zone_id, [
+                'title' => $meta['icon'] === 'flame' ? '🔥 ' : ($meta['icon'] === 'bolt' ? '⚡ ' : '⚠️ ').'تنبيه جديد · '.($alert->zone->name ?? 'حيك'),
+                'body'  => $meta['label'].': '.\Illuminate\Support\Str::limit($alert->description, 90),
+                'url'   => route('alerts.show', $alert),
+                'tag'   => 'alert-'.$alert->id,
+            ]);
+        }
+
+        return redirect()->route('alerts.show', $alert)->with('flash', 'تنبيهك اتنشر — شكراً.');
+    }
+
+    public function show(Alert $alert)
+    {
+        if ($alert->is_resolved && $alert->user_id !== Auth::id()) {
+            abort(404);
+        }
+
+        $alert->load(['user:id,username,avatar_seed', 'zone:id,name']);
+
+        $myConfirmed = Auth::check() && \Illuminate\Support\Facades\DB::table('alert_confirmations')
+            ->where('alert_id', $alert->id)
+            ->where('user_id', Auth::id())
+            ->exists();
+
+        $hotlines = EmergencyHotlines::forAlertType($alert->type);
+
+        $related = Alert::active()
+            ->where('id', '!=', $alert->id)
+            ->where('zone_id', $alert->zone_id)
+            ->latest()
+            ->limit(5)
+            ->get();
+
+        return view('alerts.show', compact('alert', 'myConfirmed', 'hotlines', 'related'));
     }
 
     public function confirm(Alert $alert)

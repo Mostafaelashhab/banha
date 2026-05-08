@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class DirectoryController extends Controller
@@ -149,6 +150,8 @@ class DirectoryController extends Controller
 
         $sm = Business::SUB_TYPES[$data['sub_type']];
 
+        $photoUrl = $this->handlePhotoUpload($request);
+
         $business = Business::create([
             'name'          => $data['name'],
             'category'      => $sm['category'],
@@ -164,6 +167,7 @@ class DirectoryController extends Controller
             'is_verified'   => false,
             'is_active'     => true,
             'emoji'         => $sm['emoji'],
+            'photo_url'     => $photoUrl,
         ]);
 
         return redirect()->route('directory.show', $business)
@@ -187,6 +191,8 @@ class DirectoryController extends Controller
         $data = $this->validateBusiness($request);
         $sm   = Business::SUB_TYPES[$data['sub_type']];
 
+        $newPhoto = $this->handlePhotoUpload($request, $business->photo_url);
+
         $business->update([
             'name'        => $data['name'],
             'category'    => $sm['category'],
@@ -199,6 +205,7 @@ class DirectoryController extends Controller
             'hours'       => $data['hours'] ?? null,
             'is_24h'      => (bool) ($data['is_24h'] ?? false),
             'emoji'       => $sm['emoji'],
+            'photo_url'   => $newPhoto ?: $business->photo_url,
         ]);
 
         return redirect()->route('directory.show', $business)
@@ -231,9 +238,29 @@ class DirectoryController extends Controller
             'address'     => ['nullable', 'string', 'max:200'],
             'hours'       => ['nullable', 'string', 'max:100'],
             'is_24h'      => ['nullable', 'boolean'],
+            'photo'       => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:3072'],
         ], [
             'phone.regex'    => 'لازم رقم موبايل مصري صحيح.',
             'whatsapp.regex' => 'لازم رقم واتساب مصري صحيح.',
+            'photo.image'    => 'الملف لازم يكون صورة.',
+            'photo.mimes'    => 'لازم JPG / PNG / WEBP.',
+            'photo.max'      => 'حجم الصورة لازم أقل من ٣ ميجا.',
         ]);
+    }
+
+    private function handlePhotoUpload(Request $request, ?string $oldUrl = null): ?string
+    {
+        if (! $request->hasFile('photo')) {
+            return null;
+        }
+
+        // Delete old
+        if ($oldUrl && str_starts_with($oldUrl, '/storage/')) {
+            $relative = ltrim(str_replace('/storage/', '', $oldUrl), '/');
+            Storage::disk('public')->delete($relative);
+        }
+
+        $path = $request->file('photo')->store('businesses', 'public');
+        return '/storage/'.$path;
     }
 }

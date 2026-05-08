@@ -62,8 +62,19 @@
         </a>
 
         <button type="button"
+                data-share data-share-url="{{ route('posts.show', $post) }}"
+                data-share-title="بوست على بنهاوي"
+                data-share-text="{{ \Illuminate\Support\Str::limit($post->title ?? $post->body, 120) }}"
+                class="ms-auto p-2 rounded-full hover:bg-cream-200 hover:text-coral-600 transition text-ink-400" aria-label="شير">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+            </svg>
+        </button>
+
+        <button type="button"
                 data-report="{{ route('posts.report', $post) }}"
-                class="ms-auto p-2 rounded-full hover:bg-cream-200 transition text-ink-400 hover:text-blush-500"
+                class="p-2 rounded-full hover:bg-cream-200 transition text-ink-400 hover:text-blush-500"
                 aria-label="بلّغ عن البوست">
             <x-icon name="flag" class="w-4 h-4"/>
         </button>

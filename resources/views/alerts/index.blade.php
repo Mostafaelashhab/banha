@@ -106,6 +106,11 @@
                 </div>
 
                 <div class="flex items-center gap-1 mt-3 pt-3 border-t border-ink-950/5 text-sm">
+                    <a href="{{ route('alerts.show', $alert) }}"
+                       class="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-ink-500 hover:text-ink-950 hover:bg-cream-200 transition text-xs font-bold">
+                        تفاصيل
+                    </a>
+
                     @if(! $isMine && ! $confirmed)
                         <form method="POST" action="{{ route('alerts.confirm', $alert) }}">
                             @csrf
@@ -121,8 +126,19 @@
                         </span>
                     @endif
 
+                    <button type="button"
+                            data-share data-share-url="{{ route('alerts.show', $alert) }}"
+                            data-share-title="تنبيه على بنهاوي · {{ $meta['label'] }}"
+                            data-share-text="{{ \Illuminate\Support\Str::limit($alert->description, 120) }}"
+                            class="ms-auto p-2 rounded-full text-ink-400 hover:text-coral-600 hover:bg-cream-200 transition" aria-label="شير">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5">
+                            <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                        </svg>
+                    </button>
+
                     @if($isMine)
-                        <form method="POST" action="{{ route('alerts.resolve', $alert) }}" class="ms-auto"
+                        <form method="POST" action="{{ route('alerts.resolve', $alert) }}"
                               data-confirm="تأشير التنبيه كمنتهي؟"
                               data-confirm-action="نعم"
                               data-confirm-tone="danger">

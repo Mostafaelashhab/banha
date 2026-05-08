@@ -34,6 +34,11 @@ class FeedController extends Controller
                 ->all();
         }
 
+        // Infinite-scroll partial (AJAX)
+        if ($request->boolean('partial') || $request->ajax()) {
+            return view('partials.feed-page', compact('posts', 'userVotes'));
+        }
+
         return view('feed', [
             'posts'      => $posts,
             'tab'        => $tab,

@@ -341,6 +341,29 @@ html[dir="rtl"] body {
     background: #FFF7F1 !important;
 }
 
+/* ─── Toast ──────────────────────────────────────────────── */
+.banhawy-toast {
+    position: fixed;
+    bottom: calc(110px + env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--color-ink-950);
+    color: #fff;
+    padding: 12px 22px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 700;
+    box-shadow: 0 18px 40px -10px rgba(11, 11, 12, .45);
+    opacity: 0;
+    transition: opacity .25s ease, transform .25s cubic-bezier(.2,.9,.3,1);
+    z-index: 70;
+    max-width: 90vw;
+}
+.banhawy-toast.in {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
 /* ─── Install banner ─────────────────────────────────────── */
 .install-banner {
     position: fixed;

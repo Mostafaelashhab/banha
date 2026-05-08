@@ -16,8 +16,26 @@
         </p>
     </div>
 
-    <form method="POST" action="{{ route('directory.store') }}" class="card-light p-5 space-y-4">
+    <form method="POST" action="{{ route('directory.store') }}" class="card-light p-5 space-y-4" enctype="multipart/form-data">
         @csrf
+
+        {{-- Photo upload --}}
+        <div>
+            <label class="text-xs font-bold text-ink-500 mb-2 block">صورة (اختياري)</label>
+            <label class="flex items-center gap-3 bg-cream-100 rounded-2xl p-3 cursor-pointer border border-ink-950/8 hover:border-coral-500/40 transition">
+                <span class="w-12 h-12 rounded-xl pill-coral grid place-items-center shrink-0">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                        <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                </span>
+                <div class="flex-1">
+                    <div class="text-sm font-bold text-ink-950">ارفع صورة للنشاط</div>
+                    <div class="text-[11px] text-ink-500" data-photo-name>JPG / PNG / WEBP · حتى ٣ ميجا</div>
+                </div>
+                <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" class="hidden" onchange="this.form.querySelector('[data-photo-name]').textContent = this.files[0]?.name || 'JPG / PNG / WEBP · حتى ٣ ميجا'">
+            </label>
+            @error('photo') <p class="text-blush-500 text-xs mt-1">{{ $message }}</p> @enderror
+        </div>
 
         {{-- Sub-type pickers grouped by category --}}
         <div>

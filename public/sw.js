@@ -1,6 +1,9 @@
-/* Banhawy service worker */
-const CACHE = 'banhawy-v1';
-const ASSETS = [
+/* Banhawy service worker — v3
+ * Strategy: cache STATIC assets only. Never intercept HTML/JSON,
+ * so auth cookies + dynamic content are always fresh.
+ */
+const CACHE = 'banhawy-static-v3';
+const STATIC_ASSETS = [
     '/icons/icon.svg',
     '/icons/icon-192.png',
     '/icons/icon-512.png',
@@ -8,23 +11,28 @@ const ASSETS = [
     '/manifest.json',
 ];
 
-self.addEventListener('install', (e) => {
-    e.waitUntil(
-        caches.open(CACHE).then((c) => c.addAll(ASSETS)).catch(() => {})
+self.addEventListener('install', (event) => {
+    event.waitUntil(
+        caches.open(CACHE)
+            .then((c) => c.addAll(STATIC_ASSETS))
+            .catch(() => {})
     );
     self.skipWaiting();
 });
 
-self.addEventListener('activate', (e) => {
-    e.waitUntil(
-        caches.keys().then((keys) =>
-            Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
-        )
-    );
-    self.clients.claim();
+self.addEventListener('activate', (event) => {
+    event.waitUntil((async () => {
+        // Drop ALL old caches (any v1/v2 versions get nuked)
+        const keys = await caches.keys();
+        await Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)));
+        // Enable navigation preload (faster initial loads)
+        if (self.registration.navigationPreload) {
+            try { await self.registration.navigationPreload.enable(); } catch (e) {}
+        }
+        await self.clients.claim();
+    })());
 });
 
-// Stale-while-revalidate for navigation, network-first for API, cache-first for assets
 self.addEventListener('fetch', (event) => {
     const { request } = event;
     if (request.method !== 'GET') return;
@@ -32,39 +40,51 @@ self.addEventListener('fetch', (event) => {
     const url = new URL(request.url);
     if (url.origin !== location.origin) return;
 
-    // Skip vite/build hashed assets — let them be (cache-busted by hash)
-    if (url.pathname.startsWith('/build/')) {
-        event.respondWith(
-            caches.match(request).then((cached) =>
-                cached ||
-                fetch(request).then((res) => {
-                    const copy = res.clone();
-                    caches.open(CACHE).then((c) => c.put(request, copy));
-                    return res;
-                }).catch(() => cached)
-            )
-        );
+    // ─── Static assets: stale-while-revalidate ─────────────
+    const isStatic =
+        url.pathname.startsWith('/build/') ||
+        url.pathname.startsWith('/icons/') ||
+        url.pathname === '/manifest.json' ||
+        url.pathname === '/favicon.ico';
+
+    if (isStatic) {
+        event.respondWith((async () => {
+            const cache  = await caches.open(CACHE);
+            const cached = await cache.match(request);
+            const network = fetch(request).then((res) => {
+                if (res && res.status === 200) cache.put(request, res.clone());
+                return res;
+            }).catch(() => cached);
+            return cached || network;
+        })());
         return;
     }
 
-    // HTML navigation: network-first with offline fallback
+    // ─── Everything else (HTML pages, API JSON): network-only with preload ──
+    // We do NOT cache authenticated HTML to avoid showing one user's data to another.
     if (request.mode === 'navigate') {
-        event.respondWith(
-            fetch(request)
-                .then((res) => {
-                    const copy = res.clone();
-                    caches.open(CACHE).then((c) => c.put(request, copy));
-                    return res;
-                })
-                .catch(() => caches.match(request).then((r) => r || caches.match('/')))
-        );
+        event.respondWith((async () => {
+            try {
+                // Use navigation preload if available (much faster on cold start)
+                const preload = await event.preloadResponse;
+                if (preload) return preload;
+                return await fetch(request);
+            } catch (err) {
+                // Offline fallback: return whatever we have for "/" if available
+                const cache = await caches.open(CACHE);
+                const fallback = await cache.match('/');
+                return fallback || new Response(
+                    '<!doctype html><meta charset="utf-8"><title>أوفلاين · بنهاوي</title>' +
+                    '<style>body{font-family:Cairo,sans-serif;background:#FFF7F1;color:#0B0B0C;display:grid;place-items:center;min-height:100vh;margin:0;padding:24px;text-align:center}h1{font-size:24px}</style>' +
+                    '<h1>📡 مفيش نت</h1><p style="color:#5C5C66">افتح النت تاني وحدّث الصفحة.</p>',
+                    { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+                );
+            }
+        })());
         return;
     }
 
-    // Default: cache-first
-    event.respondWith(
-        caches.match(request).then((cached) => cached || fetch(request))
-    );
+    // For non-navigation GET (e.g. fetch() calls), don't intercept at all.
 });
 
 // ─── Push notifications ──────────────────────────────────

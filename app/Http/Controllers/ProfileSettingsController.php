@@ -6,6 +6,7 @@ use App\Models\Zone;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class ProfileSettingsController extends Controller
@@ -46,5 +47,40 @@ class ProfileSettingsController extends Controller
         $user->update(['password' => $data['password']]);
 
         return back()->with('flash', 'تم تغيير الباسورد.');
+    }
+
+    public function uploadAvatar(Request $request)
+    {
+        $request->validate([
+            'avatar' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+        ], [
+            'avatar.image' => 'الملف لازم يكون صورة.',
+            'avatar.mimes' => 'لازم JPG / PNG / WEBP.',
+            'avatar.max'   => 'حجم الصورة لازم أقل من ٢ ميجا.',
+        ]);
+
+        $user = Auth::user();
+
+        // Delete old
+        if ($user->avatar_url && str_starts_with($user->avatar_url, '/storage/')) {
+            $relative = ltrim(str_replace('/storage/', '', $user->avatar_url), '/');
+            Storage::disk('public')->delete($relative);
+        }
+
+        $path = $request->file('avatar')->store('avatars', 'public');
+        $user->update(['avatar_url' => '/storage/'.$path]);
+
+        return back()->with('flash', '✓ صورتك اتغيّرت.');
+    }
+
+    public function deleteAvatar()
+    {
+        $user = Auth::user();
+        if ($user->avatar_url && str_starts_with($user->avatar_url, '/storage/')) {
+            $relative = ltrim(str_replace('/storage/', '', $user->avatar_url), '/');
+            Storage::disk('public')->delete($relative);
+        }
+        $user->update(['avatar_url' => null]);
+        return back()->with('flash', 'تم حذف الصورة.');
     }
 }

@@ -255,6 +255,42 @@
 
     @elseif($isMe && $tab === 'settings')
         <div class="space-y-3">
+            {{-- Avatar upload --}}
+            <form method="POST" action="{{ route('profile.avatar') }}" enctype="multipart/form-data" class="card-light p-5">
+                @csrf
+                <h3 class="text-sm font-extrabold text-ink-950 mb-3">صورتك الشخصية</h3>
+                <div class="flex items-center gap-3">
+                    @if($user->avatar_url)
+                        <img src="{{ $user->avatar_url }}" alt="" class="w-16 h-16 rounded-2xl object-cover shrink-0 ring-2 ring-coral-500/20">
+                    @else
+                        <span class="w-16 h-16 rounded-2xl grid place-items-center text-white font-black text-2xl shrink-0"
+                              style="background: {{ $color }}">{{ $initial }}</span>
+                    @endif
+                    <label class="flex-1 cursor-pointer bg-cream-100 rounded-2xl p-3 border border-ink-950/8 hover:border-coral-500/40 transition text-sm font-bold text-ink-950">
+                        <span data-photo-name>{{ $user->avatar_url ? 'استبدل الصورة' : 'ارفع صورة' }}</span>
+                        <span class="block text-[10px] text-ink-500 font-normal mt-0.5">JPG / PNG / WEBP · حتى ٢ ميجا</span>
+                        <input type="file" name="avatar" accept="image/jpeg,image/png,image/webp" class="hidden" onchange="this.parentElement.querySelector('[data-photo-name]').textContent = this.files[0]?.name || 'استبدل'; this.form.requestSubmit()">
+                    </label>
+                </div>
+                <p class="text-[11px] text-ink-400 mt-3 leading-relaxed">
+                    <b class="text-ink-950">ملاحظة:</b>
+                    صورتك مش بتظهر لما تنشر بوست/كومنت <b class="text-ink-950">مجهول</b> — خصوصيتك أولاً.
+                </p>
+                @error('avatar') <p class="text-blush-500 text-xs mt-2">{{ $message }}</p> @enderror
+
+                @if($user->avatar_url)
+                    <button type="button" onclick="document.getElementById('delete-avatar').requestSubmit()"
+                            class="text-xs font-bold text-blush-500 hover:underline mt-3">احذف الصورة</button>
+                @endif
+            </form>
+
+            @if($user->avatar_url)
+                <form id="delete-avatar" method="POST" action="{{ route('profile.avatar.delete') }}" class="hidden"
+                      data-confirm="حذف الصورة؟" data-confirm-action="احذف" data-confirm-tone="danger">
+                    @csrf @method('DELETE')
+                </form>
+            @endif
+
             {{-- Update profile --}}
             <form method="POST" action="{{ route('profile.update') }}" class="card-light p-5 space-y-3">
                 @csrf

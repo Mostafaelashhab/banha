@@ -121,6 +121,73 @@ document.addEventListener('click', (e) => {
 // ─── Auto-hide flash ─────────────────────────────────────────
 setTimeout(() => document.querySelectorAll('[data-flash]').forEach(el => el.remove()), 4500);
 
+// ─── Infinite scroll for the feed ───────────────────────────
+(function () {
+    const list = document.querySelector('[data-infinite-scroll]');
+    if (!list || !('IntersectionObserver' in window)) return;
+
+    const loader = document.querySelector('[data-feed-loader]');
+    const done   = document.querySelector('[data-feed-done]');
+    let loading  = false;
+    let nextUrl  = list.querySelector('[data-feed-end]')?.dataset.nextUrl || '';
+    let hasMore  = list.querySelector('[data-feed-end]')?.dataset.hasMore === '1';
+
+    if (!hasMore) { done?.classList.remove('hidden'); return; }
+
+    const fetchNext = async () => {
+        if (loading || !hasMore || !nextUrl) return;
+        loading = true;
+        loader?.classList.remove('hidden');
+
+        try {
+            const url = new URL(nextUrl, location.origin);
+            url.searchParams.set('partial', '1');
+            const res = await fetch(url, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' },
+                credentials: 'same-origin',
+            });
+            if (!res.ok) throw new Error('Bad response');
+            const html = await res.text();
+
+            // Remove old sentinel
+            list.querySelector('[data-feed-end]')?.remove();
+
+            // Append new HTML
+            const tmp = document.createElement('div');
+            tmp.innerHTML = html;
+            while (tmp.firstChild) list.appendChild(tmp.firstChild);
+
+            // Update next URL from the new sentinel
+            const sentinel = list.querySelector('[data-feed-end]');
+            nextUrl = sentinel?.dataset.nextUrl || '';
+            hasMore = sentinel?.dataset.hasMore === '1';
+
+            if (!hasMore) {
+                done?.classList.remove('hidden');
+                io.disconnect();
+            } else {
+                io.observe(sentinel);
+            }
+        } catch (err) {
+            // soft-fail: stop trying
+            io.disconnect();
+            done?.classList.remove('hidden');
+        } finally {
+            loading = false;
+            loader?.classList.add('hidden');
+        }
+    };
+
+    const io = new IntersectionObserver((entries) => {
+        for (const e of entries) {
+            if (e.isIntersecting) fetchNext();
+        }
+    }, { rootMargin: '600px 0px 600px 0px' });
+
+    const sentinel = list.querySelector('[data-feed-end]');
+    if (sentinel) io.observe(sentinel);
+})();
+
 // ─── Reveal-on-scroll ────────────────────────────────────────
 if ('IntersectionObserver' in window) {
     const io = new IntersectionObserver((entries) => {
@@ -343,6 +410,48 @@ document.addEventListener('click', async (e) => {
         alert('Push notifications مش مفعّلين على السيرفر لسه.');
     }
     btn.disabled = false;
+});
+
+// ─── Share button (Web Share API + clipboard fallback) ─────
+function showShareToast(text) {
+    const t = document.createElement('div');
+    t.className = 'banhawy-toast';
+    t.textContent = text;
+    document.body.appendChild(t);
+    requestAnimationFrame(() => t.classList.add('in'));
+    setTimeout(() => {
+        t.classList.remove('in');
+        setTimeout(() => t.remove(), 300);
+    }, 2200);
+}
+
+document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-share]');
+    if (!btn) return;
+    e.preventDefault();
+
+    const url   = new URL(btn.dataset.shareUrl || location.href, location.origin).href;
+    const title = btn.dataset.shareTitle || 'بنهاوي';
+    const text  = btn.dataset.shareText  || '';
+    const composed = `${text ? text + '\n\n' : ''}${url}\n\nمن بنهاوي 🔥`;
+
+    if (navigator.share) {
+        try {
+            await navigator.share({ title, text: composed, url });
+            return;
+        } catch (err) {
+            // user cancelled — silent
+            if (err.name === 'AbortError') return;
+        }
+    }
+
+    // Fallback: copy
+    try {
+        await navigator.clipboard.writeText(composed);
+        showShareToast('✓ اللينك اتنسخ — جاهز للشير');
+    } catch (err) {
+        prompt('انسخ اللينك:', url);
+    }
 });
 
 // Test push send button

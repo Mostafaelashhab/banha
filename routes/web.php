@@ -74,6 +74,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/me',                 [ProfileController::class, 'show'])->name('profile.me');
     Route::post('/me/profile',        [ProfileSettingsController::class, 'updateProfile'])->name('profile.update');
     Route::post('/me/password',       [ProfileSettingsController::class, 'changePassword'])->name('profile.password');
+    Route::post('/me/avatar',         [ProfileSettingsController::class, 'uploadAvatar'])->name('profile.avatar');
+    Route::delete('/me/avatar',       [ProfileSettingsController::class, 'deleteAvatar'])->name('profile.avatar.delete');
     Route::get('/u/{username}',       [ProfileController::class, 'show'])->name('profile.show');
 
     // Prices
@@ -91,6 +93,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/alerts',                  [AlertController::class, 'index'])->name('alerts.index');
     Route::get('/alerts/new',              [AlertController::class, 'create'])->name('alerts.create');
     Route::post('/alerts',                 [AlertController::class, 'store'])->name('alerts.store');
+    Route::get('/alerts/{alert}',          [AlertController::class, 'show'])->name('alerts.show');
     Route::post('/alerts/{alert}/confirm', [AlertController::class, 'confirm'])->name('alerts.confirm');
     Route::post('/alerts/{alert}/resolve', [AlertController::class, 'resolve'])->name('alerts.resolve');
 });

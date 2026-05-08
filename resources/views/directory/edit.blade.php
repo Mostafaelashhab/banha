@@ -9,9 +9,27 @@
         <h1 class="text-xl font-extrabold text-ink-950">تعديل النشاط</h1>
     </div>
 
-    <form method="POST" action="{{ route('directory.update', $business) }}" class="card-light p-5 space-y-4">
+    <form method="POST" action="{{ route('directory.update', $business) }}" class="card-light p-5 space-y-4" enctype="multipart/form-data">
         @csrf
         @method('PATCH')
+
+        {{-- Photo --}}
+        <div>
+            <label class="text-xs font-bold text-ink-500 mb-2 block">صورة النشاط</label>
+            <div class="flex items-center gap-3">
+                @if($business->photo_url)
+                    <img src="{{ $business->photo_url }}" alt="" class="w-16 h-16 rounded-xl object-cover shrink-0">
+                @else
+                    <span class="w-16 h-16 rounded-xl pill-coral grid place-items-center text-2xl shrink-0">{{ $business->emoji ?? '📍' }}</span>
+                @endif
+                <label class="flex-1 cursor-pointer bg-cream-100 rounded-2xl p-3 border border-ink-950/8 hover:border-coral-500/40 transition text-sm font-bold text-ink-950">
+                    <span data-photo-name>{{ $business->photo_url ? 'استبدل الصورة' : 'ارفع صورة' }}</span>
+                    <span class="block text-[10px] text-ink-500 font-normal mt-0.5">JPG / PNG / WEBP · حتى ٣ ميجا</span>
+                    <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" class="hidden" onchange="this.parentElement.querySelector('[data-photo-name]').textContent = this.files[0]?.name || 'استبدل الصورة'">
+                </label>
+            </div>
+            @error('photo') <p class="text-blush-500 text-xs mt-1">{{ $message }}</p> @enderror
+        </div>
 
         <div>
             <label class="text-xs font-bold text-ink-500 mb-2 block">نوع النشاط *</label>
