@@ -160,11 +160,12 @@ class DirectoryController extends Controller
         $photoUrl = $this->handlePhotoUpload($request);
 
         $business = Business::create([
-            'name'          => $data['name'],
-            'category'      => $sm['category'],
-            'sub_type'      => $data['sub_type'],
-            'zone_id'       => $data['zone_id'],
-            'owner_user_id' => Auth::id(),
+            'name'            => $data['name'],
+            'category'        => $sm['category'],
+            'sub_type'        => $data['sub_type'],
+            'custom_sub_type' => $data['custom_sub_type'] ?? null,
+            'zone_id'         => $data['zone_id'],
+            'owner_user_id'   => Auth::id(),
             'description'   => $data['description'] ?? null,
             'phone'         => $data['phone'] ?? null,
             'whatsapp'      => $data['whatsapp'] ?? null,
@@ -203,10 +204,11 @@ class DirectoryController extends Controller
         $newPhoto = $this->handlePhotoUpload($request, $business->photo_url);
 
         $business->update([
-            'name'        => $data['name'],
-            'category'    => $sm['category'],
-            'sub_type'    => $data['sub_type'],
-            'zone_id'     => $data['zone_id'],
+            'name'            => $data['name'],
+            'category'        => $sm['category'],
+            'sub_type'        => $data['sub_type'],
+            'custom_sub_type' => $data['custom_sub_type'] ?? null,
+            'zone_id'         => $data['zone_id'],
             'description' => $data['description'] ?? null,
             'phone'       => $data['phone'] ?? null,
             'whatsapp'    => $data['whatsapp'] ?? null,
@@ -238,17 +240,18 @@ class DirectoryController extends Controller
 
     private function validateBusiness(Request $request): array
     {
-        return $request->validate([
-            'name'        => ['required', 'string', 'min:3', 'max:120'],
-            'sub_type'    => ['required', 'in:'.implode(',', array_keys(Business::SUB_TYPES))],
-            'zone_id'     => ['required', 'exists:zones,id'],
-            'description' => ['nullable', 'string', 'max:1000'],
-            'phone'       => ['nullable', 'regex:/^01[0125][0-9]{8}$/'],
-            'whatsapp'    => ['nullable', 'regex:/^01[0125][0-9]{8}$/'],
-            'address'     => ['nullable', 'string', 'max:200'],
-            'hours'       => ['nullable', 'string', 'max:100'],
-            'is_24h'      => ['nullable', 'boolean'],
-            'photo'       => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:3072'],
+        $data = $request->validate([
+            'name'            => ['required', 'string', 'min:3', 'max:120'],
+            'sub_type'        => ['required', 'in:'.implode(',', array_keys(Business::SUB_TYPES))],
+            'custom_sub_type' => ['nullable', 'string', 'max:80'],
+            'zone_id'         => ['required', 'exists:zones,id'],
+            'description'     => ['nullable', 'string', 'max:1000'],
+            'phone'           => ['nullable', 'regex:/^01[0125][0-9]{8}$/'],
+            'whatsapp'        => ['nullable', 'regex:/^01[0125][0-9]{8}$/'],
+            'address'         => ['nullable', 'string', 'max:200'],
+            'hours'           => ['nullable', 'string', 'max:100'],
+            'is_24h'          => ['nullable', 'boolean'],
+            'photo'           => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:3072'],
         ], [
             'phone.regex'    => 'لازم رقم موبايل مصري صحيح.',
             'whatsapp.regex' => 'لازم رقم واتساب مصري صحيح.',
@@ -256,6 +259,17 @@ class DirectoryController extends Controller
             'photo.mimes'    => 'لازم JPG / PNG / WEBP.',
             'photo.max'      => 'حجم الصورة لازم أقل من ٣ ميجا.',
         ]);
+
+        // Only keep custom_sub_type when an "_other" type was picked
+        if (! str_ends_with($data['sub_type'], '_other')) {
+            $data['custom_sub_type'] = null;
+        } elseif (empty(trim($data['custom_sub_type'] ?? ''))) {
+            throw ValidationException::withMessages([
+                'custom_sub_type' => 'اكتب نوع نشاطك بالظبط.',
+            ]);
+        }
+
+        return $data;
     }
 
     private function handlePhotoUpload(Request $request, ?string $oldUrl = null): ?string

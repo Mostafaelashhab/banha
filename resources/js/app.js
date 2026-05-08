@@ -633,6 +633,151 @@ function showShareToast(text) {
     }, 2200);
 }
 
+// ─── Sub-type picker: toggle "other" custom field ────────────
+document.addEventListener('change', (e) => {
+    const radio = e.target.closest('[data-subtype-picker] input[type="radio"][name="sub_type"]');
+    if (!radio) return;
+    const wrap   = radio.closest('[data-subtype-picker]');
+    const custom = wrap?.querySelector('[data-custom-subtype-wrap]');
+    if (!custom) return;
+    const isOther = radio.dataset.isOther === '1';
+    custom.classList.toggle('hidden', !isOther);
+    if (isOther) custom.querySelector('input')?.focus();
+});
+
+// ─── Comment likes (AJAX, optimistic) ────────────────────────
+document.addEventListener('submit', async (e) => {
+    const form = e.target.closest('form[data-comment-like]');
+    if (!form) return;
+    e.preventDefault();
+
+    const btn      = form.querySelector('button[type="submit"]');
+    if (!btn || btn.dataset.busy === '1') return;
+    btn.dataset.busy = '1';
+
+    const csrf     = document.querySelector('meta[name="csrf-token"]')?.content;
+    const countEl  = btn.querySelector('[data-like-count]');
+    const wasLiked = btn.dataset.liked === '1';
+    const newLiked = !wasLiked;
+    const prev     = parseInt(countEl?.textContent || '0', 10);
+
+    // Optimistic UI
+    btn.dataset.liked = newLiked ? '1' : '0';
+    btn.classList.toggle('bg-coral-500', newLiked);
+    btn.classList.toggle('text-white', newLiked);
+    btn.classList.toggle('text-ink-500', !newLiked);
+    btn.classList.toggle('hover:bg-cream-100', !newLiked);
+    if (countEl) countEl.textContent = Math.max(0, prev + (newLiked ? 1 : -1));
+    const svg = btn.querySelector('svg');
+    if (svg) {
+        if (newLiked) { svg.setAttribute('fill', 'currentColor'); svg.removeAttribute('stroke'); }
+        else { svg.setAttribute('fill', 'none'); svg.setAttribute('stroke', 'currentColor'); }
+    }
+    btn.classList.add('pop');
+    setTimeout(() => btn.classList.remove('pop'), 400);
+
+    try {
+        const res = await fetch(form.action, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': csrf,
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            credentials: 'same-origin',
+        });
+        if (!res.ok) throw new Error('like failed');
+        const data = await res.json();
+        if (typeof data.upvotes === 'number' && countEl) countEl.textContent = data.upvotes;
+    } catch (err) {
+        // rollback
+        btn.dataset.liked = wasLiked ? '1' : '0';
+        btn.classList.toggle('bg-coral-500', wasLiked);
+        btn.classList.toggle('text-white', wasLiked);
+        btn.classList.toggle('text-ink-500', !wasLiked);
+        btn.classList.toggle('hover:bg-cream-100', !wasLiked);
+        if (countEl) countEl.textContent = prev;
+        if (svg) {
+            if (wasLiked) { svg.setAttribute('fill', 'currentColor'); svg.removeAttribute('stroke'); }
+            else { svg.setAttribute('fill', 'none'); svg.setAttribute('stroke', 'currentColor'); }
+        }
+    } finally {
+        delete btn.dataset.busy;
+    }
+});
+
+// ─── Reply form toggle ──────────────────────────────────────
+document.addEventListener('click', (e) => {
+    const trigger = e.target.closest('[data-reply-toggle]');
+    if (!trigger) return;
+    const id = trigger.dataset.replyToggle;
+    const form = document.querySelector(`form[data-reply-form="${id}"]`);
+    if (!form) return;
+    form.classList.toggle('hidden');
+    if (!form.classList.contains('hidden')) {
+        form.querySelector('textarea')?.focus();
+    }
+});
+
+// ─── Three-dot overflow menus ───────────────────────────────
+document.addEventListener('click', (e) => {
+    const toggle = e.target.closest('[data-menu-toggle]');
+    // Close all panels first
+    document.querySelectorAll('[data-menu-panel]').forEach(p => {
+        if (toggle && p === toggle.parentElement.querySelector('[data-menu-panel]')) return;
+        p.classList.add('hidden');
+    });
+    if (toggle) {
+        const panel = toggle.parentElement.querySelector('[data-menu-panel]');
+        panel?.classList.toggle('hidden');
+    }
+});
+
+// ─── Comment report (modal) ─────────────────────────────────
+document.addEventListener('click', (e) => {
+    const trigger = e.target.closest('[data-comment-report]');
+    if (!trigger) return;
+    e.preventDefault();
+    const action = trigger.dataset.action;
+    const csrf   = trigger.dataset.csrf;
+
+    const reasons = [
+        ['spam',  'سبام / إعلان'],
+        ['abuse', 'إهانة / تنمر'],
+        ['nsfw',  'محتوى مسيء'],
+        ['fake',  'كذب / تضليل'],
+        ['other', 'حاجة تانية'],
+    ];
+
+    const wrap = document.createElement('div');
+    wrap.className = 'modal-wrap';
+    wrap.innerHTML = `
+        <div class="modal-backdrop"></div>
+        <div class="modal-sheet">
+            <div class="p-5">
+                <h3 class="text-lg font-extrabold text-ink-950 mb-4">ابلاغ عن الكومنت</h3>
+                <form method="POST" action="${action}" class="space-y-2">
+                    <input type="hidden" name="_token" value="${csrf}">
+                    ${reasons.map(([v, l]) => `
+                        <label class="flex items-center gap-2 p-3 rounded-2xl bg-cream-100 border border-ink-950/8 cursor-pointer has-[:checked]:bg-coral-500 has-[:checked]:text-white has-[:checked]:border-coral-500 transition">
+                            <input type="radio" name="reason" value="${v}" required class="accent-coral-500">
+                            <span class="font-bold text-sm">${l}</span>
+                        </label>
+                    `).join('')}
+                    <div class="flex gap-2 pt-2">
+                        <button type="button" class="btn-ghost flex-1 justify-center" data-close>إلغاء</button>
+                        <button type="submit" class="btn-primary flex-1 justify-center">ابعت البلاغ</button>
+                    </div>
+                </form>
+            </div>
+        </div>`;
+    document.body.appendChild(wrap);
+    requestAnimationFrame(() => wrap.classList.add('open'));
+    const close = () => { wrap.classList.remove('open'); setTimeout(() => wrap.remove(), 220); };
+    wrap.querySelector('.modal-backdrop').addEventListener('click', close);
+    wrap.querySelector('[data-close]').addEventListener('click', close);
+});
+
 document.addEventListener('click', async (e) => {
     const btn = e.target.closest('[data-share]');
     if (!btn) return;

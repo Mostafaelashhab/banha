@@ -31,19 +31,22 @@
             @error('photo') <p class="text-blush-500 text-xs mt-1">{{ $message }}</p> @enderror
         </div>
 
-        <div>
+        <div data-subtype-picker>
             <label class="text-xs font-bold text-ink-500 mb-2 block">نوع النشاط *</label>
             @foreach(\App\Models\Business::CATEGORIES as $catKey => $catMeta)
-                <div class="mb-3">
-                    <div class="text-[11px] font-bold text-ink-400 mb-1.5">{{ $catMeta['emoji'] }} {{ $catMeta['label'] }}</div>
+                <div class="mb-4">
+                    <div class="text-[11px] font-bold text-ink-400 mb-2">{{ $catMeta['label'] }}</div>
                     <div class="flex flex-wrap gap-2">
                         @foreach($subTypes as $key => $st)
                             @if($st['category'] === $catKey)
+                                @php $isOther = str_ends_with($key, '_other'); @endphp
                                 <label class="cursor-pointer">
                                     <input type="radio" name="sub_type" value="{{ $key }}" class="peer sr-only"
-                                           {{ old('sub_type', $business->sub_type) === $key ? 'checked' : '' }}>
+                                           {{ old('sub_type', $business->sub_type) === $key ? 'checked' : '' }}
+                                           data-is-other="{{ $isOther ? '1' : '0' }}">
                                     <span class="block px-3 py-1.5 rounded-full text-xs font-bold bg-cream-100 border border-ink-950/8 peer-checked:bg-coral-500 peer-checked:text-white peer-checked:border-coral-500 transition inline-flex items-center gap-1.5">
-                                        <span>{{ $st['emoji'] }}</span> {{ $st['label'] }}
+                                        <x-icon :name="$st['icon'] ?? 'briefcase'" class="w-3.5 h-3.5"/>
+                                        {{ $st['label'] }}
                                     </span>
                                 </label>
                             @endif
@@ -51,6 +54,15 @@
                     </div>
                 </div>
             @endforeach
+
+            <div class="mt-2 {{ str_ends_with(old('sub_type', $business->sub_type), '_other') ? '' : 'hidden' }}" data-custom-subtype-wrap>
+                <label class="text-xs font-bold text-ink-500 mb-1 block">اكتب نوع نشاطك</label>
+                <input type="text" name="custom_sub_type" maxlength="80"
+                       value="{{ old('custom_sub_type', $business->custom_sub_type) }}"
+                       placeholder="مثلاً: محل ساعات، مدرّس عربي…"
+                       class="w-full bg-cream-100 rounded-2xl px-4 py-3 text-ink-950 placeholder-ink-400 outline-0 border border-ink-950/8 focus:border-coral-500 transition">
+                @error('custom_sub_type') <p class="text-blush-500 text-xs mt-1">{{ $message }}</p> @enderror
+            </div>
         </div>
 
         <div>

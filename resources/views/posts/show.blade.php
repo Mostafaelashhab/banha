@@ -118,25 +118,7 @@
     {{-- comments list --}}
     <div class="space-y-2">
         @forelse($comments as $c)
-            @php
-                $cIsAnon  = $c->is_anonymous;
-                $cDisplay = $cIsAnon ? ($c->anon_seed ?? 'مجهول') : $c->user->username;
-                $cTier    = $cIsAnon ? 'none' : ($c->user->verification_tier ?? 'none');
-            @endphp
-            <div class="card-light p-3.5">
-                <div class="flex items-center gap-2 mb-1.5">
-                    <x-avatar :user="$cIsAnon ? null : $c->user" :name="$cDisplay" :anon="$cIsAnon" size="sm"/>
-                    <span class="text-sm font-bold text-ink-950 inline-flex items-center gap-1">
-                        @if($cIsAnon)<x-icon name="mask" class="w-3 h-3 text-coral-600"/>@endif
-                        {{ $cDisplay }}
-                        @if(! $cIsAnon)
-                            <x-verified-badge :tier="$cTier"/>
-                        @endif
-                    </span>
-                    <span class="text-[11px] text-ink-400">{{ $c->created_at->diffForHumans() }}</span>
-                </div>
-                <p class="text-ink-950 text-sm leading-relaxed whitespace-pre-line ps-9">{{ $c->body }}</p>
-            </div>
+            @include('partials.comment', ['c' => $c, 'likedCommentIds' => $likedCommentIds ?? [], 'depth' => 0])
         @empty
             <div class="card-light p-6 text-center text-ink-500 text-sm">
                 لسه مفيش كومنتات. كن أول واحد يرد.

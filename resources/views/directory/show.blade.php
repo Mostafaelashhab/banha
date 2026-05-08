@@ -12,10 +12,21 @@
         <a href="{{ route('directory.category', $business->category) }}" class="w-9 h-9 rounded-full bg-white border border-ink-950/8 grid place-items-center text-ink-950">
             <x-icon name="arrow-right" class="w-4 h-4"/>
         </a>
-        <h1 class="text-base font-bold text-ink-500">{{ $cm['label'] }} · {{ $sm['label'] }}</h1>
+        <h1 class="text-base font-bold text-ink-500">{{ $cm['label'] }} · {{ $business->displayType() }}</h1>
+
+        {{-- Share (works for everyone) --}}
+        <button type="button" class="ms-auto w-9 h-9 rounded-full bg-white border border-ink-950/8 grid place-items-center text-ink-950 hover:bg-cream-100 transition"
+                data-share
+                data-share-url="{{ route('directory.show', $business) }}"
+                data-share-title="{{ $business->name }} · بنهاوي"
+                data-share-text="شوف {{ $business->name }} في دليل بنها"
+                aria-label="شارك">
+            <x-icon name="share" class="w-4 h-4"/>
+        </button>
+
         @auth
             @if(auth()->id() === $business->owner_user_id)
-                <a href="{{ route('directory.edit', $business) }}" class="ms-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-coral-100 text-coral-700 text-xs font-bold hover:bg-coral-500 hover:text-white transition">
+                <a href="{{ route('directory.edit', $business) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-coral-100 text-coral-700 text-xs font-bold hover:bg-coral-500 hover:text-white transition">
                     <x-icon name="more" class="w-3.5 h-3.5"/>
                     عدّل
                 </a>
@@ -38,9 +49,9 @@
 
     <div class="card-light p-5 mb-3">
         <div class="flex items-start gap-4">
-            <span class="w-16 h-16 rounded-2xl grid place-items-center text-3xl shrink-0"
-                  style="background: {{ $cm['color'] }}20; border: 1px solid {{ $cm['color'] }}50">
-                {{ ($business->emoji && $business->emoji !== '🔥📦') ? $business->emoji : $sm['emoji'] }}
+            <span class="w-16 h-16 rounded-2xl grid place-items-center shrink-0"
+                  style="background: {{ $cm['color'] }}20; border: 1px solid {{ $cm['color'] }}50; color: {{ $cm['color'] }}">
+                <x-icon :name="$sm['icon'] ?? 'briefcase'" class="w-7 h-7"/>
             </span>
             <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-1.5 flex-wrap">
@@ -53,7 +64,7 @@
                     @endif
                 </div>
                 <div class="text-sm text-ink-500 mt-0.5">
-                    {{ $sm['label'] }}
+                    {{ $business->displayType() }}
                     @if($business->zone) · {{ $business->zone->name }} @endif
                 </div>
                 @if($business->ratings_count > 0)
@@ -68,6 +79,15 @@
 
         @if($business->description)
             <p class="text-ink-950 text-sm leading-relaxed mt-4">{{ $business->description }}</p>
+        @endif
+
+        {{-- Owner link --}}
+        @if($business->owner)
+            <a href="{{ route('profile.show', $business->owner->username) }}"
+               class="mt-4 inline-flex items-center gap-2 text-xs text-ink-500 hover:text-coral-600 transition">
+                <x-icon name="user" class="w-3.5 h-3.5"/>
+                صاحب النشاط: <span class="font-bold text-ink-950">@{{ $business->owner->username }}</span>
+            </a>
         @endif
 
         {{-- Action buttons --}}

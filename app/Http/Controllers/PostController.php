@@ -17,16 +17,22 @@ use Illuminate\Validation\ValidationException;
 
 class PostController extends Controller
 {
-    public function show(Post $post, Request $request)
+    public function show(Post $post)
     {
         if ($post->status !== 'active' && (! Auth::check() || Auth::id() !== $post->user_id)) {
             abort(404);
         }
 
         $post->load(['user:id,username,avatar_seed,avatar_url,verification_tier', 'zone:id,name']);
+
+        // Top-level comments only — replies render recursively via the partial
         $comments = $post->comments()
-            ->with('user:id,username,avatar_seed,avatar_url,verification_tier')
+            ->with([
+                'user:id,username,avatar_seed,avatar_url,verification_tier',
+                'replies.user:id,username,avatar_seed,avatar_url,verification_tier',
+            ])
             ->where('status', 'active')
+            ->whereNull('parent_id')
             ->latest()
             ->get();
 
@@ -34,7 +40,28 @@ class PostController extends Controller
             ? Vote::where('user_id', Auth::id())->where('post_id', $post->id)->value('value')
             : null;
 
-        return view('posts.show', compact('post', 'comments', 'userVote'));
+        $likedCommentIds = Auth::check()
+            ? DB::table('comment_likes')
+                ->where('user_id', Auth::id())
+                ->whereIn('comment_id', $this->collectCommentIds($comments))
+                ->pluck('comment_id')
+                ->all()
+            : [];
+
+        return view('posts.show', compact('post', 'comments', 'userVote', 'likedCommentIds'));
+    }
+
+    /** Flatten nested comments + replies into a single id list. */
+    private function collectCommentIds($comments): array
+    {
+        $ids = [];
+        foreach ($comments as $c) {
+            $ids[] = $c->id;
+            if ($c->relationLoaded('replies')) {
+                foreach ($c->replies as $r) $ids[] = $r->id;
+            }
+        }
+        return $ids;
     }
 
     public function create()

@@ -41,6 +41,11 @@ Route::middleware('guest')->group(function () {
 
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
 
+// Public directory (browseable without login)
+Route::get('/directory',                     [DirectoryController::class, 'index'])->name('directory.index');
+Route::get('/directory/business/{business}', [DirectoryController::class, 'show'])->name('directory.show');
+Route::get('/directory/c/{category}',        [DirectoryController::class, 'category'])->name('directory.category');
+
 // Authenticated app routes
 Route::middleware('auth')->group(function () {
     // Activation (after signup)
@@ -52,16 +57,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/discover', [BrowseController::class, 'discover'])->name('discover');
     Route::get('/zones',    [BrowseController::class, 'zones'])->name('zones');
 
-    // Directory (businesses, craftsmen, restaurants, doctors, …)
-    Route::get('/directory',                                [DirectoryController::class, 'index'])->name('directory.index');
+    // Directory — owner CRUD (auth-only)
     Route::get('/directory/new',                            [DirectoryController::class, 'create'])->name('directory.create');
     Route::post('/directory',                               [DirectoryController::class, 'store'])->name('directory.store');
     Route::get('/directory/mine',                           [DirectoryController::class, 'myListings'])->name('directory.mine');
-    Route::get('/directory/business/{business}',            [DirectoryController::class, 'show'])->name('directory.show');
     Route::get('/directory/business/{business}/edit',       [DirectoryController::class, 'edit'])->name('directory.edit');
     Route::patch('/directory/business/{business}',          [DirectoryController::class, 'update'])->name('directory.update');
     Route::delete('/directory/business/{business}',         [DirectoryController::class, 'destroy'])->name('directory.destroy');
-    Route::get('/directory/{category}',                     [DirectoryController::class, 'category'])->name('directory.category');
 
     Route::get('/posts/new',  [PostController::class, 'create'])->name('posts.create');
     Route::post('/posts',     [PostController::class, 'store'])->name('posts.store');
@@ -71,6 +73,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/posts/{post}/vote',    [PostController::class, 'vote'])->name('posts.vote');
     Route::post('/posts/{post}/comment', [PostController::class, 'comment'])->name('posts.comment');
     Route::post('/posts/{post}/report',  [PostController::class, 'report'])->name('posts.report');
+
+    Route::post('/comments/{comment}/like',   [\App\Http\Controllers\CommentController::class, 'like'])->name('comments.like');
+    Route::post('/comments/{comment}/reply',  [\App\Http\Controllers\CommentController::class, 'reply'])->name('comments.reply');
+    Route::post('/comments/{comment}/report', [\App\Http\Controllers\CommentController::class, 'report'])->name('comments.report');
+    Route::delete('/comments/{comment}',      [\App\Http\Controllers\CommentController::class, 'destroy'])->name('comments.destroy');
 
     Route::get('/me',                 [ProfileController::class, 'show'])->name('profile.me');
     Route::post('/me/profile',        [ProfileSettingsController::class, 'updateProfile'])->name('profile.update');

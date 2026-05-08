@@ -36,6 +36,10 @@
                     <a href="{{ route('profile.me') }}" class="block">
                         <x-avatar :user="auth()->user()" size="md"/>
                     </a>
+                @else
+                    <a href="{{ route('login') }}" class="text-xs font-bold px-3 py-1.5 rounded-full bg-coral-500 text-white hover:bg-coral-600 transition">
+                        دخول
+                    </a>
                 @endauth
             </div>
         </div>
