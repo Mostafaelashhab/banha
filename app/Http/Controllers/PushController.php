@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\PushSubscription;
+use App\Services\PushService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -47,5 +48,24 @@ class PushController extends Controller
                 ->delete();
         }
         return response()->json(['ok' => true]);
+    }
+
+    public function sendTest(Request $request)
+    {
+        if (! PushService::isConfigured()) {
+            return response()->json(['ok' => false, 'reason' => 'not_configured'], 422);
+        }
+
+        $result = PushService::sendToUser(Auth::id(), [
+            'title' => '🎉 من بنهاوي',
+            'body'  => 'هذا اختبار — الإشعارات شغّالة على جهازك بنجاح!',
+            'url'   => '/feed',
+            'tag'   => 'banhawy-test',
+        ]);
+
+        return response()->json([
+            'ok'  => $result['sent'] > 0,
+            ...$result,
+        ]);
     }
 }

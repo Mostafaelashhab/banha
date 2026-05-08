@@ -13,6 +13,14 @@
             <x-icon name="arrow-right" class="w-4 h-4"/>
         </a>
         <h1 class="text-base font-bold text-ink-500">{{ $cm['label'] }} · {{ $sm['label'] }}</h1>
+        @auth
+            @if(auth()->id() === $business->owner_user_id)
+                <a href="{{ route('directory.edit', $business) }}" class="ms-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-coral-100 text-coral-700 text-xs font-bold hover:bg-coral-500 hover:text-white transition">
+                    <x-icon name="more" class="w-3.5 h-3.5"/>
+                    عدّل
+                </a>
+            @endif
+        @endauth
     </div>
 
     {{-- Hero --}}

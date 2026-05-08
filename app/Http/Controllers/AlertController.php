@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Alert;
 use App\Models\Zone;
 use App\Services\BadgeService;
+use App\Services\PushService;
 use App\Support\EmergencyHotlines;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -129,6 +130,17 @@ class AlertController extends Controller
                     $owner->refresh();
                     BadgeService::onAlertVerified($owner);
                     BadgeService::onReputationChange($owner);
+                }
+
+                // Push to zone subscribers (excluding the alert author)
+                if ($alert->zone_id) {
+                    $meta = $alert->typeMeta();
+                    PushService::sendToZone($alert->zone_id, [
+                        'title' => '⚠️ تنبيه موثّق · '.($alert->zone->name ?? 'حيك'),
+                        'body'  => $meta['label'].': '.\Illuminate\Support\Str::limit($alert->description, 90),
+                        'url'   => route('alerts.index', ['type' => $alert->type]),
+                        'tag'   => 'alert-'.$alert->id,
+                    ]);
                 }
             }
         }

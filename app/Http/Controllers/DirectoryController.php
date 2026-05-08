@@ -5,7 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Business;
 use App\Models\Zone;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Validation\ValidationException;
 
 class DirectoryController extends Controller
 {
@@ -94,7 +97,9 @@ class DirectoryController extends Controller
 
     public function show(Business $business)
     {
-        if (! $business->is_active) abort(404);
+        if (! $business->is_active && (! Auth::check() || Auth::id() !== $business->owner_user_id)) {
+            abort(404);
+        }
 
         $business->load(['zone', 'owner:id,username']);
 
@@ -107,5 +112,128 @@ class DirectoryController extends Controller
             ->get();
 
         return view('directory.show', compact('business', 'similar'));
+    }
+
+    // ─── Owner CRUD ─────────────────────────────────────────────
+
+    public function myListings()
+    {
+        $businesses = Business::query()
+            ->where('owner_user_id', Auth::id())
+            ->latest()
+            ->get();
+
+        return view('directory.my-listings', compact('businesses'));
+    }
+
+    public function create()
+    {
+        return view('directory.create', [
+            'categories' => Business::CATEGORIES,
+            'subTypes'   => Business::SUB_TYPES,
+            'zones'      => Zone::orderBy('sort')->get(),
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        $key = 'biz:'.Auth::id();
+        if (RateLimiter::tooManyAttempts($key, 5)) {
+            throw ValidationException::withMessages([
+                'name' => 'لا تستطيع إضافة أنشطة كتير في نفس الوقت. حاول لاحقاً.',
+            ]);
+        }
+        RateLimiter::hit($key, 600);
+
+        $data = $this->validateBusiness($request);
+
+        $sm = Business::SUB_TYPES[$data['sub_type']];
+
+        $business = Business::create([
+            'name'          => $data['name'],
+            'category'      => $sm['category'],
+            'sub_type'      => $data['sub_type'],
+            'zone_id'       => $data['zone_id'],
+            'owner_user_id' => Auth::id(),
+            'description'   => $data['description'] ?? null,
+            'phone'         => $data['phone'] ?? null,
+            'whatsapp'      => $data['whatsapp'] ?? null,
+            'address'       => $data['address'] ?? null,
+            'hours'         => $data['hours'] ?? null,
+            'is_24h'        => (bool) ($data['is_24h'] ?? false),
+            'is_verified'   => false,
+            'is_active'     => true,
+            'emoji'         => $sm['emoji'],
+        ]);
+
+        return redirect()->route('directory.show', $business)
+            ->with('flash', '✓ نشاطك انضاف للدليل! هتراجعه فريق بنهاوي قريباً للتوثيق.');
+    }
+
+    public function edit(Business $business)
+    {
+        $this->authorizeOwner($business);
+        return view('directory.edit', [
+            'business'   => $business,
+            'subTypes'   => Business::SUB_TYPES,
+            'zones'      => Zone::orderBy('sort')->get(),
+        ]);
+    }
+
+    public function update(Request $request, Business $business)
+    {
+        $this->authorizeOwner($business);
+
+        $data = $this->validateBusiness($request);
+        $sm   = Business::SUB_TYPES[$data['sub_type']];
+
+        $business->update([
+            'name'        => $data['name'],
+            'category'    => $sm['category'],
+            'sub_type'    => $data['sub_type'],
+            'zone_id'     => $data['zone_id'],
+            'description' => $data['description'] ?? null,
+            'phone'       => $data['phone'] ?? null,
+            'whatsapp'    => $data['whatsapp'] ?? null,
+            'address'     => $data['address'] ?? null,
+            'hours'       => $data['hours'] ?? null,
+            'is_24h'      => (bool) ($data['is_24h'] ?? false),
+            'emoji'       => $sm['emoji'],
+        ]);
+
+        return redirect()->route('directory.show', $business)
+            ->with('flash', '✓ تم تحديث النشاط.');
+    }
+
+    public function destroy(Business $business)
+    {
+        $this->authorizeOwner($business);
+        $business->update(['is_active' => false]);
+        return redirect()->route('directory.mine')->with('flash', 'تم حذف النشاط.');
+    }
+
+    private function authorizeOwner(Business $business): void
+    {
+        if (! Auth::check() || $business->owner_user_id !== Auth::id()) {
+            abort(403);
+        }
+    }
+
+    private function validateBusiness(Request $request): array
+    {
+        return $request->validate([
+            'name'        => ['required', 'string', 'min:3', 'max:120'],
+            'sub_type'    => ['required', 'in:'.implode(',', array_keys(Business::SUB_TYPES))],
+            'zone_id'     => ['required', 'exists:zones,id'],
+            'description' => ['nullable', 'string', 'max:1000'],
+            'phone'       => ['nullable', 'regex:/^01[0125][0-9]{8}$/'],
+            'whatsapp'    => ['nullable', 'regex:/^01[0125][0-9]{8}$/'],
+            'address'     => ['nullable', 'string', 'max:200'],
+            'hours'       => ['nullable', 'string', 'max:100'],
+            'is_24h'      => ['nullable', 'boolean'],
+        ], [
+            'phone.regex'    => 'لازم رقم موبايل مصري صحيح.',
+            'whatsapp.regex' => 'لازم رقم واتساب مصري صحيح.',
+        ]);
     }
 }

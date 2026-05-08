@@ -330,13 +330,49 @@ document.addEventListener('click', async (e) => {
     const result = wasOn ? await pushUnsubscribe() : await pushSubscribe();
     if (result.ok) {
         btn.dataset.pushOn = wasOn ? '0' : '1';
-        btn.innerText = wasOn ? 'تشغيل التنبيهات' : 'تنبيهات شغّالة ✓';
+        btn.textContent = wasOn ? 'تشغيل التنبيهات' : 'تنبيهات شغّالة ✓';
+        // Reveal the test button
+        document.querySelectorAll('[data-push-test]').forEach((el) => {
+            el.classList.toggle('hidden', wasOn);
+        });
     } else if (result.reason === 'denied') {
         alert('فعّل الإشعارات من إعدادات المتصفح علشان تستلم تنبيهات بنهاوي.');
     } else if (result.reason === 'unsupported') {
         alert('متصفحك مش بيدعم Push notifications. استخدم Chrome أو Firefox الأحدث.');
     } else if (result.reason === 'no-vapid') {
         alert('Push notifications مش مفعّلين على السيرفر لسه.');
+    }
+    btn.disabled = false;
+});
+
+// Test push send button
+document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-push-test]');
+    if (!btn) return;
+    e.preventDefault();
+    btn.disabled = true;
+    const original = btn.textContent;
+    btn.textContent = 'جاري الإرسال…';
+    try {
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
+        const r = await fetch('/push/test', {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+        });
+        const data = await r.json();
+        if (data.ok) {
+            btn.textContent = `تم ✓ (${data.sent} جهاز)`;
+            setTimeout(() => { btn.textContent = original; }, 3000);
+        } else if (data.reason === 'not_configured') {
+            alert('السيرفر لسه مش جاهز للـ push.');
+            btn.textContent = original;
+        } else {
+            btn.textContent = `فشل (${data.failed || 0})`;
+            setTimeout(() => { btn.textContent = original; }, 3000);
+        }
+    } catch (err) {
+        btn.textContent = original;
+        alert('في مشكلة. حاول تاني.');
     }
     btn.disabled = false;
 });

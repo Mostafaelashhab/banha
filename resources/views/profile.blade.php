@@ -332,12 +332,31 @@
                 <p class="text-xs text-ink-500 mb-4 leading-relaxed">
                     شغّل الإشعارات وهتوصلك تنبيهات لحظية لما يحصل حاجة في حيك (زحمة، كهربا، ميمز ترند…).
                 </p>
-                <button type="button"
-                        data-push-toggle data-push-on="0"
-                        class="btn-primary w-full justify-center !py-2.5 text-sm">
-                    تشغيل التنبيهات
-                </button>
+                <div class="space-y-2">
+                    <button type="button"
+                            data-push-toggle data-push-on="0"
+                            class="btn-primary w-full justify-center !py-2.5 text-sm">
+                        تشغيل التنبيهات
+                    </button>
+                    <button type="button"
+                            data-push-test
+                            class="hidden btn-ghost w-full justify-center !py-2.5 text-sm">
+                        أرسل إشعار تجريبي لي
+                    </button>
+                </div>
             </div>
+
+            {{-- My listings --}}
+            <a href="{{ route('directory.mine') }}" class="card-light p-4 flex items-center gap-3 hover:-translate-y-0.5 hover:shadow-lg transition">
+                <span class="w-10 h-10 rounded-2xl pill-coral grid place-items-center shrink-0">
+                    <x-icon name="bag" class="w-4 h-4"/>
+                </span>
+                <div class="flex-1">
+                    <div class="text-sm font-extrabold text-ink-950">نشاطاتي في الدليل</div>
+                    <div class="text-[11px] text-ink-500">صنايعية · مطاعم · دكاترة · محلات</div>
+                </div>
+                <x-icon name="arrow-left" class="w-4 h-4 text-ink-400"/>
+            </a>
 
             {{-- PWA install hint --}}
             <div class="card-light p-5">

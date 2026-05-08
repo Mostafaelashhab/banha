@@ -52,9 +52,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/zones',    [BrowseController::class, 'zones'])->name('zones');
 
     // Directory (businesses, craftsmen, restaurants, doctors, …)
-    Route::get('/directory',                         [DirectoryController::class, 'index'])->name('directory.index');
-    Route::get('/directory/business/{business}',     [DirectoryController::class, 'show'])->name('directory.show');
-    Route::get('/directory/{category}',              [DirectoryController::class, 'category'])->name('directory.category');
+    Route::get('/directory',                                [DirectoryController::class, 'index'])->name('directory.index');
+    Route::get('/directory/new',                            [DirectoryController::class, 'create'])->name('directory.create');
+    Route::post('/directory',                               [DirectoryController::class, 'store'])->name('directory.store');
+    Route::get('/directory/mine',                           [DirectoryController::class, 'myListings'])->name('directory.mine');
+    Route::get('/directory/business/{business}',            [DirectoryController::class, 'show'])->name('directory.show');
+    Route::get('/directory/business/{business}/edit',       [DirectoryController::class, 'edit'])->name('directory.edit');
+    Route::patch('/directory/business/{business}',          [DirectoryController::class, 'update'])->name('directory.update');
+    Route::delete('/directory/business/{business}',         [DirectoryController::class, 'destroy'])->name('directory.destroy');
+    Route::get('/directory/{category}',                     [DirectoryController::class, 'category'])->name('directory.category');
 
     Route::get('/posts/new',  [PostController::class, 'create'])->name('posts.create');
     Route::post('/posts',     [PostController::class, 'store'])->name('posts.store');
@@ -79,6 +85,7 @@ Route::middleware('auth')->group(function () {
     // Push notifications
     Route::post('/push/subscribe',   [PushController::class, 'subscribe'])->name('push.subscribe');
     Route::post('/push/unsubscribe', [PushController::class, 'unsubscribe'])->name('push.unsubscribe');
+    Route::post('/push/test',        [PushController::class, 'sendTest'])->name('push.test');
 
     // Alerts
     Route::get('/alerts',                  [AlertController::class, 'index'])->name('alerts.index');

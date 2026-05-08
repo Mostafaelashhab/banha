@@ -13,10 +13,8 @@ class DatabaseSeeder extends Seeder
             ProductSeeder::class,
             BadgeSeeder::class,
             BusinessSeeder::class,
-        ]);
-
-        if (app()->environment(['local', 'staging']) || env('SEED_DEMO', false)) {
+            ]);
             $this->call(DemoSeeder::class);
-        }
+
     }
 }
