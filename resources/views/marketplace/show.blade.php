@@ -64,7 +64,7 @@
         {{-- Owner --}}
         <a href="{{ route('profile.show', $listing->user->username) }}" class="flex items-center gap-2 mt-4 pt-3 border-t border-ink-950/8">
             <x-avatar :user="$listing->user" size="sm"/>
-            <span class="text-xs text-ink-500">صاحب الإعلان: <span class="font-bold text-ink-950">@{{ $listing->user->username }}</span></span>
+            <span class="text-xs text-ink-500">صاحب الإعلان: <span class="font-bold text-ink-950">@@{{ $listing->user->username }}</span></span>
         </a>
 
         {{-- CTAs --}}

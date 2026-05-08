@@ -86,7 +86,7 @@
             <a href="{{ route('profile.show', $business->owner->username) }}"
                class="mt-4 inline-flex items-center gap-2 text-xs text-ink-500 hover:text-coral-600 transition">
                 <x-icon name="user" class="w-3.5 h-3.5"/>
-                صاحب النشاط: <span class="font-bold text-ink-950">@{{ $business->owner->username }}</span>
+                صاحب النشاط: <span class="font-bold text-ink-950">@@{{ $business->owner->username }}</span>
             </a>
         @endif
 
