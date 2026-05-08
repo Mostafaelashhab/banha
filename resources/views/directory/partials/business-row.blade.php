@@ -5,10 +5,14 @@
 @endphp
 
 <a href="{{ route('directory.show', $business) }}" class="card-light p-3 flex items-center gap-3 hover:-translate-y-0.5 hover:shadow-lg transition">
-    <span class="w-12 h-12 rounded-2xl grid place-items-center text-2xl shrink-0"
-          style="background: {{ $cm['color'] }}20; border: 1px solid {{ $cm['color'] }}50">
-        {{ $business->emoji ?: $sm['emoji'] }}
-    </span>
+    @if($business->photo_url)
+        <img src="{{ $business->photo_url }}" alt="" class="w-12 h-12 rounded-2xl object-cover shrink-0">
+    @else
+        <span class="w-12 h-12 rounded-2xl grid place-items-center text-2xl shrink-0"
+              style="background: {{ $cm['color'] }}20; border: 1px solid {{ $cm['color'] }}50">
+            {{ $business->emoji ?: $sm['emoji'] }}
+        </span>
+    @endif
     <div class="flex-1 min-w-0">
         <div class="flex items-center gap-1.5">
             <h4 class="font-extrabold text-ink-950 text-sm truncate">{{ $business->name }}</h4>

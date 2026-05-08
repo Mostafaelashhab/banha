@@ -4,8 +4,6 @@
     use App\Support\AnonSeed;
     $isAnon  = $post->is_anonymous;
     $display = $isAnon ? ($post->anon_seed ?? 'مجهول') : $post->user->username;
-    $color   = AnonSeed::avatarColor($display);
-    $initial = AnonSeed::initial($display);
     $score   = (int) $post->upvotes - (int) $post->downvotes;
     $cat     = \App\Models\Post::CATEGORIES[$post->category] ?? $post->category;
 @endphp
@@ -22,8 +20,7 @@
     {{-- post --}}
     <article class="card-light p-5 mb-4">
         <header class="flex items-center gap-2.5 mb-4">
-            <span class="w-11 h-11 rounded-full grid place-items-center text-white font-bold shrink-0"
-                  style="background: {{ $color }}">{{ $initial }}</span>
+            <x-avatar :user="$isAnon ? null : $post->user" :name="$display" :anon="$isAnon" size="md"/>
             <div class="flex-1">
                 <div class="flex items-center gap-1.5 font-bold text-ink-950">
                     @if($isAnon)
@@ -111,13 +108,10 @@
             @php
                 $cIsAnon = $c->is_anonymous;
                 $cDisplay = $cIsAnon ? ($c->anon_seed ?? 'مجهول') : $c->user->username;
-                $cColor = AnonSeed::avatarColor($cDisplay);
-                $cInit = AnonSeed::initial($cDisplay);
             @endphp
             <div class="card-light p-3.5">
                 <div class="flex items-center gap-2 mb-1.5">
-                    <span class="w-7 h-7 rounded-full grid place-items-center text-white font-bold text-xs shrink-0"
-                          style="background: {{ $cColor }}">{{ $cInit }}</span>
+                    <x-avatar :user="$cIsAnon ? null : $c->user" :name="$cDisplay" :anon="$cIsAnon" size="sm"/>
                     <span class="text-sm font-bold text-ink-950 inline-flex items-center gap-1">
                         @if($cIsAnon)<x-icon name="mask" class="w-3 h-3 text-coral-600"/>@endif
                         {{ $cDisplay }}

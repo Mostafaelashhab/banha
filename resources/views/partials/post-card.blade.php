@@ -1,10 +1,7 @@
 @php
-    use App\Support\AnonSeed;
     /** @var \App\Models\Post $post */
     $isAnon   = $post->is_anonymous;
     $display  = $isAnon ? ($post->anon_seed ?? 'مجهول') : $post->user->username;
-    $color    = AnonSeed::avatarColor($display);
-    $initial  = AnonSeed::initial($display);
     $score    = (int) $post->upvotes - (int) $post->downvotes;
     $myVote   = $userVotes[$post->id] ?? 0;
     $cat      = \App\Models\Post::CATEGORIES[$post->category] ?? $post->category;
@@ -13,8 +10,7 @@
 <article class="card-light p-4 mb-3" data-post-id="{{ $post->id }}">
     {{-- header --}}
     <header class="flex items-center gap-2.5 mb-3">
-        <span class="w-9 h-9 rounded-full grid place-items-center text-white font-bold text-sm shrink-0"
-              style="background: {{ $color }}">{{ $initial }}</span>
+        <x-avatar :user="$isAnon ? null : $post->user" :name="$display" :anon="$isAnon" size="md"/>
         <div class="flex-1 min-w-0">
             <div class="flex items-center gap-1.5 text-sm font-bold text-ink-950">
                 @if($isAnon)

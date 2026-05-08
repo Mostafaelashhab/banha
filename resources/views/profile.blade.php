@@ -17,8 +17,7 @@
         <div class="absolute -bottom-16 -start-16 w-56 h-56 rounded-full bg-honey-400/40 blur-3xl"></div>
 
         <div class="relative flex items-start gap-4">
-            <span class="w-20 h-20 md:w-24 md:h-24 rounded-2xl grid place-items-center text-white font-black text-3xl md:text-4xl shrink-0 ring-4 ring-white/30 shadow-xl"
-                  style="background: {{ $color }}">{{ $initial }}</span>
+            <x-avatar :user="$user" size="xl" :ring="true" class="shadow-xl"/>
 
             <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2 flex-wrap">

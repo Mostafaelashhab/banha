@@ -23,7 +23,25 @@
         @endauth
     </div>
 
-    {{-- Hero --}}
+    {{-- Hero with photo --}}
+    @if($business->photo_url)
+        <div class="rounded-3xl overflow-hidden mb-3 relative aspect-[16/9] shadow">
+            <img src="{{ $business->photo_url }}" alt="{{ $business->name }}" class="w-full h-full object-cover">
+            <div class="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-ink-950/80 to-transparent"></div>
+            <div class="absolute bottom-3 inset-x-3 text-white">
+                <h2 class="text-xl md:text-2xl font-black inline-flex items-center gap-2">
+                    {{ $business->name }}
+                    @if($business->is_verified)
+                        <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-mint-500 text-white">
+                            <x-icon name="check" class="w-3 h-3"/> موثّق
+                        </span>
+                    @endif
+                </h2>
+                <div class="text-white/85 text-xs">{{ $sm['label'] }} @if($business->zone) · {{ $business->zone->name }} @endif</div>
+            </div>
+        </div>
+    @endif
+
     <div class="card-light p-5 mb-3">
         <div class="flex items-start gap-4">
             <span class="w-16 h-16 rounded-2xl grid place-items-center text-3xl shrink-0"

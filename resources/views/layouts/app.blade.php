@@ -33,9 +33,8 @@
 
             <div class="flex items-center gap-2">
                 @auth
-                    <a href="{{ route('profile.me') }}" class="w-9 h-9 rounded-full grid place-items-center text-white font-bold text-xs"
-                       style="background: {{ \App\Support\AnonSeed::avatarColor(auth()->user()->username) }}">
-                        {{ \App\Support\AnonSeed::initial(auth()->user()->username) }}
+                    <a href="{{ route('profile.me') }}" class="block">
+                        <x-avatar :user="auth()->user()" size="md"/>
                     </a>
                 @endauth
             </div>
