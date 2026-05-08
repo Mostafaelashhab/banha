@@ -20,45 +20,142 @@ class AdminController extends Controller
 {
     public function dashboard()
     {
-        $today = now()->startOfDay();
-        $week  = now()->subDays(7);
+        $today      = now()->startOfDay();
+        $yesterday  = now()->subDay()->startOfDay();
+        $weekAgo    = now()->subDays(7);
+
+        // Helper: count today vs yesterday and compute % delta
+        $delta = function (string $model, string $col = 'created_at') use ($today, $yesterday) {
+            $t = $model::where($col, '>=', $today)->count();
+            $y = $model::whereBetween($col, [$yesterday, $today])->count();
+            $pct = $y > 0 ? round((($t - $y) / $y) * 100) : ($t > 0 ? 100 : 0);
+            return ['today' => $t, 'yesterday' => $y, 'pct' => $pct];
+        };
+
+        $usersDelta  = $delta(User::class);
+        $postsDelta  = $delta(Post::class);
+        $alertsDelta = $delta(Alert::class);
+        $pricesDelta = $delta(Price::class);
 
         $stats = [
             'users'           => User::count(),
-            'users_today'     => User::where('created_at', '>=', $today)->count(),
+            'users_today'     => $usersDelta['today'],
+            'users_pct'       => $usersDelta['pct'],
             'users_banned'    => User::where('is_banned', true)->count(),
             'users_verified'  => User::whereIn('verification_tier', ['silver', 'gold'])->count(),
             'posts'           => Post::count(),
-            'posts_today'     => Post::where('created_at', '>=', $today)->count(),
+            'posts_today'     => $postsDelta['today'],
+            'posts_pct'       => $postsDelta['pct'],
             'posts_flagged'   => Post::where('status', 'flagged')->count(),
             'comments'        => Comment::count(),
             'alerts_active'   => Alert::active()->count(),
+            'alerts_today'    => $alertsDelta['today'],
+            'alerts_pct'      => $alertsDelta['pct'],
             'alerts_verified' => Alert::where('is_verified', true)->count(),
             'businesses'      => Business::where('is_active', true)->count(),
             'biz_pending'     => Business::where('is_active', true)->where('is_verified', false)->whereNotNull('owner_user_id')->count(),
             'reports_open'    => Report::where('status', 'open')->count(),
             'prices'          => Price::count(),
-            'prices_week'     => Price::where('created_at', '>=', $week)->count(),
+            'prices_today'    => $pricesDelta['today'],
+            'prices_pct'      => $pricesDelta['pct'],
+            'prices_week'     => Price::where('created_at', '>=', $weekAgo)->count(),
             'subs_total'      => PushSubscription::count(),
         ];
 
-        // Last 7 days signups chart
-        $signupsByDay = User::query()
-            ->select(DB::raw('DATE(created_at) as d'), DB::raw('count(*) as c'))
-            ->where('created_at', '>=', now()->subDays(7))
-            ->groupBy('d')->orderBy('d')->get();
+        // Helper: last 7 days filled with 0s for missing days
+        $sevenDaySeries = function (string $model) {
+            $rows = $model::query()
+                ->select(DB::raw('DATE(created_at) as d'), DB::raw('count(*) as c'))
+                ->where('created_at', '>=', now()->subDays(7))
+                ->groupBy('d')->orderBy('d')->pluck('c', 'd')->all();
 
-        // Top zones by posts
+            $series = [];
+            for ($i = 6; $i >= 0; $i--) {
+                $day = now()->subDays($i)->format('Y-m-d');
+                $series[] = ['d' => $day, 'c' => (int) ($rows[$day] ?? 0)];
+            }
+            return $series;
+        };
+
+        $charts = [
+            'users'  => $sevenDaySeries(User::class),
+            'posts'  => $sevenDaySeries(Post::class),
+            'alerts' => $sevenDaySeries(Alert::class),
+            'prices' => $sevenDaySeries(Price::class),
+        ];
+
+        // Top zones with relative bars
         $topZones = Zone::query()
             ->withCount(['posts' => function ($q) { $q->where('status', 'active'); }])
             ->orderByDesc('posts_count')
-            ->limit(5)
+            ->limit(6)
             ->get();
+        $maxZonePosts = max($topZones->max('posts_count') ?: 0, 1);
 
-        $recentReports = Report::where('status', 'open')->latest()->limit(5)->get();
-        $recentSignups = User::latest()->limit(5)->get();
+        // Mixed activity timeline (last 12 events)
+        $events = collect();
 
-        return view('admin.dashboard', compact('stats', 'signupsByDay', 'topZones', 'recentReports', 'recentSignups'));
+        foreach (User::latest()->limit(8)->get() as $u) {
+            $events->push([
+                'type'  => 'signup',
+                'at'    => $u->created_at,
+                'icon'  => 'user', 'tone' => 'coral',
+                'title' => $u->username.' سجّل حساب',
+                'sub'   => $u->phone.' · '.($u->zone?->name ?? '—'),
+                'url'   => route('profile.show', $u->username),
+            ]);
+        }
+        foreach (Post::latest()->limit(8)->get() as $p) {
+            $events->push([
+                'type'  => 'post',
+                'at'    => $p->created_at,
+                'icon'  => 'flame', 'tone' => 'honey',
+                'title' => ($p->is_anonymous ? '🤫 بوست مجهول' : ($p->user?->username.' نشر بوست')),
+                'sub'   => \Illuminate\Support\Str::limit($p->title ?: $p->body, 70),
+                'url'   => route('posts.show', $p),
+            ]);
+        }
+        foreach (Alert::latest()->limit(6)->get() as $a) {
+            $meta = $a->typeMeta();
+            $events->push([
+                'type'  => 'alert',
+                'at'    => $a->created_at,
+                'icon'  => $meta['icon'], 'tone' => $meta['tone'],
+                'title' => $meta['label'].' في '.($a->zone?->name ?? '—'),
+                'sub'   => \Illuminate\Support\Str::limit($a->description, 70),
+                'url'   => route('alerts.show', $a),
+            ]);
+        }
+        foreach (Business::latest()->limit(5)->get() as $b) {
+            $events->push([
+                'type'  => 'business',
+                'at'    => $b->created_at,
+                'icon'  => 'bag', 'tone' => 'mint',
+                'title' => $b->name.' انضاف للدليل',
+                'sub'   => ($b->subTypeMeta()['label'] ?? '').' · '.($b->zone?->name ?? '—'),
+                'url'   => route('directory.show', $b),
+            ]);
+        }
+        foreach (Report::where('status', 'open')->latest()->limit(5)->get() as $r) {
+            $events->push([
+                'type'  => 'report',
+                'at'    => $r->created_at,
+                'icon'  => 'flag', 'tone' => 'blush',
+                'title' => 'بلاغ: '.$r->reason,
+                'sub'   => $r->target_type.' #'.$r->target_id,
+                'url'   => route('admin.reports'),
+            ]);
+        }
+
+        $timeline = $events->sortByDesc('at')->take(12)->values();
+
+        return view('admin.dashboard', [
+            'stats'        => $stats,
+            'charts'       => $charts,
+            'topZones'     => $topZones,
+            'maxZonePosts' => $maxZonePosts,
+            'timeline'     => $timeline,
+        ]);
     }
 
     public function users(Request $request)

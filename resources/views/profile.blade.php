@@ -367,18 +367,11 @@
                 <p class="text-xs text-ink-500 mb-4 leading-relaxed">
                     شغّل الإشعارات وهتوصلك تنبيهات لحظية لما يحصل حاجة في حيك (زحمة، كهربا، ميمز ترند…).
                 </p>
-                <div class="space-y-2">
-                    <button type="button"
-                            data-push-toggle data-push-on="0"
-                            class="btn-primary w-full justify-center !py-2.5 text-sm">
-                        تشغيل التنبيهات
-                    </button>
-                    <button type="button"
-                            data-push-test
-                            class="hidden btn-ghost w-full justify-center !py-2.5 text-sm">
-                        أرسل إشعار تجريبي لي
-                    </button>
-                </div>
+                <button type="button"
+                        data-push-toggle data-push-on="0"
+                        class="btn-primary w-full justify-center !py-2.5 text-sm">
+                    تشغيل التنبيهات
+                </button>
             </div>
 
             @if($user->is_admin)
