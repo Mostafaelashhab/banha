@@ -96,6 +96,66 @@ html[dir="rtl"] body {
     box-shadow: var(--shadow-card);
 }
 
+/* ─── Verified post variants ──────────────────────────── */
+.card-light.tier-silver {
+    background:
+        linear-gradient(135deg, rgba(156, 163, 175, .07), transparent 40%),
+        #fff;
+    border-color: rgba(156, 163, 175, .3);
+}
+.card-light.tier-gold {
+    background:
+        linear-gradient(135deg, rgba(29, 155, 240, .06), rgba(255, 184, 92, .05) 40%, transparent 70%),
+        #fff;
+    border-color: rgba(29, 155, 240, .35);
+    box-shadow:
+        0 6px 20px -6px rgba(29, 155, 240, .18),
+        0 0 0 1px rgba(29, 155, 240, .08);
+}
+.card-light.tier-gold::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 22px;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(29, 155, 240, .4), rgba(255, 184, 92, .3) 50%, transparent);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+}
+
+.ring-tier-silver { box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(156, 163, 175, .55); }
+.ring-tier-gold   { box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(29, 155, 240, .65); }
+
+/* Verified checkmark badge (Twitter-like) */
+.v-badge {
+    display: inline-grid;
+    place-items: center;
+    width: 16px; height: 16px;
+    border-radius: 999px;
+    color: #fff;
+    flex-shrink: 0;
+}
+.v-badge-silver {
+    background: linear-gradient(135deg, #9CA3AF, #D1D5DB);
+    box-shadow: 0 1px 3px rgba(156, 163, 175, .4);
+}
+.v-badge-gold {
+    background: linear-gradient(135deg, #1D9BF0, #4DBFFF);
+    box-shadow: 0 2px 6px rgba(29, 155, 240, .45);
+}
+.v-badge svg { width: 10px; height: 10px; }
+
+/* Subtle shimmer on gold avatars */
+@keyframes verified-shimmer {
+    0%, 100% { box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(29, 155, 240, .65), 0 0 0 6px rgba(29, 155, 240, .15); }
+    50%      { box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(29, 155, 240, .8),  0 0 0 8px rgba(29, 155, 240, .25); }
+}
+.ring-tier-gold {
+    animation: verified-shimmer 3s ease-in-out infinite;
+}
+
 .card-dark {
     background: var(--color-ink-950);
     border-radius: 22px;

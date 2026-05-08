@@ -1,9 +1,10 @@
 @props([
-    'user'   => null,    // App\Models\User OR null when anonymous
-    'name'   => null,    // explicit display name (for anon seed)
-    'anon'   => false,   // when true, NEVER show user's avatar_url
-    'size'   => 'md',    // sm | md | lg | xl
-    'ring'   => false,
+    'user'    => null,    // App\Models\User OR null when anonymous
+    'name'    => null,    // explicit display name (for anon seed)
+    'anon'    => false,   // when true, NEVER show avatar_url or tier ring
+    'size'    => 'md',    // sm | md | lg | xl
+    'ring'    => false,
+    'showTier'=> true,    // show silver/gold ring when not anonymous
 ])
 
 @php
@@ -21,13 +22,20 @@
     $color       = AnonSeed::avatarColor($displayName);
     $initial     = AnonSeed::initial($displayName);
     $url         = ($anon || ! $user) ? null : $user->avatar_url;
+
+    $tier        = ($anon || ! $user || ! $showTier) ? null : ($user->verification_tier ?? null);
+    $tierClass   = match ($tier) {
+        'gold'   => 'ring-tier-gold',
+        'silver' => 'ring-tier-silver',
+        default  => '',
+    };
     $ringClass   = $ring ? 'ring-4 ring-white/30' : '';
 @endphp
 
 @if($url)
     <img src="{{ $url }}" alt=""
-         {{ $attributes->merge(['class' => $cfg['box'].' '.$cfg['rounded'].' object-cover shrink-0 '.$ringClass]) }}>
+         {{ $attributes->merge(['class' => $cfg['box'].' '.$cfg['rounded'].' object-cover shrink-0 '.$ringClass.' '.$tierClass]) }}>
 @else
-    <span {{ $attributes->merge(['class' => $cfg['box'].' '.$cfg['rounded'].' grid place-items-center text-white font-bold '.$cfg['text'].' shrink-0 '.$ringClass]) }}
+    <span {{ $attributes->merge(['class' => $cfg['box'].' '.$cfg['rounded'].' grid place-items-center text-white font-bold '.$cfg['text'].' shrink-0 '.$ringClass.' '.$tierClass]) }}
           style="background: {{ $color }}">{{ $initial }}</span>
 @endif

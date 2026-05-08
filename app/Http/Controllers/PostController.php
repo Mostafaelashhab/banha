@@ -23,9 +23,9 @@ class PostController extends Controller
             abort(404);
         }
 
-        $post->load(['user:id,username,avatar_seed', 'zone:id,name']);
+        $post->load(['user:id,username,avatar_seed,avatar_url,verification_tier', 'zone:id,name']);
         $comments = $post->comments()
-            ->with('user:id,username,avatar_seed')
+            ->with('user:id,username,avatar_seed,avatar_url,verification_tier')
             ->where('status', 'active')
             ->latest()
             ->get();

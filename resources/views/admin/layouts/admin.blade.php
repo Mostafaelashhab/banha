@@ -3,39 +3,51 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#0B0B0C">
+    <meta name="theme-color" content="#FFF7F1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title ?? 'Admin · بنهاوي' }}</title>
     <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
-        body { background: var(--color-ink-950) !important; color: #fff; }
         .a-side {
-            background: var(--color-ink-900);
-            border-color: rgba(255, 255, 255, 0.06);
+            background: #fff;
+            border-color: rgb(15 15 20 / .06);
         }
         .a-link {
             display: flex; align-items: center; gap: 10px;
             padding: 10px 14px; border-radius: 14px;
-            color: rgba(255, 255, 255, 0.6);
+            color: var(--color-ink-500);
             font-weight: 700; font-size: 14px;
             transition: all .15s ease;
         }
-        .a-link:hover { color: #fff; background: rgba(255, 255, 255, 0.05); }
-        .a-link.is-active { color: #fff; background: linear-gradient(135deg, var(--color-coral-500), var(--color-honey-400)); box-shadow: 0 8px 18px -8px rgba(255, 122, 77, .55); }
+        .a-link:hover { color: var(--color-ink-950); background: var(--color-cream-200); }
+        .a-link.is-active {
+            color: #fff;
+            background: linear-gradient(135deg, var(--color-coral-500), var(--color-honey-400));
+            box-shadow: 0 8px 18px -8px rgba(255, 122, 77, .55);
+        }
         .a-card {
-            background: var(--color-ink-900);
-            border: 1px solid rgba(255, 255, 255, 0.06);
+            background: #fff;
+            border: 1px solid rgb(15 15 20 / .06);
             border-radius: 18px;
+            box-shadow: var(--shadow-card);
         }
         .a-table th, .a-table td {
             padding: 10px 12px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgb(15 15 20 / .05);
             font-size: 13px;
+            color: var(--color-ink-950);
         }
-        .a-table th { font-size: 11px; text-transform: uppercase; color: rgba(255, 255, 255, 0.5); font-weight: 700; text-align: start; }
-        .a-table tr:hover td { background: rgba(255, 255, 255, 0.02); }
+        .a-table th { font-size: 11px; text-transform: uppercase; color: var(--color-ink-500); font-weight: 700; text-align: start; }
+        .a-table tr:hover td { background: var(--color-cream-100); }
         .a-pill { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 800; }
+
+        /* Table inputs */
+        .a-card select, .a-card input, .a-card textarea {
+            color: var(--color-ink-950);
+            background: var(--color-cream-100);
+            border-color: rgb(15 15 20 / .08);
+        }
     </style>
     @stack('head')
 </head>
@@ -47,7 +59,7 @@
 
         {{-- Sidebar (desktop) --}}
         <aside class="a-side hidden lg:flex flex-col w-64 border-l border-r-0 p-5 sticky top-0 h-screen shrink-0">
-            <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-2 font-extrabold text-lg mb-8">
+            <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-2 font-extrabold text-lg mb-8 text-ink-950">
                 <span class="w-9 h-9 rounded-xl brand-bg grid place-items-center"><span class="text-white font-black">ب</span></span>
                 <span>Admin</span>
             </a>
@@ -83,11 +95,11 @@
 
             {{-- Mobile topbar --}}
             <div class="lg:hidden flex items-center justify-between mb-4">
-                <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-2 font-extrabold">
+                <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-2 font-extrabold text-ink-950">
                     <span class="w-8 h-8 rounded-lg brand-bg grid place-items-center"><span class="text-white font-black text-sm">ب</span></span>
                     Admin
                 </a>
-                <a href="{{ route('feed') }}" class="text-xs text-white/60 hover:text-white">← التطبيق</a>
+                <a href="{{ route('feed') }}" class="text-xs text-ink-500 hover:text-ink-950 font-bold">← التطبيق</a>
             </div>
 
             {{-- Mobile tabs --}}
@@ -103,7 +115,7 @@
                     ] as $r => $label)
                         <a href="{{ route($r) }}"
                            class="px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition
-                                  {{ $route === $r ? 'bg-coral-500 text-white' : 'bg-white/5 text-white/60 hover:text-white border border-white/10' }}">
+                                  {{ $route === $r ? 'bg-coral-500 text-white border border-coral-500' : 'bg-white text-ink-500 hover:text-ink-950 border border-ink-950/8' }}">
                             {{ $label }}
                         </a>
                     @endforeach
@@ -111,7 +123,7 @@
             </div>
 
             @if(session('flash'))
-                <div class="mb-4 a-card p-3 border-coral-500/40 border-2 text-sm font-bold flex items-center justify-between" data-flash>
+                <div class="mb-4 card-light p-3 border-coral-500/40 border-2 text-ink-950 text-sm font-bold flex items-center justify-between" data-flash>
                     <span>{{ session('flash') }}</span>
                 </div>
             @endif

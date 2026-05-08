@@ -4,12 +4,12 @@
 
 {{-- ─── Hero ─────────────────────────────────────── --}}
 <div class="rounded-3xl p-5 md:p-7 mb-5 relative overflow-hidden brand-bg">
-    <div class="absolute -top-16 -end-16 w-64 h-64 rounded-full bg-white/10 blur-3xl"></div>
+    <div class="absolute -top-16 -end-16 w-64 h-64 rounded-full bg-white/15 blur-3xl"></div>
     <div class="absolute -bottom-16 -start-16 w-64 h-64 rounded-full bg-honey-400/40 blur-3xl"></div>
 
     <div class="relative grid md:grid-cols-3 gap-6 items-center">
         <div class="md:col-span-2">
-            <div class="text-white/80 text-sm font-bold inline-flex items-center gap-2 mb-2">
+            <div class="text-white/85 text-sm font-bold inline-flex items-center gap-2 mb-2">
                 <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
                 مباشر · {{ now()->translatedFormat('l j F') }}
             </div>
@@ -20,17 +20,17 @@
             </h1>
         </div>
         <div class="grid grid-cols-2 gap-3">
-            <div class="bg-ink-950/30 backdrop-blur rounded-2xl p-4 border border-white/15">
-                <div class="text-white/85 text-[11px] font-bold mb-1">+ النهاردة</div>
+            <div class="bg-white/15 backdrop-blur rounded-2xl p-4 border border-white/25">
+                <div class="text-white/90 text-[11px] font-bold mb-1">+ النهاردة</div>
                 <div class="text-3xl font-black text-white">{{ $stats['users_today'] }}</div>
-                <div class="text-[10px] mt-1 {{ $stats['users_pct'] >= 0 ? 'text-mint-100' : 'text-blush-500' }}">
+                <div class="text-[10px] mt-1 {{ $stats['users_pct'] >= 0 ? 'text-mint-100' : 'text-blush-100' }}">
                     {{ $stats['users_pct'] >= 0 ? '↑' : '↓' }} {{ abs($stats['users_pct']) }}% من امبارح
                 </div>
             </div>
-            <div class="bg-ink-950/30 backdrop-blur rounded-2xl p-4 border border-white/15">
-                <div class="text-white/85 text-[11px] font-bold mb-1">بحاجة لإجراء</div>
+            <div class="bg-white/15 backdrop-blur rounded-2xl p-4 border border-white/25">
+                <div class="text-white/90 text-[11px] font-bold mb-1">بحاجة لإجراء</div>
                 <div class="text-3xl font-black text-white">{{ $stats['reports_open'] + $stats['biz_pending'] + $stats['posts_flagged'] }}</div>
-                <div class="text-[10px] text-white/70 mt-1">
+                <div class="text-[10px] text-white/85 mt-1">
                     {{ $stats['reports_open'] }} بلاغ · {{ $stats['biz_pending'] }} نشاط · {{ $stats['posts_flagged'] }} بوست
                 </div>
             </div>
@@ -40,19 +40,19 @@
 
 {{-- ─── Quick action chips ────────────────────────── --}}
 <div class="flex flex-wrap gap-2 mb-5">
-    <a href="{{ route('admin.reports') }}" class="a-pill bg-blush-500/15 text-blush-500 border border-blush-500/30 px-4 py-2 hover:bg-blush-500/25 transition">
+    <a href="{{ route('admin.reports') }}" class="a-pill bg-blush-100 text-blush-500 border border-blush-500/30 px-4 py-2 hover:bg-blush-500 hover:text-white transition">
         <x-icon name="flag" class="w-3.5 h-3.5"/>
         {{ $stats['reports_open'] }} بلاغ مفتوح
     </a>
-    <a href="{{ route('admin.businesses', ['filter'=>'pending']) }}" class="a-pill bg-honey-400/15 text-honey-400 border border-honey-400/30 px-4 py-2 hover:bg-honey-400/25 transition">
+    <a href="{{ route('admin.businesses', ['filter'=>'pending']) }}" class="a-pill bg-honey-400/15 text-honey-500 border border-honey-400/40 px-4 py-2 hover:bg-honey-400 hover:text-white transition">
         <x-icon name="bag" class="w-3.5 h-3.5"/>
         {{ $stats['biz_pending'] }} نشاط بانتظار
     </a>
-    <a href="{{ route('admin.posts', ['status'=>'flagged']) }}" class="a-pill bg-coral-500/15 text-coral-400 border border-coral-500/30 px-4 py-2 hover:bg-coral-500/25 transition">
+    <a href="{{ route('admin.posts', ['status'=>'flagged']) }}" class="a-pill bg-coral-100 text-coral-700 border border-coral-500/30 px-4 py-2 hover:bg-coral-500 hover:text-white transition">
         <x-icon name="flame" class="w-3.5 h-3.5"/>
         {{ $stats['posts_flagged'] }} بوست مُبلَّغ
     </a>
-    <a href="{{ route('admin.broadcast') }}" class="a-pill bg-mint-500/15 text-mint-100 border border-mint-500/30 px-4 py-2 hover:bg-mint-500/25 transition ms-auto">
+    <a href="{{ route('admin.broadcast') }}" class="a-pill bg-mint-100 text-mint-700 border border-mint-500/30 px-4 py-2 hover:bg-mint-500 hover:text-white transition ms-auto">
         <x-icon name="bell" class="w-3.5 h-3.5"/>
         ابعت إشعار
     </a>
@@ -89,17 +89,17 @@
     @foreach($tiles as $t)
         <div class="a-card p-4">
             <div class="flex items-center justify-between mb-2">
-                <span class="w-9 h-9 rounded-xl grid place-items-center" style="background: {{ $t['color'] }}25; color: {{ $t['color'] }}">
+                <span class="w-9 h-9 rounded-xl grid place-items-center" style="background: {{ $t['color'] }}20; color: {{ $t['color'] }}">
                     <x-icon :name="$t['icon']" class="w-4 h-4"/>
                 </span>
-                <span class="text-[10px] font-bold {{ $t['pct'] >= 0 ? 'text-mint-100' : 'text-blush-500' }}">
+                <span class="text-[10px] font-bold {{ $t['pct'] >= 0 ? 'text-mint-700' : 'text-blush-500' }}">
                     {{ $t['pct'] >= 0 ? '↑' : '↓' }} {{ abs($t['pct']) }}%
                 </span>
             </div>
-            <div class="text-2xl md:text-3xl font-black">{{ number_format($t['value']) }}</div>
+            <div class="text-2xl md:text-3xl font-black text-ink-950">{{ number_format($t['value']) }}</div>
             <div class="flex items-baseline justify-between mt-1">
-                <span class="text-[11px] text-white/50">{{ $t['label'] }}</span>
-                <span class="text-[10px] text-white/40">+{{ $t['today'] }} اليوم</span>
+                <span class="text-[11px] text-ink-500">{{ $t['label'] }}</span>
+                <span class="text-[10px] text-ink-400">+{{ $t['today'] }} اليوم</span>
             </div>
             <div class="mt-2">{!! $renderSparkline($t['series'], $t['color']) !!}</div>
         </div>
@@ -122,9 +122,9 @@
     @endphp
     @foreach($smalls as [$lbl, $val, $tone, $sub])
         <div class="a-card p-3.5">
-            <div class="text-xl font-black">{{ is_numeric($val) ? number_format((int)$val) : $val }}</div>
-            <div class="text-[10px] text-white/50 mt-0.5">{{ $lbl }}</div>
-            <div class="text-[9px] text-white/35 mt-1">{{ $sub }}</div>
+            <div class="text-xl font-black text-ink-950">{{ is_numeric($val) ? number_format((int)$val) : $val }}</div>
+            <div class="text-[10px] text-ink-500 mt-0.5">{{ $lbl }}</div>
+            <div class="text-[9px] text-ink-400 mt-1">{{ $sub }}</div>
         </div>
     @endforeach
 </div>
@@ -132,13 +132,13 @@
 {{-- ─── Charts row + activity feed ────────────────── --}}
 <div class="grid lg:grid-cols-3 gap-4 mb-4">
 
-    {{-- Big chart: Posts vs Signups --}}
+    {{-- Big chart --}}
     <div class="a-card p-5 lg:col-span-2">
         <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-extrabold">نمو المنصة (٧ أيام)</h3>
+            <h3 class="text-sm font-extrabold text-ink-950">نمو المنصة (٧ أيام)</h3>
             <div class="flex items-center gap-3 text-[10px] font-bold">
-                <span class="inline-flex items-center gap-1.5 text-coral-400"><span class="w-2 h-2 rounded-full bg-coral-500"></span>تسجيلات</span>
-                <span class="inline-flex items-center gap-1.5 text-honey-400"><span class="w-2 h-2 rounded-full bg-honey-400"></span>بوستات</span>
+                <span class="inline-flex items-center gap-1.5 text-coral-600"><span class="w-2 h-2 rounded-full bg-coral-500"></span>تسجيلات</span>
+                <span class="inline-flex items-center gap-1.5 text-honey-500"><span class="w-2 h-2 rounded-full bg-honey-400"></span>بوستات</span>
             </div>
         </div>
         @php
@@ -155,14 +155,14 @@
                 <div class="flex-1 flex flex-col items-center gap-1.5">
                     <div class="w-full flex items-end gap-1 flex-1">
                         <div class="flex-1 rounded-t-md transition" style="height: {{ $hu }}%; background: linear-gradient(to top, #FF7A4D, #FFB85C)"></div>
-                        <div class="flex-1 rounded-t-md transition" style="height: {{ $hp }}%; background: linear-gradient(to top, #FFB85C, #FFC97A); opacity: .75"></div>
+                        <div class="flex-1 rounded-t-md transition" style="height: {{ $hp }}%; background: linear-gradient(to top, #FFB85C, #FFC97A); opacity: .8"></div>
                     </div>
                     <div class="flex gap-1.5 text-[10px] font-bold">
-                        <span class="text-coral-400">{{ $u['c'] }}</span>
-                        <span class="text-white/30">/</span>
-                        <span class="text-honey-400">{{ $p['c'] }}</span>
+                        <span class="text-coral-600">{{ $u['c'] }}</span>
+                        <span class="text-ink-300">/</span>
+                        <span class="text-honey-500">{{ $p['c'] }}</span>
                     </div>
-                    <div class="text-[10px] text-white/35">{{ \Illuminate\Support\Carbon::parse($u['d'])->format('d/m') }}</div>
+                    <div class="text-[10px] text-ink-400">{{ \Illuminate\Support\Carbon::parse($u['d'])->format('d/m') }}</div>
                 </div>
             @endforeach
         </div>
@@ -171,27 +171,27 @@
     {{-- Activity timeline --}}
     <div class="a-card p-5 lg:row-span-2">
         <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-extrabold">نشاط حي</h3>
+            <h3 class="text-sm font-extrabold text-ink-950">نشاط حي</h3>
             <span class="w-2 h-2 rounded-full bg-mint-500 animate-pulse"></span>
         </div>
         @if($timeline->isEmpty())
-            <p class="text-white/50 text-sm">مفيش نشاط لسه.</p>
+            <p class="text-ink-500 text-sm">مفيش نشاط لسه.</p>
         @else
             <div class="relative">
-                <div class="absolute top-2 bottom-2 start-[18px] w-px bg-white/8"></div>
+                <div class="absolute top-2 bottom-2 start-[18px] w-px bg-ink-950/8"></div>
 
                 <div class="space-y-2">
                     @foreach($timeline as $e)
-                        <a href="{{ $e['url'] }}" class="flex items-start gap-3 group hover:bg-white/[.04] -mx-2 px-2 py-1.5 rounded-xl transition relative">
-                            <span class="w-9 h-9 rounded-full pill-{{ $e['tone'] }} grid place-items-center shrink-0 z-10 ring-4 ring-ink-900">
+                        <a href="{{ $e['url'] }}" class="flex items-start gap-3 group hover:bg-cream-100 -mx-2 px-2 py-1.5 rounded-xl transition relative">
+                            <span class="w-9 h-9 rounded-full pill-{{ $e['tone'] }} grid place-items-center shrink-0 z-10 ring-4 ring-white">
                                 <x-icon :name="$e['icon']" class="w-3.5 h-3.5"/>
                             </span>
                             <div class="flex-1 min-w-0">
-                                <div class="text-xs font-bold text-white truncate group-hover:text-coral-400 transition">{{ $e['title'] }}</div>
+                                <div class="text-xs font-bold text-ink-950 truncate group-hover:text-coral-600 transition">{{ $e['title'] }}</div>
                                 @if(! empty($e['sub']))
-                                    <div class="text-[11px] text-white/50 truncate">{{ $e['sub'] }}</div>
+                                    <div class="text-[11px] text-ink-500 truncate">{{ $e['sub'] }}</div>
                                 @endif
-                                <div class="text-[10px] text-white/35 mt-0.5">{{ \Illuminate\Support\Carbon::parse($e['at'])->diffForHumans(['short'=>true]) }}</div>
+                                <div class="text-[10px] text-ink-400 mt-0.5">{{ \Illuminate\Support\Carbon::parse($e['at'])->diffForHumans(['short'=>true]) }}</div>
                             </div>
                         </a>
                     @endforeach
@@ -203,8 +203,8 @@
     {{-- Top zones --}}
     <div class="a-card p-5 lg:col-span-2">
         <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-extrabold">أنشط المناطق</h3>
-            <a href="{{ route('zones') }}" target="_blank" class="text-xs text-coral-400 font-bold">شوف الكل ←</a>
+            <h3 class="text-sm font-extrabold text-ink-950">أنشط المناطق</h3>
+            <a href="{{ route('zones') }}" target="_blank" class="text-xs text-coral-600 font-bold">شوف الكل ←</a>
         </div>
         <div class="space-y-2.5">
             @foreach($topZones as $z)
@@ -218,10 +218,10 @@
                           style="background: {{ $color }}">{{ $init }}</span>
                     <div class="flex-1 min-w-0">
                         <div class="flex items-baseline justify-between mb-1">
-                            <span class="text-sm font-bold truncate">{{ $z->name }}</span>
-                            <span class="text-xs font-black ms-2">{{ $z->posts_count }}</span>
+                            <span class="text-sm font-bold text-ink-950 truncate">{{ $z->name }}</span>
+                            <span class="text-xs font-black text-ink-950 ms-2">{{ $z->posts_count }}</span>
                         </div>
-                        <div class="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                        <div class="h-1.5 bg-cream-200 rounded-full overflow-hidden">
                             <div class="h-full rounded-full transition" style="width: {{ $pct }}%; background: {{ $color }}"></div>
                         </div>
                     </div>
@@ -234,19 +234,19 @@
 
 {{-- ─── Tools row ─────────────────────────────────── --}}
 <div class="a-card p-4 flex flex-wrap items-center gap-2">
-    <span class="text-xs text-white/50 font-bold me-2">أدوات سريعة:</span>
+    <span class="text-xs text-ink-500 font-bold me-2">أدوات سريعة:</span>
     <form method="POST" action="{{ route('admin.recheck.tiers') }}" class="inline">
         @csrf
-        <button type="submit" class="a-pill bg-white/10 hover:bg-white/15 text-white px-3 py-1.5">
+        <button type="submit" class="a-pill bg-cream-200 hover:bg-coral-100 text-ink-950 px-3 py-1.5 transition">
             <x-icon name="check" class="w-3.5 h-3.5"/>
             Re-check Silver tiers
         </button>
     </form>
-    <a href="{{ route('admin.users') }}" class="a-pill bg-white/10 hover:bg-white/15 text-white px-3 py-1.5">
+    <a href="{{ route('admin.users') }}" class="a-pill bg-cream-200 hover:bg-coral-100 text-ink-950 px-3 py-1.5 transition">
         <x-icon name="user" class="w-3.5 h-3.5"/>
         إدارة المستخدمين
     </a>
-    <a href="{{ route('admin.broadcast') }}" class="a-pill bg-white/10 hover:bg-white/15 text-white px-3 py-1.5">
+    <a href="{{ route('admin.broadcast') }}" class="a-pill bg-cream-200 hover:bg-coral-100 text-ink-950 px-3 py-1.5 transition">
         <x-icon name="bell" class="w-3.5 h-3.5"/>
         إرسال إشعار
     </a>

@@ -6,6 +6,12 @@
     $display = $isAnon ? ($post->anon_seed ?? 'مجهول') : $post->user->username;
     $score   = (int) $post->upvotes - (int) $post->downvotes;
     $cat     = \App\Models\Post::CATEGORIES[$post->category] ?? $post->category;
+    $tier    = $isAnon ? 'none' : ($post->user->verification_tier ?? 'none');
+    $tierCard = match ($tier) {
+        'gold'   => 'tier-gold',
+        'silver' => 'tier-silver',
+        default  => '',
+    };
 @endphp
 
 @section('content')
@@ -18,7 +24,7 @@
     </div>
 
     {{-- post --}}
-    <article class="card-light p-5 mb-4">
+    <article class="card-light {{ $tierCard }} p-5 mb-4 relative">
         <header class="flex items-center gap-2.5 mb-4">
             <x-avatar :user="$isAnon ? null : $post->user" :name="$display" :anon="$isAnon" size="md"/>
             <div class="flex-1">
@@ -27,6 +33,9 @@
                         <x-icon name="mask" class="w-4 h-4 text-coral-600"/>
                     @endif
                     {{ $display }}
+                    @if(! $isAnon)
+                        <x-verified-badge :tier="$tier"/>
+                    @endif
                     @if($post->zone)<span class="text-ink-400 font-normal text-xs">· {{ $post->zone->name }}</span>@endif
                 </div>
                 <div class="text-xs text-ink-400">{{ $post->created_at->diffForHumans() }} · {{ $cat }}</div>
@@ -106,8 +115,9 @@
     <div class="space-y-2">
         @forelse($comments as $c)
             @php
-                $cIsAnon = $c->is_anonymous;
+                $cIsAnon  = $c->is_anonymous;
                 $cDisplay = $cIsAnon ? ($c->anon_seed ?? 'مجهول') : $c->user->username;
+                $cTier    = $cIsAnon ? 'none' : ($c->user->verification_tier ?? 'none');
             @endphp
             <div class="card-light p-3.5">
                 <div class="flex items-center gap-2 mb-1.5">
@@ -115,6 +125,9 @@
                     <span class="text-sm font-bold text-ink-950 inline-flex items-center gap-1">
                         @if($cIsAnon)<x-icon name="mask" class="w-3 h-3 text-coral-600"/>@endif
                         {{ $cDisplay }}
+                        @if(! $cIsAnon)
+                            <x-verified-badge :tier="$cTier"/>
+                        @endif
                     </span>
                     <span class="text-[11px] text-ink-400">{{ $c->created_at->diffForHumans() }}</span>
                 </div>

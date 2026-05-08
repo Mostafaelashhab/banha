@@ -15,7 +15,7 @@ class FeedController extends Controller
         $tab    = $request->query('tab', 'hot');
         $zoneId = $request->query('zone');
 
-        $query = Post::active()->with(['user:id,username,avatar_seed', 'zone:id,name']);
+        $query = Post::active()->with(['user:id,username,avatar_seed,avatar_url,verification_tier', 'zone:id,name']);
 
         if ($zoneId) {
             $query->where('zone_id', $zoneId);

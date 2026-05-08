@@ -5,9 +5,15 @@
     $score    = (int) $post->upvotes - (int) $post->downvotes;
     $myVote   = $userVotes[$post->id] ?? 0;
     $cat      = \App\Models\Post::CATEGORIES[$post->category] ?? $post->category;
+    $tier     = $isAnon ? 'none' : ($post->user->verification_tier ?? 'none');
+    $tierCard = match ($tier) {
+        'gold'   => 'tier-gold',
+        'silver' => 'tier-silver',
+        default  => '',
+    };
 @endphp
 
-<article class="card-light p-4 mb-3" data-post-id="{{ $post->id }}">
+<article class="card-light {{ $tierCard }} p-4 mb-3 relative" data-post-id="{{ $post->id }}">
     {{-- header --}}
     <header class="flex items-center gap-2.5 mb-3">
         <x-avatar :user="$isAnon ? null : $post->user" :name="$display" :anon="$isAnon" size="md"/>
@@ -17,6 +23,9 @@
                     <x-icon name="mask" class="w-3.5 h-3.5 text-coral-600"/>
                 @endif
                 <span class="truncate">{{ $display }}</span>
+                @if(! $isAnon)
+                    <x-verified-badge :tier="$tier"/>
+                @endif
                 @if($post->zone)
                     <span class="text-ink-400 font-normal text-xs">· {{ $post->zone->name }}</span>
                 @endif

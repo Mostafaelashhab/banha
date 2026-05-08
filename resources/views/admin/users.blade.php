@@ -3,13 +3,13 @@
 @section('content')
 <div class="flex items-center justify-between mb-4">
     <h1 class="text-2xl font-black">المستخدمين</h1>
-    <span class="text-white/50 text-sm">{{ $users->total() }} مستخدم</span>
+    <span class="text-ink-500 text-sm">{{ $users->total() }} مستخدم</span>
 </div>
 
 <form method="GET" class="a-card p-3 mb-4 flex items-center gap-2">
     <input type="text" name="q" value="{{ $q }}" placeholder="username أو رقم موبايل…"
-           class="flex-1 bg-transparent outline-0 px-3 py-2 text-white placeholder-white/30 text-sm">
-    <select name="filter" class="select-styled bg-ink-800 text-white rounded-full px-3 py-2 text-xs border border-white/10">
+           class="flex-1 bg-transparent outline-0 px-3 py-2 text-ink-950 placeholder-ink-400 text-sm">
+    <select name="filter" class="select-styled bg-cream-100 text-ink-950 rounded-full px-3 py-2 text-xs border border-ink-950/8">
         <option value="">الكل</option>
         <option value="banned" {{ $filter === 'banned' ? 'selected' : '' }}>محظورين</option>
         <option value="verified" {{ $filter === 'verified' ? 'selected' : '' }}>موثّقين</option>
@@ -41,7 +41,7 @@
                             @if($u->avatar_url)
                                 <img src="{{ $u->avatar_url }}" class="w-8 h-8 rounded-full object-cover" alt="">
                             @else
-                                <span class="w-8 h-8 rounded-full grid place-items-center text-white font-bold text-xs" style="background: {{ $color }}">{{ $init }}</span>
+                                <span class="w-8 h-8 rounded-full grid place-items-center text-ink-950 font-bold text-xs" style="background: {{ $color }}">{{ $init }}</span>
                             @endif
                             <a href="{{ route('profile.show', $u->username) }}" target="_blank" class="font-bold hover:text-coral-400">{{ $u->username }}</a>
                         </div>
@@ -51,7 +51,7 @@
                     <td>
                         <form method="POST" action="{{ route('admin.users.tier', $u) }}" class="inline">
                             @csrf
-                            <select name="tier" onchange="this.form.submit()" class="bg-ink-800 text-white text-xs rounded-full px-2 py-1 border border-white/10">
+                            <select name="tier" onchange="this.form.submit()" class="bg-cream-100 text-ink-950 text-xs rounded-full px-2 py-1 border border-ink-950/8">
                                 @foreach(['none','bronze','silver','gold'] as $t)
                                     <option value="{{ $t }}" {{ $u->verification_tier === $t ? 'selected' : '' }}>{{ $t }}</option>
                                 @endforeach
@@ -64,27 +64,27 @@
                               data-confirm="{{ $u->is_admin ? 'إزالة صلاحية الأدمن؟' : 'تعيين كأدمن؟' }}"
                               data-confirm-action="نعم">
                             @csrf
-                            <button type="submit" class="a-pill {{ $u->is_admin ? 'bg-coral-500 text-white' : 'bg-white/10 text-white/40' }}">
+                            <button type="submit" class="a-pill {{ $u->is_admin ? 'bg-coral-500 text-ink-950' : 'bg-cream-200 text-ink-400' }}">
                                 {{ $u->is_admin ? '★ أدمن' : '—' }}
                             </button>
                         </form>
                     </td>
                     <td>
                         @if($u->is_admin)
-                            <span class="a-pill bg-white/5 text-white/30">—</span>
+                            <span class="a-pill bg-cream-100 text-ink-400">—</span>
                         @else
                             <form method="POST" action="{{ route('admin.users.ban', $u) }}" class="inline"
                                   data-confirm="{{ $u->is_banned ? 'رفع الحظر عن '.$u->username.'؟' : 'حظر '.$u->username.'؟' }}"
                                   data-confirm-action="نعم"
                                   data-confirm-tone="danger">
                                 @csrf
-                                <button type="submit" class="a-pill {{ $u->is_banned ? 'pill-blush' : 'bg-white/10 text-white/40' }}">
+                                <button type="submit" class="a-pill {{ $u->is_banned ? 'pill-blush' : 'bg-cream-200 text-ink-400' }}">
                                     {{ $u->is_banned ? '⛔ محظور' : '—' }}
                                 </button>
                             </form>
                         @endif
                     </td>
-                    <td class="text-white/50 text-[11px]">{{ $u->created_at->diffForHumans(short: true) }}</td>
+                    <td class="text-ink-500 text-[11px]">{{ $u->created_at->diffForHumans(short: true) }}</td>
                 </tr>
             @endforeach
         </tbody>
