@@ -8,7 +8,7 @@
     <div class="flex items-center justify-between mb-2">
         <span class="w-10 h-10 rounded-xl grid place-items-center text-xl"
               style="background: {{ $cm['color'] }}20; border: 1px solid {{ $cm['color'] }}50">
-            {{ $business->emoji ?: $sm['emoji'] }}
+            {{ ($business->emoji && $business->emoji !== '🔥📦') ? $business->emoji : $sm['emoji'] }}
         </span>
         @if($business->is_24h)
             <span class="pill-mint text-[10px] font-bold px-2 py-0.5 rounded-full">٢٤س</span>

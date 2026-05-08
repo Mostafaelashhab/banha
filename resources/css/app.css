@@ -125,8 +125,8 @@ html[dir="rtl"] body {
     pointer-events: none;
 }
 
-.ring-tier-silver { box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(156, 163, 175, .55); }
-.ring-tier-gold   { box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(29, 155, 240, .65); }
+.ring-tier-silver { box-shadow: 0 0 0 1.5px #fff, 0 0 0 3px rgba(156, 163, 175, .45); }
+.ring-tier-gold   { box-shadow: 0 0 0 1.5px #fff, 0 0 0 3px rgba(29, 155, 240, .55); }
 
 /* Verified checkmark badge (Twitter-like) */
 .v-badge {
@@ -147,14 +147,7 @@ html[dir="rtl"] body {
 }
 .v-badge svg { width: 10px; height: 10px; }
 
-/* Subtle shimmer on gold avatars */
-@keyframes verified-shimmer {
-    0%, 100% { box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(29, 155, 240, .65), 0 0 0 6px rgba(29, 155, 240, .15); }
-    50%      { box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(29, 155, 240, .8),  0 0 0 8px rgba(29, 155, 240, .25); }
-}
-.ring-tier-gold {
-    animation: verified-shimmer 3s ease-in-out infinite;
-}
+/* (no animation — keep it subtle) */
 
 .card-dark {
     background: var(--color-ink-950);
@@ -401,6 +394,53 @@ html[dir="rtl"] body {
     background: #FFF7F1 !important;
 }
 
+/* ─── Business cover (image w/ pretty fallback) ─────────── */
+.biz-cover {
+    background:
+        radial-gradient(circle at 25% 20%, rgba(255,255,255,.55), transparent 55%),
+        radial-gradient(circle at 75% 85%, rgba(255,255,255,.30), transparent 50%),
+        linear-gradient(135deg, var(--cover-color, #FF7A4D), color-mix(in srgb, var(--cover-color, #FF7A4D) 55%, #FFFFFF));
+    isolation: isolate;
+}
+.biz-cover-emoji {
+    filter: drop-shadow(0 6px 16px rgba(0,0,0,.18));
+    line-height: 1;
+}
+/* When the <img> fails or is removed via onerror, the fallback layer becomes visible */
+.biz-cover.is-fallback .biz-cover-fallback {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+
+/* ─── Compact action chips (feed top row) ────────────────── */
+.action-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px 6px 6px;
+    border-radius: 999px;
+    background: #fff;
+    border: 1px solid rgb(15 15 20 / .06);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--color-ink-950);
+    box-shadow: 0 1px 2px rgb(15 15 20 / .03);
+    transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+.action-chip:hover {
+    transform: translateY(-1px);
+    border-color: rgba(255, 122, 77, .25);
+    box-shadow: 0 4px 10px -4px rgb(15 15 20 / .12);
+}
+.action-chip-icon {
+    width: 26px; height: 26px;
+    border-radius: 999px;
+    display: grid; place-items: center;
+    flex-shrink: 0;
+}
+
 /* ─── Quick action tiles (horizontal feed scroll) ────────── */
 .quick-tile {
     display: flex;
@@ -469,6 +509,45 @@ html[dir="rtl"] body {
     50%  { transform: scaleX(.7);  }
     80%  { transform: scaleX(.9);  }
     100% { transform: scaleX(.97); }
+}
+
+/* ─── Vote / action buttons (post card) ─────────────────── */
+.vote-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    color: var(--color-ink-500);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all .15s ease;
+    background: transparent;
+    border: 0;
+    user-select: none;
+}
+.vote-btn:hover {
+    background: var(--color-cream-100);
+    color: var(--color-ink-950);
+}
+.vote-btn.is-liked {
+    color: var(--color-coral-600);
+    background: var(--color-coral-100);
+}
+.vote-btn.is-liked:hover {
+    background: var(--color-coral-100);
+}
+.vote-btn.is-disliked {
+    color: var(--color-blush-500);
+    background: var(--color-blush-100);
+}
+.vote-btn.pop {
+    animation: vote-pop .35s cubic-bezier(.2,.9,.3,1);
+}
+@keyframes vote-pop {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.18); }
+    100% { transform: scale(1); }
 }
 
 /* ─── Avatar camera badge ────────────────────────────────── */

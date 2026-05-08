@@ -23,30 +23,24 @@
         @endauth
     </div>
 
-    {{-- Hero with photo --}}
-    @if($business->photo_url)
-        <div class="rounded-3xl overflow-hidden mb-3 relative aspect-[16/9] shadow">
-            <img src="{{ $business->photo_url }}" alt="{{ $business->name }}" class="w-full h-full object-cover">
-            <div class="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-ink-950/80 to-transparent"></div>
-            <div class="absolute bottom-3 inset-x-3 text-white">
-                <h2 class="text-xl md:text-2xl font-black inline-flex items-center gap-2">
-                    {{ $business->name }}
-                    @if($business->is_verified)
-                        <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-mint-500 text-white">
-                            <x-icon name="check" class="w-3 h-3"/> موثّق
-                        </span>
-                    @endif
-                </h2>
-                <div class="text-white/85 text-xs">{{ $sm['label'] }} @if($business->zone) · {{ $business->zone->name }} @endif</div>
-            </div>
-        </div>
-    @endif
+    {{-- Hero cover (always shown — uses photo if valid, else pretty fallback) --}}
+    <x-business-cover :business="$business" class="aspect-[16/9] rounded-3xl mb-3 shadow"/>
+    <div class="flex items-center gap-2 mb-4 -mt-12 px-4 relative z-10">
+        <h2 class="text-xl md:text-2xl font-black text-white drop-shadow-lg inline-flex items-center gap-2">
+            {{ $business->name }}
+            @if($business->is_verified)
+                <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-mint-500 text-white">
+                    <x-icon name="check" class="w-3 h-3"/> موثّق
+                </span>
+            @endif
+        </h2>
+    </div>
 
     <div class="card-light p-5 mb-3">
         <div class="flex items-start gap-4">
             <span class="w-16 h-16 rounded-2xl grid place-items-center text-3xl shrink-0"
                   style="background: {{ $cm['color'] }}20; border: 1px solid {{ $cm['color'] }}50">
-                {{ $business->emoji ?: $sm['emoji'] }}
+                {{ ($business->emoji && $business->emoji !== '🔥📦') ? $business->emoji : $sm['emoji'] }}
             </span>
             <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-1.5 flex-wrap">
@@ -145,6 +139,44 @@
             </div>
         @endif
     </div>
+
+    {{-- Reviews --}}
+    @if(isset($reviews) && $reviews->isNotEmpty())
+        <div class="card-light p-5 mb-3">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-extrabold text-ink-950 inline-flex items-center gap-2">
+                    <span class="text-coral-500">★</span>
+                    آراء الناس
+                    <span class="text-ink-400 font-normal">({{ $reviews->count() }})</span>
+                </h3>
+            </div>
+            <div class="space-y-3">
+                @foreach($reviews as $r)
+                    <div class="border-b border-ink-950/8 last:border-0 pb-3 last:pb-0">
+                        <div class="flex items-center gap-2 mb-1.5">
+                            <span class="w-7 h-7 rounded-full pill-honey grid place-items-center text-xs font-bold shrink-0">
+                                {{ mb_substr($r->maskedPhone(), 0, 1) }}
+                            </span>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-xs font-bold text-ink-950" dir="ltr">{{ $r->maskedPhone() }}</div>
+                                @if($r->reviewed_at)
+                                    <div class="text-[10px] text-ink-400">{{ $r->reviewed_at->translatedFormat('d M Y') }}</div>
+                                @endif
+                            </div>
+                            @if($r->rating > 0)
+                                <div class="text-xs font-bold text-coral-600 shrink-0">
+                                    @for($i=0; $i<$r->rating; $i++)★@endfor<span class="text-ink-300">@for($i=$r->rating; $i<5; $i++)★@endfor</span>
+                                </div>
+                            @endif
+                        </div>
+                        @if($r->body)
+                            <p class="text-sm text-ink-950 leading-relaxed">{{ $r->body }}</p>
+                        @endif
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
 
     {{-- Similar --}}
     @if($similar->isNotEmpty())

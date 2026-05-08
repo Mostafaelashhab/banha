@@ -47,23 +47,27 @@
         @endif
         <p class="text-ink-950 text-[16px] leading-loose whitespace-pre-line">{{ $post->body }}</p>
 
-        <footer class="mt-5 flex items-center gap-1 text-ink-500 pt-4 border-t border-ink-950/5">
-            <form method="POST" action="{{ route('posts.vote', $post) }}" class="inline-flex items-center bg-cream-100 rounded-full">
-                @csrf
-                <button name="value" value="{{ $userVote === 1 ? 0 : 1 }}"
-                        class="p-2 rounded-full hover:bg-coral-100 transition {{ $userVote === 1 ? 'text-coral-600' : '' }}">
-                    <x-icon name="arrow-right" class="w-4 h-4 -rotate-90"/>
-                </button>
-                <span class="px-2 font-bold text-ink-950 min-w-[2rem] text-center">{{ $score }}</span>
-                <button name="value" value="{{ $userVote === -1 ? 0 : -1 }}"
-                        class="p-2 rounded-full hover:bg-blush-100 transition {{ $userVote === -1 ? 'text-blush-500' : '' }}">
-                    <x-icon name="arrow-right" class="w-4 h-4 rotate-90"/>
-                </button>
-            </form>
+        <footer class="mt-5 flex items-center gap-1 text-ink-500 pt-4 border-t border-ink-950/5" data-vote-block
+                data-post-id="{{ $post->id }}"
+                data-vote-url="{{ route('posts.vote', $post) }}"
+                data-my-vote="{{ $userVote ?? 0 }}">
+            <button type="button" data-vote="1"
+                    class="vote-btn {{ ($userVote ?? 0) === 1 ? 'is-liked' : '' }}"
+                    aria-label="إعجاب">
+                <x-icon name="thumbs-up" class="w-4 h-4" :filled="($userVote ?? 0) === 1"/>
+                <span data-count="up" class="font-bold">{{ $post->upvotes }}</span>
+            </button>
 
-            <span class="px-3 py-2 inline-flex items-center gap-1.5 text-sm">
-                <x-icon name="bell" class="w-4 h-4"/>
-                {{ $post->comments_count }} كومنت
+            <button type="button" data-vote="-1"
+                    class="vote-btn {{ ($userVote ?? 0) === -1 ? 'is-disliked' : '' }}"
+                    aria-label="مش عاجبني">
+                <x-icon name="thumbs-down" class="w-4 h-4" :filled="($userVote ?? 0) === -1"/>
+                <span data-count="down" class="font-bold">{{ $post->downvotes }}</span>
+            </button>
+
+            <span class="vote-btn pointer-events-none">
+                <x-icon name="comment" class="w-4 h-4"/>
+                <span class="font-bold">{{ $post->comments_count }}</span>
             </span>
 
             @auth

@@ -449,6 +449,64 @@ async function pushUnsubscribe() {
 
 window.banhawyPush = { subscribe: pushSubscribe, unsubscribe: pushUnsubscribe };
 
+// ─── First-visit notification permission prompt ──────────────
+(function () {
+    const KEY = 'banhawy_notif_prompt_at';
+
+    const shouldAsk = () => {
+        if (!('serviceWorker' in navigator) || !('Notification' in window) || !('PushManager' in window)) return false;
+        if (Notification.permission !== 'default') return false;
+        if (!document.querySelector('meta[name="csrf-token"]')) return false;
+        if (!document.querySelector('.bottom-nav')) return false;
+        const last = localStorage.getItem(KEY);
+        if (last && (Date.now() - Number(last)) < 7 * 24 * 60 * 60 * 1000) return false;
+        return true;
+    };
+
+    const askNow = () => {
+        if (!window.banhawyModal) return;
+        const html = `
+            <div class="p-5 text-center">
+                <div class="w-16 h-16 rounded-2xl brand-bg grid place-items-center mx-auto mb-4">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8">
+                        <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+                        <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-extrabold text-ink-950 mb-2">نوصّلك أهم اللي بيحصل في بنها؟</h3>
+                <p class="text-ink-500 text-sm leading-relaxed mb-5">
+                    تنبيهات لحظية عن الزحمة والكهربا في حيك،
+                    <br>وإشعارات لو حد عمل like أو علّق على بوستك.
+                </p>
+                <div class="flex gap-2">
+                    <button type="button" class="btn-ghost flex-1 justify-center" data-notif-skip>مش دلوقتي</button>
+                    <button type="button" class="btn-primary flex-1 justify-center" data-notif-allow>اسمحلي</button>
+                </div>
+                <p class="text-[10px] text-ink-400 mt-3">تقدر تطفّيها أي وقت من إعدادات حسابك</p>
+            </div>`;
+        const wrap = window.banhawyModal.show(html);
+
+        wrap.querySelector('[data-notif-allow]').onclick = async () => {
+            window.banhawyModal.hide(wrap);
+            const r = await pushSubscribe();
+            localStorage.setItem(KEY, String(Date.now()));
+            if (r.ok) {
+                showShareToast('✓ التنبيهات اتفعّلت');
+            } else if (r.reason === 'denied') {
+                showShareToast('فعّلها من إعدادات المتصفح وقتما تحب');
+            }
+        };
+        wrap.querySelector('[data-notif-skip]').onclick = () => {
+            window.banhawyModal.hide(wrap);
+            localStorage.setItem(KEY, String(Date.now()));
+        };
+    };
+
+    if (shouldAsk()) {
+        setTimeout(() => { if (shouldAsk()) askNow(); }, 3500);
+    }
+})();
+
 document.addEventListener('click', async (e) => {
     const btn = e.target.closest('[data-push-toggle]');
     if (!btn) return;
@@ -467,6 +525,99 @@ document.addEventListener('click', async (e) => {
         alert('Push notifications مش مفعّلين على السيرفر لسه.');
     }
     btn.disabled = false;
+});
+
+// ─── Feed filter sheet ──────────────────────────────────────
+document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-feed-filter]');
+    if (!btn) return;
+    e.preventDefault();
+    const tpl = document.getElementById('feed-filter-template');
+    if (!tpl || !window.banhawyModal) return;
+    window.banhawyModal.show(tpl.innerHTML);
+});
+
+// ─── Real-time voting (AJAX, optimistic update) ──────────────
+document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-vote]');
+    if (!btn) return;
+    e.preventDefault();
+
+    const block = btn.closest('[data-vote-block]');
+    if (!block || block.dataset.voting === '1') return;
+    block.dataset.voting = '1';
+
+    const url        = block.dataset.voteUrl;
+    const csrf       = document.querySelector('meta[name="csrf-token"]')?.content;
+    const value      = parseInt(btn.dataset.vote, 10); // 1 or -1
+    const currentVal = parseInt(block.dataset.myVote || '0', 10);
+    const newValue   = currentVal === value ? 0 : value;
+
+    const upEl   = block.querySelector('[data-count="up"]');
+    const downEl = block.querySelector('[data-count="down"]');
+    const upBtn  = block.querySelector('[data-vote="1"]');
+    const downBtn= block.querySelector('[data-vote="-1"]');
+
+    const prevUp   = parseInt(upEl?.textContent || '0', 10);
+    const prevDown = parseInt(downEl?.textContent || '0', 10);
+
+    // Optimistic delta calculation
+    let upDelta   = (newValue === 1 ? 1 : 0) - (currentVal === 1 ? 1 : 0);
+    let downDelta = (newValue === -1 ? 1 : 0) - (currentVal === -1 ? 1 : 0);
+
+    upEl   && (upEl.textContent   = Math.max(0, prevUp + upDelta));
+    downEl && (downEl.textContent = Math.max(0, prevDown + downDelta));
+
+    // Toggle visual states
+    upBtn?.classList.toggle('is-liked',     newValue === 1);
+    downBtn?.classList.toggle('is-disliked', newValue === -1);
+    block.dataset.myVote = newValue;
+    btn.classList.add('pop');
+    setTimeout(() => btn.classList.remove('pop'), 400);
+
+    // Toggle filled svg (rerender icon — find <svg> inside btn and flip fill)
+    const flipFill = (b, filled) => {
+        const svg = b?.querySelector('svg');
+        if (!svg) return;
+        if (filled) {
+            svg.setAttribute('fill', 'currentColor');
+            svg.removeAttribute('stroke');
+        } else {
+            svg.setAttribute('fill', 'none');
+            svg.setAttribute('stroke', 'currentColor');
+        }
+    };
+    flipFill(upBtn,   newValue === 1);
+    flipFill(downBtn, newValue === -1);
+
+    try {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': csrf,
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'value=' + encodeURIComponent(String(newValue)),
+            credentials: 'same-origin',
+        });
+        if (!res.ok) throw new Error('Bad response');
+        const data = await res.json();
+        if (typeof data.upvotes === 'number')   upEl   && (upEl.textContent   = data.upvotes);
+        if (typeof data.downvotes === 'number') downEl && (downEl.textContent = data.downvotes);
+    } catch (err) {
+        // Rollback
+        upEl   && (upEl.textContent   = prevUp);
+        downEl && (downEl.textContent = prevDown);
+        upBtn?.classList.toggle('is-liked',     currentVal === 1);
+        downBtn?.classList.toggle('is-disliked', currentVal === -1);
+        flipFill(upBtn,   currentVal === 1);
+        flipFill(downBtn, currentVal === -1);
+        block.dataset.myVote = currentVal;
+    } finally {
+        delete block.dataset.voting;
+    }
 });
 
 // ─── Share button (Web Share API + clipboard fallback) ─────

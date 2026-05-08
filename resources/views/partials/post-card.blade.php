@@ -44,43 +44,49 @@
     </a>
 
     {{-- actions --}}
-    <footer class="mt-4 flex items-center gap-1 text-ink-500 text-sm">
-        <form method="POST" action="{{ route('posts.vote', $post) }}" class="inline-flex items-center bg-cream-100 rounded-full">
-            @csrf
-            <button name="value" value="{{ $myVote === 1 ? 0 : 1 }}"
-                    class="p-2 rounded-full hover:bg-coral-100 transition {{ $myVote === 1 ? 'text-coral-600' : '' }}"
-                    aria-label="رفع">
-                <x-icon name="arrow-right" class="w-4 h-4 -rotate-90"/>
-            </button>
-            <span class="px-1 font-bold text-ink-950 min-w-[1.5rem] text-center">{{ $score }}</span>
-            <button name="value" value="{{ $myVote === -1 ? 0 : -1 }}"
-                    class="p-2 rounded-full hover:bg-blush-100 transition {{ $myVote === -1 ? 'text-blush-500' : '' }}"
-                    aria-label="نزل">
-                <x-icon name="arrow-right" class="w-4 h-4 rotate-90"/>
-            </button>
-        </form>
+    <footer class="mt-4 flex items-center gap-1 text-ink-500 text-sm" data-vote-block
+            data-post-id="{{ $post->id }}"
+            data-vote-url="{{ route('posts.vote', $post) }}"
+            data-my-vote="{{ $myVote }}">
+        {{-- Like --}}
+        <button type="button" data-vote="1"
+                class="vote-btn {{ $myVote === 1 ? 'is-liked' : '' }}"
+                aria-label="إعجاب">
+            <x-icon name="thumbs-up" class="w-4 h-4" :filled="$myVote === 1"/>
+            <span data-count="up" class="font-bold">{{ $post->upvotes }}</span>
+        </button>
 
+        {{-- Dislike --}}
+        <button type="button" data-vote="-1"
+                class="vote-btn {{ $myVote === -1 ? 'is-disliked' : '' }}"
+                aria-label="مش عاجبني">
+            <x-icon name="thumbs-down" class="w-4 h-4" :filled="$myVote === -1"/>
+            <span data-count="down" class="font-bold">{{ $post->downvotes }}</span>
+        </button>
+
+        {{-- Comments --}}
         <a href="{{ route('posts.show', $post) }}#comments"
-           class="inline-flex items-center gap-1.5 px-3 py-2 rounded-full hover:bg-cream-200 transition">
-            <x-icon name="bell" class="w-4 h-4"/>
+           class="vote-btn">
+            <x-icon name="comment" class="w-4 h-4"/>
             <span class="font-bold">{{ $post->comments_count }}</span>
         </a>
 
+        {{-- Share --}}
         <button type="button"
                 data-share data-share-url="{{ route('posts.show', $post) }}"
                 data-share-title="بوست على بنهاوي"
                 data-share-text="{{ \Illuminate\Support\Str::limit($post->title ?? $post->body, 120) }}"
-                class="ms-auto p-2 rounded-full hover:bg-cream-200 hover:text-coral-600 transition text-ink-400" aria-label="شير">
+                class="vote-btn ms-auto" aria-label="شير">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
                 <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
                 <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
             </svg>
         </button>
 
+        {{-- Report --}}
         <button type="button"
                 data-report="{{ route('posts.report', $post) }}"
-                class="p-2 rounded-full hover:bg-cream-200 transition text-ink-400 hover:text-blush-500"
-                aria-label="بلّغ عن البوست">
+                class="vote-btn text-ink-400" aria-label="بلّغ عن البوست">
             <x-icon name="flag" class="w-4 h-4"/>
         </button>
     </footer>

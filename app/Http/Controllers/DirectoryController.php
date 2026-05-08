@@ -112,7 +112,14 @@ class DirectoryController extends Controller
             ->limit(4)
             ->get();
 
-        return view('directory.show', compact('business', 'similar'));
+        $reviews = $business->reviews()
+            ->whereNotNull('body')
+            ->where('body', '!=', '')
+            ->orderByDesc('reviewed_at')
+            ->limit(20)
+            ->get();
+
+        return view('directory.show', compact('business', 'similar', 'reviews'));
     }
 
     // ─── Owner CRUD ─────────────────────────────────────────────

@@ -20,7 +20,7 @@
                 @if($business->photo_url)
                     <img src="{{ $business->photo_url }}" alt="" class="w-16 h-16 rounded-xl object-cover shrink-0">
                 @else
-                    <span class="w-16 h-16 rounded-xl pill-coral grid place-items-center text-2xl shrink-0">{{ $business->emoji ?? '📍' }}</span>
+                    <span class="w-16 h-16 rounded-xl pill-coral grid place-items-center text-2xl shrink-0">{{ ($business->emoji && $business->emoji !== '🔥📦') ? $business->emoji : '📍' }}</span>
                 @endif
                 <label class="flex-1 cursor-pointer bg-cream-100 rounded-2xl p-3 border border-ink-950/8 hover:border-coral-500/40 transition text-sm font-bold text-ink-950">
                     <span data-photo-name>{{ $business->photo_url ? 'استبدل الصورة' : 'ارفع صورة' }}</span>

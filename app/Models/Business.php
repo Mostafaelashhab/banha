@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'name', 'category', 'sub_type', 'zone_id', 'owner_user_id',
@@ -87,6 +88,11 @@ class Business extends Model
     public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_user_id');
+    }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(BusinessReview::class)->latest('reviewed_at');
     }
 
     public function categoryMeta(): array

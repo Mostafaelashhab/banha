@@ -3,97 +3,100 @@
 @section('content')
 <div class="max-w-3xl mx-auto">
 
-    {{-- Slim welcome strip --}}
-    <div class="card-orange p-4 mb-3 relative overflow-hidden">
-        <div class="absolute -top-8 -end-8 w-32 h-32 rounded-full bg-white/15 blur-2xl"></div>
-        <div class="relative flex items-center justify-between gap-3">
-            <div class="min-w-0">
-                <div class="text-white/80 text-[11px]">أهلاً يا</div>
-                <div class="text-white text-lg font-black truncate">{{ auth()->user()->username }}</div>
-                @if(auth()->user()->zone)
-                    <div class="text-white/85 text-[11px] mt-0.5 inline-flex items-center gap-1">
-                        <x-icon name="map-pin" class="w-3 h-3"/>
-                        {{ auth()->user()->zone->name }}
-                    </div>
-                @endif
-            </div>
-            <a href="{{ route('posts.create') }}" class="btn-dark !py-2 !px-4 text-sm shrink-0">
-                <x-icon name="plus" class="w-4 h-4"/>
-                بوست
-            </a>
-        </div>
-    </div>
-
-    {{-- Quick actions (horizontal scroll) --}}
-    @php
-        $quickActions = [
-            ['url' => route('alerts.index'),                   'icon' => 'bolt',        'label' => 'تنبيهات',     'tone' => 'blush'],
-            ['url' => route('prices.index'),                   'icon' => 'tag',         'label' => 'الأسعار',      'tone' => 'mint'],
-            ['url' => route('directory.index'),                'icon' => 'bag',         'label' => 'الدليل',       'tone' => 'coral'],
-            ['url' => route('zones'),                          'icon' => 'map-pin',     'label' => 'المناطق',     'tone' => 'honey'],
-            ['url' => route('discover'),                       'icon' => 'flame',       'label' => 'اكتشف',       'tone' => 'coral'],
-            ['url' => route('directory.category', 'medical'),  'icon' => 'stethoscope', 'label' => 'دكاترة',      'tone' => 'mint'],
-            ['url' => route('directory.category', 'food'),     'icon' => 'utensils',    'label' => 'مطاعم',       'tone' => 'coral'],
-            ['url' => route('directory.category', 'craftsmen'),'icon' => 'more',        'label' => 'صنايعية',     'tone' => 'honey'],
-            ['url' => route('directory.category', 'shops'),    'icon' => 'cart',        'label' => 'محلات',       'tone' => 'coral'],
-            ['url' => route('alerts.create'),                  'icon' => 'plus',        'label' => 'بلّغ',         'tone' => 'blush'],
-        ];
-    @endphp
-
+    {{-- Compact action chips row (replaces orange welcome + 4 tiles) --}}
     <div class="overflow-x-auto scrollbar-hide -mx-4 mb-3">
-        <div class="flex gap-2.5 px-4 w-max">
-            @foreach($quickActions as $a)
-                <a href="{{ $a['url'] }}" class="quick-tile">
-                    <span class="quick-tile-icon pill-{{ $a['tone'] }}">
-                        <x-icon :name="$a['icon']" class="w-5 h-5"/>
+        <div class="flex gap-2 px-4 w-max">
+            @php
+                $chips = [
+                    ['route' => route('alerts.index'),    'icon' => 'bolt',        'label' => 'تنبيهات', 'tone' => 'blush'],
+                    ['route' => route('prices.index'),    'icon' => 'tag',         'label' => 'أسعار',    'tone' => 'mint'],
+                    ['route' => route('directory.index'), 'icon' => 'bag',         'label' => 'الدليل',   'tone' => 'coral'],
+                    ['route' => route('zones'),           'icon' => 'map-pin',     'label' => 'المناطق', 'tone' => 'honey'],
+                    ['route' => route('discover'),        'icon' => 'flame',       'label' => 'اكتشف',   'tone' => 'coral'],
+                    ['route' => route('directory.category','food'),     'icon' => 'utensils',    'label' => 'مطاعم',   'tone' => 'coral'],
+                    ['route' => route('directory.category','medical'),  'icon' => 'stethoscope', 'label' => 'دكاترة',  'tone' => 'mint'],
+                    ['route' => route('directory.category','craftsmen'),'icon' => 'more',        'label' => 'صنايعية','tone' => 'honey'],
+                ];
+            @endphp
+            @foreach($chips as $c)
+                <a href="{{ $c['route'] }}" class="action-chip">
+                    <span class="action-chip-icon pill-{{ $c['tone'] }}">
+                        <x-icon :name="$c['icon']" class="w-3.5 h-3.5"/>
                     </span>
-                    <span class="quick-tile-label">{{ $a['label'] }}</span>
+                    <span>{{ $c['label'] }}</span>
                 </a>
             @endforeach
         </div>
     </div>
 
-    {{-- Sticky filter bar --}}
-    <div class="sticky top-14 bg-cream-100/90 backdrop-blur z-30 -mx-4 px-4 pt-2 pb-3 mb-3 border-b border-ink-950/5 space-y-2">
-        @php $zoneParam = $activeZone ? ['zone' => $activeZone] : []; @endphp
-
-        {{-- Tabs --}}
-        <div class="flex items-center gap-2">
-            <a href="{{ route('feed', $zoneParam + ['tab' => 'hot']) }}"
-               class="chip chip-coral {{ $tab === 'hot' ? 'chip-active' : '' }}">
-                <x-icon name="flame" class="w-3.5 h-3.5"/> ترند
-            </a>
-            <a href="{{ route('feed', $zoneParam + ['tab' => 'new']) }}"
-               class="chip {{ $tab === 'new' ? 'chip-active' : '' }}">
-                جديد
-            </a>
+    {{-- Tiny inline filter row --}}
+    @php
+        $activeZoneName = $activeZone ? optional($zones->firstWhere('id', $activeZone))->name : null;
+        $tabLabel = $tab === 'new' ? 'جديد' : 'ترند';
+    @endphp
+    <div class="flex items-center justify-between mb-3 text-sm">
+        <div class="text-ink-500">
+            {{ $tabLabel }}
+            @if($activeZoneName)
+                · <span class="text-ink-950 font-bold">{{ $activeZoneName }}</span>
+            @endif
         </div>
-
-        {{-- Zone chips (horizontal scroll) --}}
-        <div class="overflow-x-auto scrollbar-hide -mx-4">
-            <div class="flex gap-2 w-max px-4">
-                <a href="{{ route('feed', ['tab' => $tab]) }}"
-                   class="chip {{ ! $activeZone ? 'chip-active' : '' }}">
-                    كل المناطق
-                </a>
-                @foreach($zones as $zone)
-                    <a href="{{ route('feed', ['tab' => $tab, 'zone' => $zone->id]) }}"
-                       class="chip {{ $activeZone === $zone->id ? 'chip-active' : '' }}">
-                        {{ $zone->name }}
-                    </a>
-                @endforeach
-            </div>
-        </div>
+        <button type="button" data-feed-filter
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-ink-950/8 text-ink-500 hover:text-ink-950 hover:bg-cream-200 transition text-xs font-bold">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5">
+                <line x1="4" y1="6" x2="20" y2="6"/>
+                <line x1="7" y1="12" x2="17" y2="12"/>
+                <line x1="10" y1="18" x2="14" y2="18"/>
+            </svg>
+            فلتر
+        </button>
     </div>
 
-    {{-- Posts (infinite scroll) --}}
-    @if($posts->isEmpty())
+    {{-- Hidden filter sheet (template) --}}
+    <template id="feed-filter-template">
+        <div class="p-5">
+            <h3 class="text-lg font-extrabold text-ink-950 mb-4">فلترة الفيد</h3>
+
+            <div class="mb-5">
+                <div class="text-xs font-bold text-ink-500 mb-2">الترتيب</div>
+                <div class="flex gap-2">
+                    <a href="{{ route('feed', ($activeZone ? ['zone' => $activeZone] : []) + ['tab' => 'hot']) }}"
+                       class="chip chip-coral {{ $tab === 'hot' ? 'chip-active' : '' }}">
+                        🔥 ترند
+                    </a>
+                    <a href="{{ route('feed', ($activeZone ? ['zone' => $activeZone] : []) + ['tab' => 'new']) }}"
+                       class="chip {{ $tab === 'new' ? 'chip-active' : '' }}">
+                        جديد
+                    </a>
+                </div>
+            </div>
+
+            <div class="mb-5">
+                <div class="text-xs font-bold text-ink-500 mb-2">المنطقة</div>
+                <div class="flex flex-wrap gap-2">
+                    <a href="{{ route('feed', ['tab' => $tab]) }}"
+                       class="chip {{ ! $activeZone ? 'chip-active' : '' }}">كل المناطق</a>
+                    @foreach($zones as $zone)
+                        <a href="{{ route('feed', ['tab' => $tab, 'zone' => $zone->id]) }}"
+                           class="chip {{ $activeZone === $zone->id ? 'chip-active' : '' }}">
+                            {{ $zone->name }}
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+
+            <button type="button" class="btn-ghost w-full justify-center" data-close>تمام</button>
+        </div>
+    </template>
+
+    {{-- Unified feed (posts + alerts + businesses ads + prices) — infinite scroll --}}
+    @if($items->isEmpty())
         <div class="card-light p-10 text-center">
             <div class="icon-tile mx-auto mb-4 text-coral-600 w-16 h-16">
                 <x-icon name="flame" class="w-7 h-7"/>
             </div>
-            <h3 class="text-xl font-extrabold text-ink-950 mb-1">لسه مفيش بوستات</h3>
-            <p class="text-ink-500 text-sm">كن أول واحد يبدأ — اكتب بوست وشارك حاجة بتحصل في حيك.</p>
+            <h3 class="text-xl font-extrabold text-ink-950 mb-1">مفيش حاجة في الفيد</h3>
+            <p class="text-ink-500 text-sm">كن أول واحد يبدأ.</p>
             <a href="{{ route('posts.create') }}" class="btn-primary mt-5">
                 ابدأ أول بوست
                 <x-icon name="arrow-left" class="w-4 h-4"/>
@@ -101,7 +104,7 @@
         </div>
     @else
         <div id="feed-list" data-infinite-scroll>
-            @include('partials.feed-page', ['posts' => $posts, 'userVotes' => $userVotes])
+            @include('partials.feed-page', ['items' => $items, 'paginator' => $paginator, 'userVotes' => $userVotes])
         </div>
 
         {{-- Loader spinner --}}

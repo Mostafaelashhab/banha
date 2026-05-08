@@ -141,6 +141,21 @@ class PostController extends Controller
                     BadgeService::onPost($owner);
                 }
             }
+
+            // Push notification to post owner on a NEW like (not self, not changing existing like)
+            if ($value === 1 && $prev !== 1 && $post->user_id !== $userId) {
+                $voter = Auth::user();
+                $title = $post->is_anonymous
+                    ? '👍 حد عجبه بوستك'
+                    : '👍 '.$voter->username.' عجبه بوستك';
+                $snippet = \Illuminate\Support\Str::limit($post->title ?: $post->body, 80);
+                \App\Services\PushService::sendToUser($post->user_id, [
+                    'title' => $title,
+                    'body'  => $snippet,
+                    'url'   => route('posts.show', $post),
+                    'tag'   => 'post-like-'.$post->id,
+                ]);
+            }
         });
 
         if ($request->wantsJson()) {
@@ -185,6 +200,20 @@ class PostController extends Controller
         $post->increment('comments_count');
 
         BadgeService::onComment(Auth::user());
+
+        // Push notification to post owner on new comment (not self)
+        if ($post->user_id !== Auth::id()) {
+            $commenter = Auth::user();
+            $title = $isAnon
+                ? '💬 حد علّق على بوستك'
+                : '💬 '.$commenter->username.' علّق على بوستك';
+            \App\Services\PushService::sendToUser($post->user_id, [
+                'title' => $title,
+                'body'  => \Illuminate\Support\Str::limit($data['body'], 90),
+                'url'   => route('posts.show', $post).'#comments',
+                'tag'   => 'post-comment-'.$post->id,
+            ]);
+        }
 
         return back()->with('flash', 'كومنتك انضاف.');
     }
