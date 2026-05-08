@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
             ZoneSeeder::class,
             ProductSeeder::class,
             BadgeSeeder::class,
+            BusinessSeeder::class,
         ]);
 
         if (app()->environment(['local', 'staging']) || env('SEED_DEMO', false)) {

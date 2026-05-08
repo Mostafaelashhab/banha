@@ -38,6 +38,37 @@
         </div>
     </div>
 
+    {{-- Emergency hotlines --}}
+    @if(! empty($hotlines))
+        <div class="card-light p-4 mb-4 border-2 border-blush-500/15 bg-blush-500/5">
+            <h3 class="text-sm font-extrabold text-ink-950 mb-3 inline-flex items-center gap-2">
+                <span class="w-7 h-7 rounded-full pill-blush grid place-items-center">
+                    <x-icon name="bolt" class="w-3.5 h-3.5"/>
+                </span>
+                @if($activeType)
+                    أرقام طوارئ {{ \App\Models\Alert::TYPES[$activeType]['label'] ?? '' }}
+                @else
+                    أرقام طوارئ مهمة
+                @endif
+            </h3>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                @foreach($hotlines as $h)
+                    <a href="tel:{{ $h['number'] }}"
+                       class="flex items-center gap-2.5 bg-white rounded-2xl p-3 border border-ink-950/8 hover:border-coral-500/40 hover:-translate-y-0.5 transition group">
+                        <span class="w-9 h-9 rounded-xl pill-{{ $h['tone'] }} grid place-items-center shrink-0">
+                            <x-icon :name="$h['icon']" class="w-4 h-4"/>
+                        </span>
+                        <div class="flex-1 min-w-0">
+                            <div class="text-[10px] text-ink-500">{{ $h['label'] }}</div>
+                            <div class="text-base font-black text-ink-950 leading-none mt-0.5" dir="ltr">{{ $h['number'] }}</div>
+                        </div>
+                    </a>
+                @endforeach
+            </div>
+            <p class="text-[11px] text-ink-400 mt-3 text-center">اضغط الرقم للاتصال مباشرة</p>
+        </div>
+    @endif
+
     {{-- Alerts list --}}
     <div class="space-y-2.5">
         @forelse($alerts as $alert)

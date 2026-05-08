@@ -24,18 +24,21 @@
         </div>
 
         {{-- Quick actions --}}
-        <div class="relative grid grid-cols-2 gap-2">
+        <div class="relative grid grid-cols-3 gap-2">
             <a href="{{ route('alerts.index') }}"
-               class="bg-ink-950/25 backdrop-blur rounded-xl px-3 py-2.5 text-white border border-white/15 hover:bg-ink-950/35 transition flex items-center gap-2">
-                <x-icon name="bolt" class="w-4 h-4 shrink-0"/>
-                <span class="text-xs font-bold flex-1 truncate">تنبيهات حيك</span>
-                <x-icon name="arrow-left" class="w-3.5 h-3.5 opacity-70 shrink-0"/>
+               class="bg-ink-950/25 backdrop-blur rounded-xl px-2.5 py-2.5 text-white border border-white/15 hover:bg-ink-950/35 transition flex flex-col items-center gap-1">
+                <x-icon name="bolt" class="w-4 h-4"/>
+                <span class="text-[11px] font-bold text-center leading-tight">تنبيهات</span>
             </a>
             <a href="{{ route('prices.index') }}"
-               class="bg-ink-950/25 backdrop-blur rounded-xl px-3 py-2.5 text-white border border-white/15 hover:bg-ink-950/35 transition flex items-center gap-2">
-                <x-icon name="tag" class="w-4 h-4 shrink-0"/>
-                <span class="text-xs font-bold flex-1 truncate">رادار الأسعار</span>
-                <x-icon name="arrow-left" class="w-3.5 h-3.5 opacity-70 shrink-0"/>
+               class="bg-ink-950/25 backdrop-blur rounded-xl px-2.5 py-2.5 text-white border border-white/15 hover:bg-ink-950/35 transition flex flex-col items-center gap-1">
+                <x-icon name="tag" class="w-4 h-4"/>
+                <span class="text-[11px] font-bold text-center leading-tight">أسعار</span>
+            </a>
+            <a href="{{ route('directory.index') }}"
+               class="bg-ink-950/25 backdrop-blur rounded-xl px-2.5 py-2.5 text-white border border-white/15 hover:bg-ink-950/35 transition flex flex-col items-center gap-1">
+                <x-icon name="stethoscope" class="w-4 h-4"/>
+                <span class="text-[11px] font-bold text-center leading-tight">دليل بنها</span>
             </a>
         </div>
     </div>

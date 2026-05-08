@@ -3,6 +3,7 @@
 use App\Http\Controllers\AlertController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BrowseController;
+use App\Http\Controllers\DirectoryController;
 use App\Http\Controllers\FeedController;
 use App\Http\Controllers\OtpController;
 use App\Http\Controllers\PostController;
@@ -49,6 +50,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/feed',     [FeedController::class, 'index'])->name('feed');
     Route::get('/discover', [BrowseController::class, 'discover'])->name('discover');
     Route::get('/zones',    [BrowseController::class, 'zones'])->name('zones');
+
+    // Directory (businesses, craftsmen, restaurants, doctors, …)
+    Route::get('/directory',                         [DirectoryController::class, 'index'])->name('directory.index');
+    Route::get('/directory/business/{business}',     [DirectoryController::class, 'show'])->name('directory.show');
+    Route::get('/directory/{category}',              [DirectoryController::class, 'category'])->name('directory.category');
 
     Route::get('/posts/new',  [PostController::class, 'create'])->name('posts.create');
     Route::post('/posts',     [PostController::class, 'store'])->name('posts.store');

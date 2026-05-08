@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Alert;
 use App\Models\Zone;
 use App\Services\BadgeService;
+use App\Support\EmergencyHotlines;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -41,6 +42,10 @@ class AlertController extends Controller
             ->pluck('c', 'type')
             ->all();
 
+        $hotlines = $type
+            ? EmergencyHotlines::forAlertType($type)
+            : EmergencyHotlines::all();
+
         return view('alerts.index', [
             'alerts'     => $alerts,
             'types'      => Alert::TYPES,
@@ -49,6 +54,7 @@ class AlertController extends Controller
             'zones'      => Zone::orderBy('sort')->get(),
             'activeZone' => $zoneId ? (int) $zoneId : null,
             'myConfirms' => $myConfirms,
+            'hotlines'   => $hotlines,
         ]);
     }
 
