@@ -95,6 +95,7 @@ class AuthController extends Controller
         ]);
 
         BadgeService::onSignup($user);
+        \App\Services\AdminNotificationService::onUserSignup($user->fresh()->load('zone'));
 
         Auth::login($user, remember: true);
         $request->session()->regenerate();

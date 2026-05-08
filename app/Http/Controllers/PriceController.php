@@ -136,6 +136,15 @@ class PriceController extends Controller
 
         BadgeService::onPriceSubmit(Auth::user());
 
+        $product = Product::find($data['product_id']);
+        $zone    = \App\Models\Zone::find($data['zone_id']);
+        \App\Services\AdminNotificationService::onPriceSubmitted(
+            $product?->name ?? 'منتج',
+            $zone?->name ?? 'منطقة',
+            (float) $data['price'],
+            Auth::user()
+        );
+
         return redirect()->route('prices.show', $data['product_id'])
             ->with('flash', 'شكراً، السعر اتسجّل ودخل في المتوسط.');
     }

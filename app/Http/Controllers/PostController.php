@@ -80,6 +80,7 @@ class PostController extends Controller
         $post->save();
 
         BadgeService::onPost(Auth::user());
+        \App\Services\AdminNotificationService::onPostCreated($post->fresh()->load(['user.zone']));
 
         return redirect()->route('posts.show', $post)->with('flash', 'بوستك اتنشر! 🎉');
     }
@@ -195,7 +196,7 @@ class PostController extends Controller
             'details' => ['nullable', 'string', 'max:500'],
         ]);
 
-        Report::firstOrCreate(
+        $report = Report::firstOrCreate(
             [
                 'reporter_id' => Auth::id(),
                 'target_type' => 'post',
@@ -212,6 +213,10 @@ class PostController extends Controller
         if ($post->flag_count >= 5) {
             $post->status = 'flagged';
             $post->save();
+        }
+
+        if ($report->wasRecentlyCreated) {
+            \App\Services\AdminNotificationService::onReportCreated($report);
         }
 
         return back()->with('flash', 'تم استلام البلاغ، شكراً.');

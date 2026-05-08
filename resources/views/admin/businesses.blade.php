@@ -28,7 +28,8 @@
                 <th>تليفون</th>
                 <th>التوثيق</th>
                 <th>نشط</th>
-                <th></th>
+                <th>أنشئ</th>
+                <th class="text-end">إجراءات</th>
             </tr>
         </thead>
         <tbody>
@@ -72,6 +73,29 @@
                         </form>
                     </td>
                     <td class="text-[10px] text-ink-400">{{ $b->created_at->diffForHumans(short: true) }}</td>
+                    <td class="text-end">
+                        <div class="inline-flex items-center gap-1">
+                            <a href="{{ route('directory.edit', $b) }}"
+                               class="a-pill bg-coral-100 text-coral-700 hover:bg-coral-500 hover:text-white px-2.5 py-1.5 transition" title="تعديل">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3">
+                                    <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z"/>
+                                </svg>
+                                تعديل
+                            </a>
+                            <form method="POST" action="{{ route('directory.destroy', $b) }}" class="inline"
+                                  data-confirm="حذف النشاط نهائياً؟"
+                                  data-confirm-body="مش هيرجع تاني — لكن البيانات هتفضل في الـ DB كـ inactive."
+                                  data-confirm-action="احذف"
+                                  data-confirm-tone="danger">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="a-pill bg-cream-200 text-ink-400 hover:bg-blush-500 hover:text-white px-2 py-1.5 transition" title="حذف">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3">
+                                        <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                    </svg>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
                 </tr>
             @endforeach
         </tbody>

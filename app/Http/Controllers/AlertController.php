@@ -96,6 +96,7 @@ class AlertController extends Controller
         ]);
 
         BadgeService::onAlertSubmit(Auth::user());
+        \App\Services\AdminNotificationService::onAlertCreated($alert->fresh()->load('zone'));
 
         // Push to zone subscribers (excluding the author)
         if ($alert->zone_id) {

@@ -170,6 +170,8 @@ class DirectoryController extends Controller
             'photo_url'     => $photoUrl,
         ]);
 
+        \App\Services\AdminNotificationService::onBusinessCreated($business->fresh()->load('owner'));
+
         return redirect()->route('directory.show', $business)
             ->with('flash', '✓ نشاطك انضاف للدليل! هتراجعه فريق بنهاوي قريباً للتوثيق.');
     }
@@ -221,9 +223,10 @@ class DirectoryController extends Controller
 
     private function authorizeOwner(Business $business): void
     {
-        if (! Auth::check() || $business->owner_user_id !== Auth::id()) {
-            abort(403);
-        }
+        if (! Auth::check()) abort(403);
+        $u = Auth::user();
+        if ($u->is_admin) return;
+        if ($business->owner_user_id !== $u->id) abort(403);
     }
 
     private function validateBusiness(Request $request): array
