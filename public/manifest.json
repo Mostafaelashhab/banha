@@ -1,0 +1,57 @@
+{
+    "name": "بنهاوي · مدينتك على راحة إيدك",
+    "short_name": "بنهاوي",
+    "description": "كل اللي بيحصل في بنها دلوقتي — ترند، أسعار، تنبيهات، اعترافات.",
+    "start_url": "/feed",
+    "scope": "/",
+    "id": "/?source=pwa",
+    "display": "standalone",
+    "display_override": ["window-controls-overlay", "standalone"],
+    "orientation": "portrait-primary",
+    "background_color": "#FFF7F1",
+    "theme_color": "#FF7A4D",
+    "lang": "ar",
+    "dir": "rtl",
+    "categories": ["social", "lifestyle", "news"],
+    "prefer_related_applications": false,
+    "icons": [
+        {
+            "src": "/icons/icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any"
+        },
+        {
+            "src": "/icons/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/icons/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "بوست جديد",
+            "short_name": "بوست",
+            "url": "/posts/new",
+            "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+        },
+        {
+            "name": "تنبيهات لحظية",
+            "short_name": "تنبيهات",
+            "url": "/alerts",
+            "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+        },
+        {
+            "name": "رادار الأسعار",
+            "short_name": "أسعار",
+            "url": "/prices",
+            "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+        }
+    ]
+}

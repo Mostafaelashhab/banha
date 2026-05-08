@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /me
+Disallow: /me/
+Disallow: /login
+Disallow: /signup
+Disallow: /logout
+Disallow: /posts/new
+Disallow: /alerts/new
+Disallow: /prices/new
+Disallow: /admin
+
+Sitemap: /sitemap.xml
