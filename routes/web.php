@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AlertController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BrowseController;
@@ -77,6 +78,32 @@ Route::middleware('auth')->group(function () {
     Route::post('/me/avatar',         [ProfileSettingsController::class, 'uploadAvatar'])->name('profile.avatar');
     Route::delete('/me/avatar',       [ProfileSettingsController::class, 'deleteAvatar'])->name('profile.avatar.delete');
     Route::get('/u/{username}',       [ProfileController::class, 'show'])->name('profile.show');
+
+    // ─── Admin ────────────────────────────────────────────────
+    Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
+        Route::get('/',                              [AdminController::class, 'dashboard'])->name('dashboard');
+
+        Route::get('/users',                         [AdminController::class, 'users'])->name('users');
+        Route::post('/users/{user}/ban',             [AdminController::class, 'userBan'])->name('users.ban');
+        Route::post('/users/{user}/tier',            [AdminController::class, 'userTier'])->name('users.tier');
+        Route::post('/users/{user}/admin',           [AdminController::class, 'userAdmin'])->name('users.admin');
+
+        Route::get('/posts',                         [AdminController::class, 'posts'])->name('posts');
+        Route::post('/posts/{post}/remove',          [AdminController::class, 'postRemove'])->name('posts.remove');
+        Route::post('/posts/{post}/restore',         [AdminController::class, 'postRestore'])->name('posts.restore');
+
+        Route::get('/reports',                       [AdminController::class, 'reports'])->name('reports');
+        Route::post('/reports/{report}/resolve',     [AdminController::class, 'reportResolve'])->name('reports.resolve');
+
+        Route::get('/businesses',                    [AdminController::class, 'businesses'])->name('businesses');
+        Route::post('/businesses/{business}/verify', [AdminController::class, 'businessVerify'])->name('businesses.verify');
+        Route::post('/businesses/{business}/toggle', [AdminController::class, 'businessToggleActive'])->name('businesses.toggle');
+
+        Route::get('/broadcast',                     [AdminController::class, 'broadcastForm'])->name('broadcast');
+        Route::post('/broadcast',                    [AdminController::class, 'broadcastSend'])->name('broadcast.send');
+
+        Route::post('/recheck-tiers',                [AdminController::class, 'recheckTiers'])->name('recheck.tiers');
+    });
 
     // Prices
     Route::get('/prices',                  [PriceController::class, 'index'])->name('prices.index');

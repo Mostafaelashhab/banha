@@ -52,7 +52,7 @@ class ProfileSettingsController extends Controller
     public function uploadAvatar(Request $request)
     {
         $request->validate([
-            'avatar' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'avatar' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5025'],
         ], [
             'avatar.image' => 'الملف لازم يكون صورة.',
             'avatar.mimes' => 'لازم JPG / PNG / WEBP.',

@@ -381,6 +381,17 @@
                 </div>
             </div>
 
+            @if($user->is_admin)
+                <a href="{{ route('admin.dashboard') }}" class="card-light p-4 flex items-center gap-3 hover:-translate-y-0.5 hover:shadow-lg transition border-2 border-coral-500/40 bg-coral-50">
+                    <span class="w-10 h-10 rounded-2xl brand-bg grid place-items-center text-white shrink-0">★</span>
+                    <div class="flex-1">
+                        <div class="text-sm font-extrabold text-ink-950">لوحة الأدمن</div>
+                        <div class="text-[11px] text-ink-500">إدارة المستخدمين، البلاغات، البوستات…</div>
+                    </div>
+                    <x-icon name="arrow-left" class="w-4 h-4 text-coral-600"/>
+                </a>
+            @endif
+
             {{-- My listings --}}
             <a href="{{ route('directory.mine') }}" class="card-light p-4 flex items-center gap-3 hover:-translate-y-0.5 hover:shadow-lg transition">
                 <span class="w-10 h-10 rounded-2xl pill-coral grid place-items-center shrink-0">
