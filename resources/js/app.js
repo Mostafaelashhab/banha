@@ -1,3 +1,64 @@
+// ─── Nav progress bar ───────────────────────────────────────
+(function () {
+    let bar = document.getElementById('nav-progress');
+    if (!bar) {
+        bar = document.createElement('div');
+        bar.id = 'nav-progress';
+        document.body.prepend(bar);
+    }
+
+    const start = () => {
+        bar.classList.remove('is-done');
+        // restart animation
+        bar.classList.remove('is-loading');
+        // force reflow
+        // eslint-disable-next-line no-unused-expressions
+        bar.offsetWidth;
+        bar.classList.add('is-loading');
+    };
+
+    // Internal link clicks
+    document.addEventListener('click', (e) => {
+        const a = e.target.closest('a[href]');
+        if (!a) return;
+        // skip: external, target=_blank, hash-only, javascript:, downloads, modifier keys
+        const href = a.getAttribute('href') || '';
+        if (
+            !href ||
+            href.startsWith('#') ||
+            href.startsWith('javascript:') ||
+            href.startsWith('mailto:') ||
+            href.startsWith('tel:') ||
+            href.startsWith('whatsapp:') ||
+            href.startsWith('https://wa.me') ||
+            a.target === '_blank' ||
+            a.hasAttribute('download') ||
+            e.metaKey || e.ctrlKey || e.shiftKey || e.altKey ||
+            e.button !== 0
+        ) return;
+
+        const url = new URL(href, location.origin);
+        if (url.origin !== location.origin) return;
+        if (url.pathname === location.pathname && url.search === location.search) return;
+
+        start();
+    }, true);
+
+    // Form submits
+    document.addEventListener('submit', (e) => {
+        const form = e.target;
+        if (form.dataset.noProgress === '1') return;
+        // Skip if not actually submitted (e.g. data-confirm intercepted)
+        setTimeout(() => start(), 0);
+    });
+
+    // Reset on bfcache restore
+    window.addEventListener('pageshow', () => {
+        bar.classList.remove('is-loading');
+        bar.style.transform = 'scaleX(0)';
+    });
+})();
+
 // ─── Modal / Sheet system ────────────────────────────────────
 const modal = {
     show(html, opts = {}) {

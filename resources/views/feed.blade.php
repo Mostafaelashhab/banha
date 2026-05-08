@@ -3,10 +3,10 @@
 @section('content')
 <div class="max-w-3xl mx-auto">
 
-    {{-- Compact welcome strip --}}
+    {{-- Slim welcome strip --}}
     <div class="card-orange p-4 mb-3 relative overflow-hidden">
         <div class="absolute -top-8 -end-8 w-32 h-32 rounded-full bg-white/15 blur-2xl"></div>
-        <div class="relative flex items-center justify-between gap-3 mb-3">
+        <div class="relative flex items-center justify-between gap-3">
             <div class="min-w-0">
                 <div class="text-white/80 text-[11px]">أهلاً يا</div>
                 <div class="text-white text-lg font-black truncate">{{ auth()->user()->username }}</div>
@@ -22,24 +22,34 @@
                 بوست
             </a>
         </div>
+    </div>
 
-        {{-- Quick actions --}}
-        <div class="relative grid grid-cols-3 gap-2">
-            <a href="{{ route('alerts.index') }}"
-               class="bg-ink-950/25 backdrop-blur rounded-xl px-2.5 py-2.5 text-white border border-white/15 hover:bg-ink-950/35 transition flex flex-col items-center gap-1">
-                <x-icon name="bolt" class="w-4 h-4"/>
-                <span class="text-[11px] font-bold text-center leading-tight">تنبيهات</span>
-            </a>
-            <a href="{{ route('prices.index') }}"
-               class="bg-ink-950/25 backdrop-blur rounded-xl px-2.5 py-2.5 text-white border border-white/15 hover:bg-ink-950/35 transition flex flex-col items-center gap-1">
-                <x-icon name="tag" class="w-4 h-4"/>
-                <span class="text-[11px] font-bold text-center leading-tight">أسعار</span>
-            </a>
-            <a href="{{ route('directory.index') }}"
-               class="bg-ink-950/25 backdrop-blur rounded-xl px-2.5 py-2.5 text-white border border-white/15 hover:bg-ink-950/35 transition flex flex-col items-center gap-1">
-                <x-icon name="stethoscope" class="w-4 h-4"/>
-                <span class="text-[11px] font-bold text-center leading-tight">دليل بنها</span>
-            </a>
+    {{-- Quick actions (horizontal scroll) --}}
+    @php
+        $quickActions = [
+            ['url' => route('alerts.index'),                   'icon' => 'bolt',        'label' => 'تنبيهات',     'tone' => 'blush'],
+            ['url' => route('prices.index'),                   'icon' => 'tag',         'label' => 'الأسعار',      'tone' => 'mint'],
+            ['url' => route('directory.index'),                'icon' => 'bag',         'label' => 'الدليل',       'tone' => 'coral'],
+            ['url' => route('zones'),                          'icon' => 'map-pin',     'label' => 'المناطق',     'tone' => 'honey'],
+            ['url' => route('discover'),                       'icon' => 'flame',       'label' => 'اكتشف',       'tone' => 'coral'],
+            ['url' => route('directory.category', 'medical'),  'icon' => 'stethoscope', 'label' => 'دكاترة',      'tone' => 'mint'],
+            ['url' => route('directory.category', 'food'),     'icon' => 'utensils',    'label' => 'مطاعم',       'tone' => 'coral'],
+            ['url' => route('directory.category', 'craftsmen'),'icon' => 'more',        'label' => 'صنايعية',     'tone' => 'honey'],
+            ['url' => route('directory.category', 'shops'),    'icon' => 'cart',        'label' => 'محلات',       'tone' => 'coral'],
+            ['url' => route('alerts.create'),                  'icon' => 'plus',        'label' => 'بلّغ',         'tone' => 'blush'],
+        ];
+    @endphp
+
+    <div class="overflow-x-auto scrollbar-hide -mx-4 mb-3">
+        <div class="flex gap-2.5 px-4 w-max">
+            @foreach($quickActions as $a)
+                <a href="{{ $a['url'] }}" class="quick-tile">
+                    <span class="quick-tile-icon pill-{{ $a['tone'] }}">
+                        <x-icon :name="$a['icon']" class="w-5 h-5"/>
+                    </span>
+                    <span class="quick-tile-label">{{ $a['label'] }}</span>
+                </a>
+            @endforeach
         </div>
     </div>
 

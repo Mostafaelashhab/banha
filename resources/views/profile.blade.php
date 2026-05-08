@@ -17,11 +17,34 @@
         <div class="absolute -bottom-16 -start-16 w-56 h-56 rounded-full bg-honey-400/40 blur-3xl"></div>
 
         <div class="relative flex items-start gap-4">
-            <x-avatar :user="$user" size="xl" :ring="true" class="shadow-xl"/>
+            <div class="relative shrink-0">
+                <x-avatar :user="$user" size="xl" :ring="true" class="shadow-xl"/>
+                @if($isMe)
+                    <form method="POST" action="{{ route('profile.avatar') }}" enctype="multipart/form-data" data-no-progress="1">
+                        @csrf
+                        <label class="avatar-cam-badge" title="غيّر الصورة">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                                <circle cx="12" cy="13" r="4"/>
+                            </svg>
+                            <input type="file" name="avatar" accept="image/jpeg,image/png,image/webp" class="hidden" onchange="this.form.requestSubmit()">
+                        </label>
+                    </form>
+                @endif
+            </div>
 
             <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2 flex-wrap">
                     <h1 class="text-xl md:text-2xl font-black text-white truncate">{{ $user->username }}</h1>
+                    @if($isMe)
+                        <a href="{{ route('profile.me', ['tab' => 'settings']) }}"
+                           class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-white/20 text-white border border-white/30 hover:bg-white/30 transition">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3">
+                                <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z"/>
+                            </svg>
+                            عدّل
+                        </a>
+                    @endif
                     @if($user->verification_tier === 'gold')
                         <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full text-white" style="background: #1D9BF0">
                             <x-icon name="check" class="w-3 h-3"/> موثّق
