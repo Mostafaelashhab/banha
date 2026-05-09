@@ -15,8 +15,16 @@ class MenuController extends Controller
     public function manage(Business $business)
     {
         $this->authorizeOwner($business);
-        $business->load(['menuCategories.items', 'menuItems' => fn ($q) => $q->whereNull('category_id')]);
-        return view('menu.manage', compact('business'));
+
+        $business->load(['menuCategories.items']);
+
+        // Items not attached to any category — so we can render them in their own block
+        $looseItems = MenuItem::where('business_id', $business->id)
+            ->whereNull('category_id')
+            ->orderBy('sort')->orderBy('id')
+            ->get();
+
+        return view('menu.manage', compact('business', 'looseItems'));
     }
 
     public function storeCategory(Business $business, Request $request)
