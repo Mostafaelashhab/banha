@@ -26,6 +26,9 @@
 
         @auth
             @if(auth()->id() === $business->owner_user_id || auth()->user()->is_admin)
+                <a href="{{ route('menu.manage', $business) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-honey-100 text-honey-700 text-xs font-bold hover:bg-honey-500 hover:text-ink-950 transition" title="منيو">
+                    📋
+                </a>
                 <a href="{{ route('directory.stats', $business) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-mint-100 text-mint-700 text-xs font-bold hover:bg-mint-500 hover:text-white transition" title="إحصائيات">
                     📊
                 </a>
@@ -87,6 +90,13 @@
 
         @if($business->description)
             <p class="text-ink-950 text-sm leading-relaxed mt-4">{{ $business->description }}</p>
+        @endif
+
+        @if($business->has_menu)
+            <a href="{{ route('menu.public', $business) }}" class="block mt-4 p-4 rounded-2xl bg-gradient-to-r from-coral-500 to-honey-500 text-white font-extrabold text-center hover:scale-[1.02] transition shadow-lg">
+                <span class="text-2xl">📋</span>
+                <span class="block text-sm">شوف المنيو والأسعار</span>
+            </a>
         @endif
 
         {{-- Owner link --}}

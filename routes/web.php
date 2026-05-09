@@ -23,6 +23,7 @@ Route::get('/', function () {
 })->name('home');
 
 Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
+Route::get('/robots.txt',  [SeoController::class, 'robots'])->name('robots');
 Route::get('/push/vapid', [PushController::class, 'vapidKey'])->name('push.vapid');
 
 // Guest auth routes
@@ -46,6 +47,9 @@ Route::get('/directory',                     [DirectoryController::class, 'index
 Route::get('/directory/business/{business}', [DirectoryController::class, 'show'])->name('directory.show');
 Route::get('/directory/c/{category}',        [DirectoryController::class, 'category'])->name('directory.category');
 Route::get('/directory/business/{business}/click', [DirectoryController::class, 'trackClick'])->name('directory.track');
+
+// Public QR menu (the SEO money page)
+Route::get('/m/{business}', [\App\Http\Controllers\MenuController::class, 'publicMenu'])->name('menu.public');
 
 // Public marketplace + search + hashtag pages
 Route::get('/market',                  [\App\Http\Controllers\ListingController::class, 'index'])->name('marketplace.index');
@@ -79,6 +83,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/directory/mine',                           [DirectoryController::class, 'myListings'])->name('directory.mine');
     Route::get('/directory/business/{business}/edit',       [DirectoryController::class, 'edit'])->name('directory.edit');
     Route::get('/directory/business/{business}/stats',      [DirectoryController::class, 'stats'])->name('directory.stats');
+
+    // Menu management (owner)
+    Route::get('/directory/business/{business}/menu',       [\App\Http\Controllers\MenuController::class, 'manage'])->name('menu.manage');
+    Route::post('/directory/business/{business}/menu/category', [\App\Http\Controllers\MenuController::class, 'storeCategory'])->name('menu.category.store');
+    Route::delete('/menu/category/{category}',              [\App\Http\Controllers\MenuController::class, 'destroyCategory'])->name('menu.category.destroy');
+    Route::post('/directory/business/{business}/menu/item', [\App\Http\Controllers\MenuController::class, 'storeItem'])->name('menu.item.store');
+    Route::patch('/menu/item/{item}',                       [\App\Http\Controllers\MenuController::class, 'updateItem'])->name('menu.item.update');
+    Route::post('/menu/item/{item}/toggle',                 [\App\Http\Controllers\MenuController::class, 'toggleItem'])->name('menu.item.toggle');
+    Route::delete('/menu/item/{item}',                      [\App\Http\Controllers\MenuController::class, 'destroyItem'])->name('menu.item.destroy');
     Route::patch('/directory/business/{business}',          [DirectoryController::class, 'update'])->name('directory.update');
     Route::delete('/directory/business/{business}',         [DirectoryController::class, 'destroy'])->name('directory.destroy');
 

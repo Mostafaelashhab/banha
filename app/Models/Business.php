@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'description', 'phone', 'whatsapp', 'address', 'lat', 'lng',
     'hours', 'is_24h', 'is_verified', 'promoted_until', 'is_active',
     'rating_avg', 'ratings_count', 'views_count', 'phone_clicks', 'whatsapp_clicks',
-    'emoji', 'photo_url',
+    'emoji', 'photo_url', 'has_menu', 'menu_currency',
 ])]
 class Business extends Model
 {
@@ -116,6 +116,7 @@ class Business extends Model
             'is_24h'         => 'boolean',
             'is_verified'    => 'boolean',
             'is_active'      => 'boolean',
+            'has_menu'       => 'boolean',
             'promoted_until' => 'datetime',
             'lat'            => 'decimal:7',
             'lng'            => 'decimal:7',
@@ -146,6 +147,16 @@ class Business extends Model
     public function photos(): HasMany
     {
         return $this->hasMany(BusinessPhoto::class)->orderBy('sort');
+    }
+
+    public function menuCategories(): HasMany
+    {
+        return $this->hasMany(MenuCategory::class)->orderBy('sort')->orderBy('id');
+    }
+
+    public function menuItems(): HasMany
+    {
+        return $this->hasMany(MenuItem::class)->orderBy('sort')->orderBy('id');
     }
 
     public function categoryMeta(): array

@@ -6,7 +6,79 @@
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#FFF7F1">
     <meta name="theme-color" media="(prefers-color-scheme: dark)"  content="#0B0B0C">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $title ?? 'بنهاوي' }}</title>
+    <title>{{ $title ?? 'بنهاوي · مدينتك على راحة إيدك · بنها · القليوبية' }}</title>
+
+    {{-- ─── SEO ─────────────────────────────────────────────── --}}
+    @php
+        $seoDesc = $description ?? 'بنهاوي — التطبيق المحلي لأهل بنها والقليوبية. أحدث الأخبار، الأسعار، التنبيهات، دليل المطاعم والصنايعية، بيع وشراء، ومنيو رقمي.';
+        $seoUrl  = $canonical ?? url()->current();
+        $seoImg  = $ogImage ?? asset('icons/icon-512.png');
+        $seoKw   = $keywords ?? 'بنها, القليوبية, مطاعم بنها, دليل بنها, أسعار بنها, تنبيهات بنها, منيو بنها, بيع وشراء بنها, banha, qalyubia';
+    @endphp
+    <meta name="description" content="{{ $seoDesc }}">
+    <meta name="keywords"    content="{{ $seoKw }}">
+    <meta name="robots"      content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <link rel="canonical"    href="{{ $seoUrl }}">
+    <link rel="alternate"    hreflang="ar-EG" href="{{ $seoUrl }}">
+
+    {{-- Open Graph --}}
+    <meta property="og:type"        content="{{ $ogType ?? 'website' }}">
+    <meta property="og:site_name"   content="بنهاوي">
+    <meta property="og:title"       content="{{ $title ?? 'بنهاوي · مدينتك على راحة إيدك' }}">
+    <meta property="og:description" content="{{ $seoDesc }}">
+    <meta property="og:url"         content="{{ $seoUrl }}">
+    <meta property="og:locale"      content="ar_EG">
+    @if($seoImg)
+        <meta property="og:image"   content="{{ $seoImg }}">
+        <meta property="og:image:width"  content="1200">
+        <meta property="og:image:height" content="630">
+    @endif
+
+    {{-- Twitter Card --}}
+    <meta name="twitter:card"        content="summary_large_image">
+    <meta name="twitter:title"       content="{{ $title ?? 'بنهاوي' }}">
+    <meta name="twitter:description" content="{{ $seoDesc }}">
+    @if($seoImg)
+        <meta name="twitter:image"   content="{{ $seoImg }}">
+    @endif
+
+    {{-- Geo (Banha specific) --}}
+    <meta name="geo.region"    content="EG-QH">
+    <meta name="geo.placename" content="Banha">
+    <meta name="geo.position"  content="30.4582;31.1797">
+    <meta name="ICBM"          content="30.4582, 31.1797">
+
+    {{-- Site-wide JSON-LD --}}
+    <script type="application/ld+json">
+    {!! json_encode([
+        '@context' => 'https://schema.org',
+        '@type'    => 'WebSite',
+        'name'     => 'بنهاوي',
+        'url'      => url('/'),
+        'inLanguage' => 'ar',
+        'potentialAction' => [
+            '@type'       => 'SearchAction',
+            'target'      => url('/search') . '?q={search_term_string}',
+            'query-input' => 'required name=search_term_string',
+        ],
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}
+    </script>
+    <script type="application/ld+json">
+    {!! json_encode([
+        '@context' => 'https://schema.org',
+        '@type'    => 'Organization',
+        'name'     => 'بنهاوي',
+        'url'      => url('/'),
+        'logo'     => asset('icons/icon-512.png'),
+        'sameAs'   => [],
+        'address'  => [
+            '@type'           => 'PostalAddress',
+            'addressLocality' => 'بنها',
+            'addressRegion'   => 'القليوبية',
+            'addressCountry'  => 'EG',
+        ],
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}
+    </script>
 
     {{-- PWA --}}
     <link rel="manifest" href="/manifest.json">
