@@ -138,6 +138,21 @@ html[dir="rtl"] body {
 .ring-tier-silver { box-shadow: 0 0 0 1.5px #fff, 0 0 0 3px rgba(156, 163, 175, .45); }
 .ring-tier-gold   { box-shadow: 0 0 0 1.5px #fff, 0 0 0 3px rgba(29, 155, 240, .55); }
 
+/* Post body collapse (Facebook-style "عرض المزيد") */
+.post-body p {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 6;
+    line-clamp: 6;
+    overflow: hidden;
+}
+.post-body.is-expanded p {
+    display: block;
+    -webkit-line-clamp: unset;
+    line-clamp: unset;
+    overflow: visible;
+}
+
 /* Sponsored post — gold/honey accent */
 .card-light.post-sponsored {
     background:

@@ -56,15 +56,20 @@
     </header>
 
     {{-- body --}}
-    <a href="{{ route('posts.show', $post) }}" class="block">
-        @if($post->title)
+    @if($post->title)
+        <a href="{{ route('posts.show', $post) }}" class="block">
             <h3 class="font-extrabold text-ink-950 mb-1.5 leading-tight">{{ $post->title }}</h3>
-        @endif
-        <p class="text-ink-950 text-[15px] leading-relaxed whitespace-pre-line">{!! \App\Support\TextRenderer::renderHashtags(\Illuminate\Support\Str::limit($post->body, 280), (bool) ($post->user->is_admin ?? false)) !!}</p>
-        @if($post->image_url)
+        </a>
+    @endif
+    <div class="post-body" data-expandable>
+        <p class="text-ink-950 text-[15px] leading-relaxed whitespace-pre-line">{!! \App\Support\TextRenderer::renderHashtags($post->body, (bool) ($post->user->is_admin ?? false)) !!}</p>
+        <button type="button" class="hidden text-coral-600 font-bold text-sm mt-1 hover:underline" data-expand>عرض المزيد</button>
+    </div>
+    @if($post->image_url)
+        <a href="{{ route('posts.show', $post) }}" class="block">
             <img src="{{ $post->image_url }}" alt="" loading="lazy" class="mt-3 w-full rounded-2xl object-cover max-h-[420px]">
-        @endif
-    </a>
+        </a>
+    @endif
 
     {{-- actions --}}
     <footer class="mt-4 flex items-center gap-1 text-ink-500 text-sm" data-vote-block

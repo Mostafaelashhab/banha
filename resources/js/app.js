@@ -1,3 +1,25 @@
+// ─── Post body "عرض المزيد" (Facebook-style inline expand) ────
+function wireExpandable(root = document) {
+    root.querySelectorAll('[data-expandable]:not([data-expand-wired])').forEach((wrap) => {
+        wrap.dataset.expandWired = '1';
+        const p   = wrap.querySelector('p');
+        const btn = wrap.querySelector('[data-expand]');
+        if (!p || !btn) return;
+        // Show button only when text actually overflows the clamp
+        if (p.scrollHeight > p.clientHeight + 2) {
+            btn.classList.remove('hidden');
+        }
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            wrap.classList.add('is-expanded');
+            btn.classList.add('hidden');
+        });
+    });
+}
+document.addEventListener('DOMContentLoaded', () => wireExpandable());
+// Re-run after infinite-scroll appends new posts
+document.addEventListener('feed:appended', (e) => wireExpandable(e.target || document));
+
 // ─── Block pinch-zoom + double-tap zoom (iOS Safari ignores user-scalable=no) ──
 document.addEventListener('gesturestart',  (e) => e.preventDefault());
 document.addEventListener('gesturechange', (e) => e.preventDefault());
@@ -235,6 +257,9 @@ setTimeout(() => document.querySelectorAll('[data-flash]').forEach(el => el.remo
             const tmp = document.createElement('div');
             tmp.innerHTML = html;
             while (tmp.firstChild) list.appendChild(tmp.firstChild);
+
+            // Re-wire any expandable post bodies that just appeared
+            list.dispatchEvent(new CustomEvent('feed:appended', { bubbles: true }));
 
             // Update next URL from the new sentinel
             const sentinel = list.querySelector('[data-feed-end]');
