@@ -24,6 +24,7 @@ Route::get('/', function () {
 
 Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
 Route::get('/robots.txt',  [SeoController::class, 'robots'])->name('robots');
+Route::view('/offline',    'offline')->name('offline');
 Route::get('/push/vapid', [PushController::class, 'vapidKey'])->name('push.vapid');
 
 // Guest auth routes

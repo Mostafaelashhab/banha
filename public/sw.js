@@ -1,14 +1,15 @@
-/* Banhawy service worker — v3
- * Strategy: cache STATIC assets only. Never intercept HTML/JSON,
- * so auth cookies + dynamic content are always fresh.
+/* Banhawy service worker — v4
+ * Strategy: cache STATIC assets + /offline page. Never cache authenticated HTML.
  */
-const CACHE = 'banhawy-static-v3';
+const CACHE = 'banhawy-static-v4';
+const OFFLINE_URL = '/offline';
 const STATIC_ASSETS = [
     '/icons/icon.svg',
     '/icons/icon-192.png',
     '/icons/icon-512.png',
     '/icons/apple-touch-icon.png',
     '/manifest.json',
+    OFFLINE_URL,
 ];
 
 self.addEventListener('install', (event) => {
@@ -70,13 +71,14 @@ self.addEventListener('fetch', (event) => {
                 if (preload) return preload;
                 return await fetch(request);
             } catch (err) {
-                // Offline fallback: return whatever we have for "/" if available
+                // Offline fallback: serve our pre-cached /offline page
                 const cache = await caches.open(CACHE);
-                const fallback = await cache.match('/');
-                return fallback || new Response(
+                const offline = await cache.match(OFFLINE_URL);
+                if (offline) return offline;
+                return new Response(
                     '<!doctype html><meta charset="utf-8"><title>أوفلاين · بنهاوي</title>' +
-                    '<style>body{font-family:Cairo,sans-serif;background:#FFF7F1;color:#0B0B0C;display:grid;place-items:center;min-height:100vh;margin:0;padding:24px;text-align:center}h1{font-size:24px}</style>' +
-                    '<h1>📡 مفيش نت</h1><p style="color:#5C5C66">افتح النت تاني وحدّث الصفحة.</p>',
+                    '<style>body{font-family:Cairo,sans-serif;background:#FFF7F1;color:#0B0B0C;display:grid;place-items:center;min-height:100vh;margin:0;padding:24px;text-align:center}</style>' +
+                    '<h1>مفيش نت</h1><p>افتح النت تاني وحدّث الصفحة.</p>',
                     { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
                 );
             }

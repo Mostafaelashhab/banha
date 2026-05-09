@@ -69,7 +69,7 @@
     @endforelse
 
     {{-- Items without category --}}
-    @if($looseItems->isNotEmpty() ?? false)
+    @if(isset($looseItems) && $looseItems->isNotEmpty())
         <div class="card-light p-4 mb-3 border-coral-500/20">
             <h3 class="font-bold text-ink-500 mb-3 text-sm">أصناف بدون قسم</h3>
             <div class="space-y-2">

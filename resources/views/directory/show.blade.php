@@ -1,117 +1,120 @@
-@extends('layouts.app', ['title' => $business->name . ' · دليل بنها'])
+@extends('layouts.app', [
+    'title'       => $business->name . ' · ' . ($business->zone->name ?? 'بنها') . ' · بنهاوي',
+    'description' => 'كل اللي تحتاج تعرفه عن ' . $business->name . ' في ' . ($business->zone->name ?? 'بنها') . ': المواعيد، الأسعار، التواصل، التقييمات.',
+    'ogImage'     => $business->photo_url,
+    'canonical'   => route('directory.show', $business),
+])
 
 @php
     $cm = $business->categoryMeta();
     $sm = $business->subTypeMeta();
+    $isOwner = auth()->check() && (auth()->id() === $business->owner_user_id || auth()->user()->is_admin);
 @endphp
 
 @section('content')
-<div class="max-w-3xl mx-auto">
+<div class="max-w-2xl mx-auto">
 
-    <div class="flex items-center gap-2 mb-4">
+    {{-- Top action bar --}}
+    <div class="flex items-center gap-2 mb-3">
         <a href="{{ route('directory.category', $business->category) }}" class="w-9 h-9 rounded-full bg-white border border-ink-950/8 grid place-items-center text-ink-950">
             <x-icon name="arrow-right" class="w-4 h-4"/>
         </a>
-        <h1 class="text-base font-bold text-ink-500">{{ $cm['label'] }} · {{ $business->displayType() }}</h1>
+        <span class="text-xs font-bold text-ink-500 truncate">{{ $cm['label'] }}</span>
 
-        {{-- Share (works for everyone) --}}
         <button type="button" class="ms-auto w-9 h-9 rounded-full bg-white border border-ink-950/8 grid place-items-center text-ink-950 hover:bg-cream-100 transition"
-                data-share
-                data-share-url="{{ route('directory.show', $business) }}"
-                data-share-title="{{ $business->name }} · بنهاوي"
-                data-share-text="شوف {{ $business->name }} في دليل بنها"
+                data-share data-share-url="{{ route('directory.show', $business) }}"
+                data-share-title="{{ $business->name }}"
                 aria-label="شارك">
             <x-icon name="share" class="w-4 h-4"/>
         </button>
 
-        @auth
-            @if(auth()->id() === $business->owner_user_id || auth()->user()->is_admin)
-                <a href="{{ route('menu.manage', $business) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-honey-100 text-honey-700 text-xs font-bold hover:bg-honey-500 hover:text-ink-950 transition" title="منيو">
-                    📋
-                </a>
-                <a href="{{ route('directory.stats', $business) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-mint-100 text-mint-700 text-xs font-bold hover:bg-mint-500 hover:text-white transition" title="إحصائيات">
-                    📊
-                </a>
-                <a href="{{ route('directory.edit', $business) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-coral-100 text-coral-700 text-xs font-bold hover:bg-coral-500 hover:text-white transition">
-                    <x-icon name="more" class="w-3.5 h-3.5"/>
-                    عدّل
-                </a>
-            @endif
-        @endauth
+        @if($isOwner)
+            <a href="{{ route('menu.manage', $business) }}" class="w-9 h-9 rounded-full bg-honey-100 text-honey-700 grid place-items-center hover:bg-honey-500 hover:text-ink-950 transition" title="منيو">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                    <rect x="6" y="3" width="12" height="18" rx="2"/>
+                    <line x1="9" y1="8" x2="15" y2="8"/>
+                    <line x1="9" y1="12" x2="15" y2="12"/>
+                    <line x1="9" y1="16" x2="13" y2="16"/>
+                </svg>
+            </a>
+            <a href="{{ route('directory.stats', $business) }}" class="w-9 h-9 rounded-full bg-mint-100 text-mint-700 grid place-items-center hover:bg-mint-500 hover:text-white transition" title="إحصائيات">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                    <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
+                    <line x1="6"  y1="20" x2="6"  y2="14"/><line x1="3"  y1="20" x2="21" y2="20"/>
+                </svg>
+            </a>
+            <a href="{{ route('directory.edit', $business) }}" class="w-9 h-9 rounded-full bg-coral-100 text-coral-700 grid place-items-center hover:bg-coral-500 hover:text-white transition" title="تعديل">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                    <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z"/>
+                </svg>
+            </a>
+        @endif
     </div>
 
-    {{-- Hero cover (always shown — uses photo if valid, else pretty fallback) --}}
-    <x-business-cover :business="$business" class="aspect-[16/9] rounded-3xl mb-3 shadow"/>
-    <div class="flex items-center gap-2 mb-4 -mt-12 px-4 relative z-10">
-        <h2 class="text-xl md:text-2xl font-black text-white drop-shadow-lg inline-flex items-center gap-2">
-            {{ $business->name }}
+    {{-- Hero (single block, name lives here only) --}}
+    @php
+        $heroPhoto = ($business->photo_url && ! str_contains($business->photo_url, 'd-innova.com')) ? $business->photo_url : null;
+        $heroPhoto = $heroPhoto ?: \App\Support\BusinessCovers::pick($business->category, $business->id);
+    @endphp
+    <div class="relative -mx-4 mb-4 overflow-hidden aspect-[16/10] bg-gradient-to-br from-coral-500 to-honey-500">
+        <img src="{{ $heroPhoto }}" alt="{{ $business->name }}" loading="eager"
+             class="absolute inset-0 w-full h-full object-cover"
+             onerror="this.style.display='none'">
+        <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent"></div>
+
+        <div class="absolute top-3 start-3 flex flex-col gap-1.5">
+            @if($business->isPromoted())
+                <span class="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-honey-500 text-ink-950 w-fit">
+                    <svg viewBox="0 0 24 24" fill="currentColor" class="w-3 h-3"><polygon points="12 2 15 9 22 9.5 17 14.5 18.5 22 12 18 5.5 22 7 14.5 2 9.5 9 9"/></svg>
+                    مُروَّج
+                </span>
+            @endif
             @if($business->is_verified)
-                <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-mint-500 text-white">
+                <span class="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-mint-500 text-white w-fit">
                     <x-icon name="check" class="w-3 h-3"/> موثّق
                 </span>
             @endif
-        </h2>
-    </div>
+        </div>
 
-    <div class="card-light p-5 mb-3">
-        <div class="flex items-start gap-4">
-            <span class="w-16 h-16 rounded-2xl grid place-items-center shrink-0"
-                  style="background: {{ $cm['color'] }}20; border: 1px solid {{ $cm['color'] }}50; color: {{ $cm['color'] }}">
-                <x-icon :name="$sm['icon'] ?? 'briefcase'" class="w-7 h-7"/>
-            </span>
-            <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-1.5 flex-wrap">
-                    <h2 class="text-xl md:text-2xl font-black text-ink-950">{{ $business->name }}</h2>
-                    @if($business->isPromoted())
-                        <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-honey-500 text-ink-950">
-                            ⭐ مُروَّج
-                        </span>
-                    @endif
-                    @if($business->is_verified)
-                        <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-mint-100 text-mint-700">
-                            <x-icon name="check" class="w-3 h-3"/>
-                            موثّق
-                        </span>
-                    @endif
-                </div>
-                <div class="text-sm text-ink-500 mt-0.5">
-                    {{ $business->displayType() }}
-                    @if($business->zone) · {{ $business->zone->name }} @endif
-                </div>
+        <div class="absolute bottom-0 inset-x-0 p-4">
+            <h1 class="text-2xl md:text-3xl font-black text-white leading-tight drop-shadow-lg">{{ $business->name }}</h1>
+            <div class="flex items-center gap-2 mt-1.5 text-white/90 text-sm">
+                <span>{{ $business->displayType() }}</span>
+                @if($business->zone)
+                    <span class="text-white/60">·</span>
+                    <span class="inline-flex items-center gap-1"><x-icon name="map-pin" class="w-3 h-3"/> {{ $business->zone->name }}</span>
+                @endif
                 @if($business->ratings_count > 0)
-                    <div class="mt-2 inline-flex items-center gap-1 text-sm">
-                        <span class="text-coral-500">★</span>
-                        <span class="font-bold text-ink-950">{{ $business->rating_avg }}</span>
-                        <span class="text-ink-400 text-xs">({{ $business->ratings_count }} تقييم)</span>
-                    </div>
+                    <span class="text-white/60">·</span>
+                    <span class="inline-flex items-center gap-0.5">
+                        <svg viewBox="0 0 24 24" fill="currentColor" class="w-3 h-3 text-honey-400"><polygon points="12 2 15 9 22 9.5 17 14.5 18.5 22 12 18 5.5 22 7 14.5 2 9.5 9 9"/></svg>
+                        <span class="font-bold">{{ $business->rating_avg }}</span>
+                        <span class="text-white/70 text-xs">({{ $business->ratings_count }})</span>
+                    </span>
                 @endif
             </div>
         </div>
+    </div>
 
-        @if($business->description)
-            <p class="text-ink-950 text-sm leading-relaxed mt-4">{{ $business->description }}</p>
-        @endif
+    {{-- Menu CTA (huge, the goal of this page for restaurants) --}}
+    @if($business->has_menu)
+        <a href="{{ route('menu.public', $business) }}" class="block mb-3 p-4 rounded-2xl bg-gradient-to-r from-coral-500 to-honey-500 text-white text-center hover:scale-[1.01] transition shadow-lg">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 mx-auto">
+                <rect x="6" y="3" width="12" height="18" rx="2"/>
+                <line x1="9" y1="8" x2="15" y2="8"/>
+                <line x1="9" y1="12" x2="15" y2="12"/>
+                <line x1="9" y1="16" x2="13" y2="16"/>
+            </svg>
+            <div class="text-base font-extrabold mt-2">شوف المنيو والأسعار</div>
+            <div class="text-xs text-white/80 mt-0.5">{{ $business->menuCategories()->count() }} قسم · {{ $business->menuItems()->where('is_available', true)->count() }} صنف</div>
+        </a>
+    @endif
 
-        @if($business->has_menu)
-            <a href="{{ route('menu.public', $business) }}" class="block mt-4 p-4 rounded-2xl bg-gradient-to-r from-coral-500 to-honey-500 text-white font-extrabold text-center hover:scale-[1.02] transition shadow-lg">
-                <span class="text-2xl">📋</span>
-                <span class="block text-sm">شوف المنيو والأسعار</span>
-            </a>
-        @endif
-
-        {{-- Owner link --}}
-        @if($business->owner)
-            <a href="{{ route('profile.show', $business->owner->username) }}"
-               class="mt-4 inline-flex items-center gap-2 text-xs text-ink-500 hover:text-coral-600 transition">
-                <x-icon name="user" class="w-3.5 h-3.5"/>
-                صاحب النشاط: <span class="font-bold text-ink-950">{{ '@'.$business->owner->username }}</span>
-            </a>
-        @endif
-
-        {{-- Action buttons --}}
-        <div class="grid grid-cols-2 gap-2 mt-4">
+    {{-- Quick contact CTAs --}}
+    @if($business->phone || $business->whatsapp)
+        <div class="grid grid-cols-{{ ($business->phone && $business->whatsapp) ? '2' : '1' }} gap-2 mb-3">
             @if($business->phone)
-                <a href="tel:{{ $business->phone }}" data-track-click="phone" data-business="{{ $business->id }}" class="btn-primary justify-center !py-3 text-sm">
+                <a href="tel:{{ $business->phone }}" data-track-click="phone" data-business="{{ $business->id }}" class="btn-primary justify-center !py-3.5 text-sm">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="w-4 h-4">
                         <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
                     </svg>
@@ -121,70 +124,80 @@
             @if($business->whatsapp)
                 <a href="https://wa.me/{{ \App\Services\WaapiService::toIntl($business->whatsapp) }}" target="_blank"
                    data-track-click="whatsapp" data-business="{{ $business->id }}"
-                   class="inline-flex items-center justify-center gap-2 py-3 px-5 rounded-full font-bold text-white text-sm transition hover:scale-[1.02]"
-                   style="background: linear-gradient(135deg, #25D366, #128C7E); box-shadow: 0 12px 24px -10px rgba(37, 211, 102, .55)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="w-4 h-4">
-                        <path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9z"/>
-                    </svg>
-                    واتساب
+                   class="inline-flex items-center justify-center gap-2 py-3.5 rounded-full font-bold text-white text-sm transition hover:scale-[1.02]"
+                   style="background: linear-gradient(135deg, #25D366, #128C7E)">
+                    <x-icon name="whatsapp" class="w-4 h-4"/> واتساب
                 </a>
             @endif
         </div>
-    </div>
+    @endif
 
-    {{-- Info --}}
-    <div class="card-light p-5 mb-3 space-y-3">
-        @if($business->address)
-            <div class="flex items-start gap-3">
-                <span class="w-9 h-9 rounded-xl pill-coral grid place-items-center shrink-0">
-                    <x-icon name="map-pin" class="w-4 h-4"/>
-                </span>
-                <div class="flex-1">
-                    <div class="text-[11px] text-ink-500">العنوان</div>
-                    <div class="text-sm font-bold text-ink-950">{{ $business->address }}</div>
-                </div>
-            </div>
-        @endif
+    {{-- About --}}
+    @if($business->description)
+        <div class="card-light p-4 mb-3">
+            <p class="text-ink-950 text-sm leading-relaxed whitespace-pre-line">{{ $business->description }}</p>
+        </div>
+    @endif
 
-        @if($business->hours || $business->is_24h)
-            <div class="flex items-start gap-3">
-                <span class="w-9 h-9 rounded-xl {{ $business->is_24h ? 'pill-mint' : 'pill-coral' }} grid place-items-center shrink-0">
-                    <x-icon name="bell" class="w-4 h-4"/>
-                </span>
-                <div class="flex-1">
-                    <div class="text-[11px] text-ink-500">المواعيد</div>
-                    <div class="text-sm font-bold text-ink-950">
-                        @if($business->is_24h)
-                            <span class="text-mint-700">٢٤ ساعة · مفتوح دلوقتي</span>
-                        @else
-                            {{ $business->hours }}
-                        @endif
+    {{-- Info rows --}}
+    @if($business->address || $business->hours || $business->is_24h || $business->phone)
+        <div class="card-light p-4 mb-3 space-y-3">
+            @if($business->address)
+                <div class="flex items-start gap-3">
+                    <span class="w-9 h-9 rounded-xl pill-coral grid place-items-center shrink-0">
+                        <x-icon name="map-pin" class="w-4 h-4"/>
+                    </span>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-[11px] text-ink-500">العنوان</div>
+                        <div class="text-sm font-bold text-ink-950">{{ $business->address }}</div>
                     </div>
                 </div>
-            </div>
-        @endif
+            @endif
 
-        @if($business->phone)
-            <div class="flex items-start gap-3">
-                <span class="w-9 h-9 rounded-xl pill-blush grid place-items-center shrink-0">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="w-4 h-4">
-                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-                    </svg>
-                </span>
-                <div class="flex-1">
-                    <div class="text-[11px] text-ink-500">رقم التليفون</div>
-                    <div class="text-sm font-bold text-ink-950" dir="ltr">{{ $business->phone }}</div>
+            @if($business->hours || $business->is_24h)
+                <div class="flex items-start gap-3">
+                    <span class="w-9 h-9 rounded-xl {{ $business->is_24h ? 'pill-mint' : 'pill-honey' }} grid place-items-center shrink-0">
+                        <x-icon name="bell" class="w-4 h-4"/>
+                    </span>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-[11px] text-ink-500">المواعيد</div>
+                        <div class="text-sm font-bold text-ink-950">
+                            @if($business->is_24h)
+                                <span class="text-mint-700">٢٤ ساعة · مفتوح دلوقتي</span>
+                            @else
+                                {{ $business->hours }}
+                            @endif
+                        </div>
+                    </div>
                 </div>
-            </div>
-        @endif
-    </div>
+            @endif
+
+            @if($business->phone)
+                <div class="flex items-start gap-3">
+                    <span class="w-9 h-9 rounded-xl pill-blush grid place-items-center shrink-0">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="w-4 h-4">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                        </svg>
+                    </span>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-[11px] text-ink-500">رقم التليفون</div>
+                        <div class="text-sm font-bold text-ink-950" dir="ltr">{{ $business->phone }}</div>
+                    </div>
+                </div>
+            @endif
+        </div>
+    @endif
 
     {{-- Gallery --}}
-    @php $isOwner = auth()->check() && (auth()->id() === $business->owner_user_id || auth()->user()->is_admin); @endphp
     @if($business->photos->isNotEmpty() || $isOwner)
         <div class="card-light p-4 mb-3">
             <div class="flex items-center justify-between mb-3">
-                <h3 class="text-sm font-extrabold text-ink-950">📸 صور النشاط</h3>
+                <h3 class="text-sm font-extrabold text-ink-950 inline-flex items-center gap-2">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-coral-600">
+                        <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                    صور النشاط
+                </h3>
                 @if($isOwner && $business->photos->count() < 6)
                     <form method="POST" action="{{ route('business.photo.store', $business) }}" enctype="multipart/form-data" class="inline">
                         @csrf
@@ -214,24 +227,22 @@
                     @endforeach
                 </div>
                 @if($isOwner)
-                    <p class="text-[10px] text-ink-400 mt-2">{{ $business->photos->count() }}/6 — الحد الأقصى ٦ صور.</p>
+                    <p class="text-[10px] text-ink-400 mt-2">{{ $business->photos->count() }}/6</p>
                 @endif
             @else
-                <p class="text-xs text-ink-400 text-center py-4">مفيش صور لسه. أضف أول صورة.</p>
+                <p class="text-xs text-ink-400 text-center py-4">مفيش صور لسه — أضف أول صورة.</p>
             @endif
         </div>
     @endif
 
     {{-- Reviews --}}
     @if(isset($reviews) && $reviews->isNotEmpty())
-        <div class="card-light p-5 mb-3">
-            <div class="flex items-center justify-between mb-3">
-                <h3 class="text-sm font-extrabold text-ink-950 inline-flex items-center gap-2">
-                    <span class="text-coral-500">★</span>
-                    آراء الناس
-                    <span class="text-ink-400 font-normal">({{ $reviews->count() }})</span>
-                </h3>
-            </div>
+        <div class="card-light p-4 mb-3">
+            <h3 class="text-sm font-extrabold text-ink-950 inline-flex items-center gap-2 mb-3">
+                <svg viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-coral-500"><polygon points="12 2 15 9 22 9.5 17 14.5 18.5 22 12 18 5.5 22 7 14.5 2 9.5 9 9"/></svg>
+                آراء الناس
+                <span class="text-ink-400 font-normal">({{ $reviews->count() }})</span>
+            </h3>
             <div class="space-y-3">
                 @foreach($reviews as $r)
                     <div class="border-b border-ink-950/8 last:border-0 pb-3 last:pb-0">
@@ -260,22 +271,23 @@
         </div>
     @endif
 
+    {{-- Owner link (small footer chip) --}}
+    @if($business->owner)
+        <a href="{{ route('profile.show', $business->owner->username) }}" class="card-light p-3 mb-3 flex items-center gap-2 hover:bg-cream-100 transition">
+            <x-icon name="user" class="w-4 h-4 text-ink-400"/>
+            <span class="text-xs text-ink-500">صاحب النشاط</span>
+            <span class="font-bold text-ink-950 text-sm">{{ '@'.$business->owner->username }}</span>
+        </a>
+    @endif
+
     {{-- Similar --}}
     @if($similar->isNotEmpty())
-        <h3 class="text-sm font-extrabold text-ink-950 mb-3 mt-5">{{ $sm['label'] }} تاني في نفس المنطقة</h3>
+        <h3 class="text-sm font-extrabold text-ink-950 mb-2 mt-5">{{ $sm['label'] }} تاني في نفس المنطقة</h3>
         <div class="space-y-2">
             @foreach($similar as $b)
                 @include('directory.partials.business-row', ['business' => $b])
             @endforeach
         </div>
     @endif
-
-    {{-- Disclaimer --}}
-    <div class="card-light !shadow-none border-coral-500/20 bg-coral-50 p-3 mt-4">
-        <p class="text-[11px] text-ink-500 leading-relaxed">
-            <b class="text-ink-950">ملاحظة:</b>
-            بنهاوي بيعرض النشاطات للمعلوماتية فقط. تأكّد قبل الشغل/الشراء، ولو حصلت مشكلة بلّغ من زر "تبليغ".
-        </p>
-    </div>
 </div>
 @endsection
