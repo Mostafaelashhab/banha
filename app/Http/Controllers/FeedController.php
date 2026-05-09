@@ -20,7 +20,7 @@ class FeedController extends Controller
 
     public function index(Request $request)
     {
-        $tab    = $request->query('tab', 'hot');
+        $tab    = $request->query('tab', 'new');
         $zoneId = $request->query('zone');
         $page   = max(1, (int) $request->query('page', 1));
 
