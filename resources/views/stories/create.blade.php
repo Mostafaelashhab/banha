@@ -7,7 +7,16 @@
             <x-icon name="arrow-right" class="w-4 h-4"/>
         </a>
         <h1 class="text-xl font-extrabold text-ink-950">ستوري جديدة</h1>
+        <span class="ms-auto text-xs font-bold text-ink-500">
+            {{ ($alive ?? 0) }}/{{ ($max ?? 10) }}
+        </span>
     </div>
+
+    @if(($alive ?? 0) >= ($max ?? 10))
+        <div class="card-light !shadow-none border-blush-500/30 bg-blush-100/50 p-4 mb-3 text-center">
+            <p class="text-blush-500 font-bold text-sm">وصلت للحد الأقصى — استنى لما واحدة تخلص أو احذف واحدة.</p>
+        </div>
+    @endif
 
     <form method="POST" action="{{ route('stories.store') }}" class="card-light p-5 space-y-4" enctype="multipart/form-data">
         @csrf
@@ -30,9 +39,11 @@
         <textarea name="caption" rows="3" maxlength="200" placeholder="ضيف كلمتين (اختياري)…"
                   class="w-full bg-cream-100 rounded-2xl px-4 py-3 text-ink-950 outline-0 border border-ink-950/8 focus:border-coral-500 transition resize-none">{{ old('caption') }}</textarea>
 
-        <button type="submit" class="btn-primary w-full justify-center !py-3">انشر الستوري</button>
+        <button type="submit" class="btn-primary w-full justify-center !py-3" {{ ($alive ?? 0) >= ($max ?? 10) ? 'disabled' : '' }}>
+            انشر الستوري
+        </button>
 
-        <p class="text-[10px] text-ink-400 text-center">حد أقصى ٥ ستوريز في نفس الوقت.</p>
+        <p class="text-[10px] text-ink-400 text-center">حد أقصى {{ $max ?? 10 }} ستوريز نشطة في نفس الوقت.</p>
     </form>
 </div>
 @endsection

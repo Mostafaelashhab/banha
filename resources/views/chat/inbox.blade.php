@@ -23,6 +23,12 @@
                         <div class="flex items-center gap-1.5 text-sm font-bold text-ink-950">
                             {{ $other->username }}
                             <x-verified-badge :tier="$other->verification_tier ?? 'none'"/>
+                            @if($other->isOnline())
+                                <span class="text-[10px] text-mint-700 font-bold inline-flex items-center gap-1">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-mint-500"></span>
+                                    أونلاين
+                                </span>
+                            @endif
                         </div>
                         @if($t->last_message_preview)
                             <div class="text-xs text-ink-500 truncate">{{ $t->last_message_preview }}</div>

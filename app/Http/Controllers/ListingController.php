@@ -22,7 +22,7 @@ class ListingController extends Controller
         if (! isset(Listing::KINDS[$kind])) $kind = 'sale';
 
         $query = Listing::query()
-            ->with(['user:id,username,avatar_seed,avatar_url,verification_tier', 'zone:id,name'])
+            ->with(['user:id,username,avatar_seed,avatar_url,verification_tier,is_admin,last_seen_at', 'zone:id,name'])
             ->where('status', 'active')
             ->where('kind', $kind);
 
@@ -61,7 +61,7 @@ class ListingController extends Controller
     {
         if ($listing->status !== 'active' && Auth::id() !== $listing->user_id) abort(404);
 
-        $listing->load(['user:id,username,avatar_seed,avatar_url,verification_tier', 'zone:id,name']);
+        $listing->load(['user:id,username,avatar_seed,avatar_url,verification_tier,is_admin,last_seen_at', 'zone:id,name']);
         $listing->increment('views');
 
         return view('marketplace.show', compact('listing'));

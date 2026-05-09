@@ -51,7 +51,7 @@ class BookmarkController extends Controller
             ->get()
             ->groupBy('target_type');
 
-        $posts = Post::with(['user:id,username,avatar_seed,avatar_url,verification_tier', 'zone:id,name'])
+        $posts = Post::with(['user:id,username,avatar_seed,avatar_url,verification_tier,is_admin,last_seen_at', 'zone:id,name'])
             ->whereIn('id', $bookmarks->get('post', collect())->pluck('target_id'))
             ->where('status', 'active')
             ->get();

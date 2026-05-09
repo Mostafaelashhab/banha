@@ -26,7 +26,7 @@ class FeedController extends Controller
 
         // ─── Pull each content type ────────────────────────────
         $posts = Post::active()
-            ->with(['user:id,username,avatar_seed,avatar_url,verification_tier', 'zone:id,name'])
+            ->with(['user:id,username,avatar_seed,avatar_url,verification_tier,is_admin,last_seen_at', 'zone:id,name'])
             ->when($zoneId, fn ($q) => $q->where('zone_id', $zoneId))
             ->orderByDesc($tab === 'new' ? 'created_at' : 'hot_score')
             ->orderByDesc('created_at')
@@ -34,7 +34,7 @@ class FeedController extends Controller
             ->get();
 
         $alerts = Alert::active()
-            ->with(['user:id,username,avatar_seed,avatar_url,verification_tier', 'zone:id,name'])
+            ->with(['user:id,username,avatar_seed,avatar_url,verification_tier,is_admin,last_seen_at', 'zone:id,name'])
             ->when($zoneId, fn ($q) => $q->where('zone_id', $zoneId))
             ->latest()
             ->limit(20)

@@ -31,7 +31,7 @@ class SearchController extends Controller
             ->where(function ($w) use ($like) {
                 $w->where('title', 'like', $like)->orWhere('body', 'like', $like);
             })
-            ->with(['user:id,username,avatar_seed,avatar_url,verification_tier', 'zone:id,name'])
+            ->with(['user:id,username,avatar_seed,avatar_url,verification_tier,is_admin,last_seen_at', 'zone:id,name'])
             ->latest()
             ->limit(15)
             ->get();

@@ -143,6 +143,7 @@ Route::middleware('auth')->group(function () {
     // Stories (owner CRUD)
     Route::get('/stories/new',          [\App\Http\Controllers\StoryController::class, 'create'])->name('stories.create');
     Route::post('/stories',             [\App\Http\Controllers\StoryController::class, 'store'])->name('stories.store');
+    Route::get('/stories/{story}/viewers', [\App\Http\Controllers\StoryController::class, 'viewers'])->name('stories.viewers')->whereNumber('story');
     Route::delete('/stories/{story}',   [\App\Http\Controllers\StoryController::class, 'destroy'])->name('stories.destroy');
 
     // DMs

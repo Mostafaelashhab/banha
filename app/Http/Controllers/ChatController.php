@@ -17,7 +17,7 @@ class ChatController extends Controller
     {
         $threads = ChatThread::query()
             ->whereHas('users', fn ($q) => $q->where('users.id', Auth::id()))
-            ->with(['users:id,username,avatar_seed,avatar_url,verification_tier'])
+            ->with(['users:id,username,avatar_seed,avatar_url,verification_tier,last_seen_at'])
             ->orderByDesc('last_message_at')
             ->limit(50)
             ->get();
@@ -36,7 +36,7 @@ class ChatController extends Controller
     {
         $this->authorize($thread);
 
-        $thread->load(['users:id,username,avatar_seed,avatar_url,verification_tier']);
+        $thread->load(['users:id,username,avatar_seed,avatar_url,verification_tier,last_seen_at']);
         $messages = $thread->messages()
             ->with('user:id,username,avatar_url,avatar_seed')
             ->oldest()

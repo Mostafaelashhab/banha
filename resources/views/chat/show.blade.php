@@ -9,7 +9,17 @@
         @if($other)
             <a href="{{ route('profile.show', $other->username) }}" class="flex items-center gap-2">
                 <x-avatar :user="$other" size="sm"/>
-                <span class="font-bold text-ink-950">{{ $other->username }}</span>
+                <div class="leading-tight">
+                    <div class="font-bold text-ink-950">{{ $other->username }}</div>
+                    @if($other->isOnline())
+                        <div class="text-[10px] text-mint-700 font-bold inline-flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-mint-500"></span>
+                            أونلاين الآن
+                        </div>
+                    @elseif($other->last_seen_at)
+                        <div class="text-[10px] text-ink-400">آخر ظهور {{ $other->last_seen_at->diffForHumans() }}</div>
+                    @endif
+                </div>
             </a>
             <button type="button" class="ms-auto w-9 h-9 rounded-full bg-white border border-ink-950/8 grid place-items-center text-ink-400 hover:text-blush-500 hover:bg-blush-100 transition"
                     data-comment-report

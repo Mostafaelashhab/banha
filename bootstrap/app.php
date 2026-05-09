@@ -14,6 +14,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureAdmin::class,
         ]);
+        // Track the authenticated user's last seen timestamp on every web request
+        $middleware->web(append: [
+            \App\Http\Middleware\TrackLastSeen::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

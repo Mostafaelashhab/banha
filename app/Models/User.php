@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['phone', 'username', 'password', 'zone_id', 'avatar_seed', 'avatar_url', 'persona', 'reputation', 'level', 'is_banned', 'is_verified', 'verification_tier', 'verified_at', 'is_admin'])]
+#[Fillable(['phone', 'username', 'password', 'zone_id', 'avatar_seed', 'avatar_url', 'persona', 'reputation', 'level', 'is_banned', 'is_verified', 'verification_tier', 'verified_at', 'is_admin', 'last_seen_at'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -29,12 +29,26 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'password'    => 'hashed',
-            'is_banned'   => 'boolean',
-            'is_verified' => 'boolean',
-            'is_admin'    => 'boolean',
-            'verified_at' => 'datetime',
+            'password'     => 'hashed',
+            'is_banned'    => 'boolean',
+            'is_verified'  => 'boolean',
+            'is_admin'     => 'boolean',
+            'verified_at'  => 'datetime',
+            'last_seen_at' => 'datetime',
         ];
+    }
+
+    /** Online if active in the last 5 minutes. */
+    public function isOnline(): bool
+    {
+        return $this->last_seen_at && $this->last_seen_at->gt(now()->subMinutes(5));
+    }
+
+    public function lastSeenLabel(): string
+    {
+        if (! $this->last_seen_at) return 'مش معروف';
+        if ($this->isOnline()) return 'أونلاين الآن';
+        return 'آخر ظهور '.$this->last_seen_at->diffForHumans();
     }
 
     public function zone(): BelongsTo

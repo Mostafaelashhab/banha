@@ -69,7 +69,10 @@
 @push('scripts')
 <script>
 document.querySelector('[data-geo-go]')?.addEventListener('click', () => {
-    if (!navigator.geolocation) { alert('المتصفح ده مش داعم تحديد الموقع.'); return; }
+    if (!navigator.geolocation) {
+        if (typeof showShareToast === 'function') showShareToast('المتصفح ده مش داعم تحديد الموقع');
+        return;
+    }
     const btn = document.querySelector('[data-geo-go]');
     btn.disabled = true; btn.textContent = 'جاري التحديد…';
     navigator.geolocation.getCurrentPosition(
@@ -79,7 +82,11 @@ document.querySelector('[data-geo-go]')?.addEventListener('click', () => {
             u.searchParams.set('lng', pos.coords.longitude.toFixed(6));
             window.location.href = u.toString();
         },
-        () => { btn.disabled = false; btn.textContent = 'دوّر حواليّا'; alert('مينفعش نوصل لموقعك. تأكّد إن الإذن مفعّل.'); },
+        () => {
+            btn.disabled = false;
+            btn.textContent = 'دوّر حواليّا';
+            if (typeof showShareToast === 'function') showShareToast('مينفعش نوصل لموقعك — فعّل الإذن وحاول تاني');
+        },
         { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
     );
 });

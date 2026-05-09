@@ -23,13 +23,13 @@ class PostController extends Controller
             abort(404);
         }
 
-        $post->load(['user:id,username,avatar_seed,avatar_url,verification_tier', 'zone:id,name', 'poll']);
+        $post->load(['user:id,username,avatar_seed,avatar_url,verification_tier,is_admin,last_seen_at', 'zone:id,name', 'poll']);
 
         // Top-level comments only — replies render recursively via the partial
         $comments = $post->comments()
             ->with([
-                'user:id,username,avatar_seed,avatar_url,verification_tier',
-                'replies.user:id,username,avatar_seed,avatar_url,verification_tier',
+                'user:id,username,avatar_seed,avatar_url,verification_tier,is_admin,last_seen_at',
+                'replies.user:id,username,avatar_seed,avatar_url,verification_tier,is_admin,last_seen_at',
             ])
             ->where('status', 'active')
             ->whereNull('parent_id')

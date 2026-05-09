@@ -100,12 +100,25 @@
                         </span>
                     @endif
                 </div>
-                <div class="text-white/85 text-xs md:text-sm mt-1">
+                <div class="text-white/85 text-xs md:text-sm mt-1 flex items-center gap-1.5 flex-wrap">
+                    @if($user->isOnline())
+                        <span class="inline-flex items-center gap-1 text-mint-300 font-bold">
+                            <span class="w-2 h-2 rounded-full bg-mint-400 animate-pulse"></span>
+                            أونلاين الآن
+                        </span>
+                    @elseif($user->last_seen_at)
+                        <span class="inline-flex items-center gap-1 text-white/70">
+                            <span class="w-2 h-2 rounded-full bg-white/40"></span>
+                            آخر ظهور {{ $user->last_seen_at->diffForHumans() }}
+                        </span>
+                    @endif
                     @if($user->zone)
+                        <span class="text-white/40">·</span>
                         <x-icon name="map-pin" class="w-3 h-3 inline -mt-0.5"/>
                         {{ $user->zone->name }}
                     @endif
-                    · انضم من {{ $user->created_at->diffForHumans(['parts' => 1, 'short' => true]) }}
+                    <span class="text-white/40">·</span>
+                    <span>انضم من {{ $user->created_at->diffForHumans(['parts' => 1, 'short' => true]) }}</span>
                 </div>
 
                 {{-- Top earned badges row (max 5) --}}

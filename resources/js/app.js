@@ -570,11 +570,11 @@ document.addEventListener('click', async (e) => {
         btn.dataset.pushOn = wasOn ? '0' : '1';
         btn.textContent = wasOn ? 'تشغيل التنبيهات' : 'تنبيهات شغّالة ✓';
     } else if (result.reason === 'denied') {
-        alert('فعّل الإشعارات من إعدادات المتصفح علشان تستلم تنبيهات بنهاوي.');
+        showShareToast('فعّل الإشعارات من إعدادات المتصفح');
     } else if (result.reason === 'unsupported') {
-        alert('متصفحك مش بيدعم Push notifications. استخدم Chrome أو Firefox الأحدث.');
+        showShareToast('المتصفح مش بيدعم الإشعارات');
     } else if (result.reason === 'no-vapid') {
-        alert('Push notifications مش مفعّلين على السيرفر لسه.');
+        showShareToast('الإشعارات مش مفعّلة على السيرفر');
     }
     btn.disabled = false;
 });
@@ -725,7 +725,9 @@ document.addEventListener('change', async (e) => {
 
     const original = input.files[0];
     if (original.size > 12 * 1024 * 1024) {
-        alert('الصورة كبيرة قوي (لازم أقل من ١٢ ميجا). جرّب صورة أصغر.');
+        if (typeof showShareToast === 'function') {
+            showShareToast('الصورة كبيرة قوي — جرّب صورة أصغر من ١٢ ميجا');
+        }
         input.value = '';
         return;
     }

@@ -19,7 +19,7 @@ class HashtagController extends Controller
         if ($hashtag) {
             $posts = $hashtag->posts()
                 ->where('posts.status', 'active')
-                ->with(['user:id,username,avatar_seed,avatar_url,verification_tier', 'zone:id,name'])
+                ->with(['user:id,username,avatar_seed,avatar_url,verification_tier,is_admin,last_seen_at', 'zone:id,name'])
                 ->latest('posts.created_at')
                 ->paginate(20);
         } else {
@@ -30,7 +30,7 @@ class HashtagController extends Controller
                     $w->where('body',  'like', '%#'.$tag.'%')
                       ->orWhere('title', 'like', '%#'.$tag.'%');
                 })
-                ->with(['user:id,username,avatar_seed,avatar_url,verification_tier', 'zone:id,name'])
+                ->with(['user:id,username,avatar_seed,avatar_url,verification_tier,is_admin,last_seen_at', 'zone:id,name'])
                 ->latest()
                 ->paginate(20);
 

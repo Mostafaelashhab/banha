@@ -26,11 +26,20 @@
     </div>
 
     <div class="text-center text-xs text-ink-400 mt-3">
-        ينتهي {{ $story->expires_at->diffForHumans() }} · 👀 {{ $story->views_count }} مشاهدة
+        ينتهي {{ $story->expires_at->diffForHumans() }}
     </div>
 
     @auth
         @if(auth()->id() === $story->user_id || auth()->user()->is_admin)
+            {{-- Owner: tappable view count → opens viewers list --}}
+            <a href="{{ route('stories.viewers', $story) }}" class="card-light mt-3 p-3 flex items-center justify-center gap-2 hover:bg-cream-100 transition">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-coral-600">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                </svg>
+                <span class="font-bold text-ink-950 text-sm">{{ $story->views_count }} مشاهدة</span>
+                <span class="text-xs text-ink-400">— اضغط شوف اللي شافوا</span>
+            </a>
+
             <form method="POST" action="{{ route('stories.destroy', $story) }}" class="mt-3"
                   data-confirm="حذف الستوري؟" data-confirm-tone="danger">
                 @csrf @method('DELETE')
@@ -38,6 +47,14 @@
                     <x-icon name="trash" class="w-4 h-4"/> احذف
                 </button>
             </form>
+        @else
+            {{-- Public: just shows count --}}
+            <div class="text-center text-xs text-ink-400 mt-1 inline-flex items-center justify-center gap-1 w-full">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                </svg>
+                {{ $story->views_count }} مشاهدة
+            </div>
         @endif
     @endauth
 </div>
