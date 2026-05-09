@@ -11,14 +11,21 @@
 
 <div id="comment-{{ $c->id }}" class="card-light p-3.5 {{ $depth > 0 ? 'me-6 mt-2' : '' }}" data-comment-id="{{ $c->id }}">
     <div class="flex items-center gap-2 mb-1.5">
-        <x-avatar :user="$cIsAnon ? null : $c->user" :name="$cDisplay" :anon="$cIsAnon" size="sm"/>
-        <span class="text-sm font-bold text-ink-950 inline-flex items-center gap-1">
-            @if($cIsAnon)<x-icon name="mask" class="w-3 h-3 text-coral-600"/>@endif
-            {{ $cDisplay }}
-            @if(! $cIsAnon)
+        @if($cIsAnon)
+            <x-avatar :user="null" :name="$cDisplay" :anon="true" size="sm"/>
+            <span class="text-sm font-bold text-ink-950 inline-flex items-center gap-1">
+                <x-icon name="mask" class="w-3 h-3 text-coral-600"/>
+                {{ $cDisplay }}
+            </span>
+        @else
+            <a href="{{ route('profile.show', $c->user->username) }}" class="shrink-0">
+                <x-avatar :user="$c->user" :name="$cDisplay" :anon="false" size="sm"/>
+            </a>
+            <a href="{{ route('profile.show', $c->user->username) }}" class="text-sm font-bold text-ink-950 inline-flex items-center gap-1 hover:text-coral-600 transition">
+                {{ $cDisplay }}
                 <x-verified-badge :tier="$cTier"/>
-            @endif
-        </span>
+            </a>
+        @endif
         <span class="text-[11px] text-ink-400">{{ $c->created_at->diffForHumans() }}</span>
 
         {{-- Overflow menu --}}

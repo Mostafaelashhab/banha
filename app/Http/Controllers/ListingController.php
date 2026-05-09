@@ -35,7 +35,15 @@ class ListingController extends Controller
             });
         }
 
-        $listings = $query->latest()->paginate(20)->withQueryString();
+        $listings = $query
+            ->orderByRaw('CASE WHEN featured_until > NOW() THEN 0 ELSE 1 END')
+            ->latest()
+            ->paginate(20)
+            ->withQueryString();
+
+        if ($request->boolean('partial') || $request->ajax()) {
+            return view('marketplace._page', compact('listings'));
+        }
 
         return view('marketplace.index', [
             'listings'      => $listings,

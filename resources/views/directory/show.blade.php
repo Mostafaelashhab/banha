@@ -25,7 +25,10 @@
         </button>
 
         @auth
-            @if(auth()->id() === $business->owner_user_id)
+            @if(auth()->id() === $business->owner_user_id || auth()->user()->is_admin)
+                <a href="{{ route('directory.stats', $business) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-mint-100 text-mint-700 text-xs font-bold hover:bg-mint-500 hover:text-white transition" title="إحصائيات">
+                    📊
+                </a>
                 <a href="{{ route('directory.edit', $business) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-coral-100 text-coral-700 text-xs font-bold hover:bg-coral-500 hover:text-white transition">
                     <x-icon name="more" class="w-3.5 h-3.5"/>
                     عدّل
@@ -56,6 +59,11 @@
             <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-1.5 flex-wrap">
                     <h2 class="text-xl md:text-2xl font-black text-ink-950">{{ $business->name }}</h2>
+                    @if($business->isPromoted())
+                        <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-honey-500 text-ink-950">
+                            ⭐ مُروَّج
+                        </span>
+                    @endif
                     @if($business->is_verified)
                         <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-mint-100 text-mint-700">
                             <x-icon name="check" class="w-3 h-3"/>
@@ -93,7 +101,7 @@
         {{-- Action buttons --}}
         <div class="grid grid-cols-2 gap-2 mt-4">
             @if($business->phone)
-                <a href="tel:{{ $business->phone }}" class="btn-primary justify-center !py-3 text-sm">
+                <a href="tel:{{ $business->phone }}" data-track-click="phone" data-business="{{ $business->id }}" class="btn-primary justify-center !py-3 text-sm">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="w-4 h-4">
                         <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
                     </svg>
@@ -102,6 +110,7 @@
             @endif
             @if($business->whatsapp)
                 <a href="https://wa.me/{{ \App\Services\WaapiService::toIntl($business->whatsapp) }}" target="_blank"
+                   data-track-click="whatsapp" data-business="{{ $business->id }}"
                    class="inline-flex items-center justify-center gap-2 py-3 px-5 rounded-full font-bold text-white text-sm transition hover:scale-[1.02]"
                    style="background: linear-gradient(135deg, #25D366, #128C7E); box-shadow: 0 12px 24px -10px rgba(37, 211, 102, .55)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="w-4 h-4">
@@ -159,6 +168,49 @@
             </div>
         @endif
     </div>
+
+    {{-- Gallery --}}
+    @php $isOwner = auth()->check() && (auth()->id() === $business->owner_user_id || auth()->user()->is_admin); @endphp
+    @if($business->photos->isNotEmpty() || $isOwner)
+        <div class="card-light p-4 mb-3">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-extrabold text-ink-950">📸 صور النشاط</h3>
+                @if($isOwner && $business->photos->count() < 6)
+                    <form method="POST" action="{{ route('business.photo.store', $business) }}" enctype="multipart/form-data" class="inline">
+                        @csrf
+                        <label class="cursor-pointer text-xs font-bold text-coral-600 hover:underline">
+                            + أضف صورة
+                            <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" class="hidden" onchange="this.form.submit()">
+                        </label>
+                    </form>
+                @endif
+            </div>
+            @if($business->photos->isNotEmpty())
+                <div class="grid grid-cols-3 gap-2">
+                    @foreach($business->photos as $ph)
+                        <div class="relative aspect-square">
+                            <img src="{{ $ph->url }}" alt="" loading="lazy" class="w-full h-full object-cover rounded-xl">
+                            @if($isOwner)
+                                <form method="POST" action="{{ route('business.photo.destroy', $ph) }}"
+                                      data-confirm="حذف الصورة؟" data-confirm-tone="danger"
+                                      class="absolute top-1 end-1">
+                                    @csrf @method('DELETE')
+                                    <button class="w-7 h-7 rounded-full bg-white/90 grid place-items-center text-blush-500 hover:bg-blush-500 hover:text-white transition" aria-label="حذف">
+                                        <x-icon name="trash" class="w-3.5 h-3.5"/>
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+                @if($isOwner)
+                    <p class="text-[10px] text-ink-400 mt-2">{{ $business->photos->count() }}/6 — الحد الأقصى ٦ صور.</p>
+                @endif
+            @else
+                <p class="text-xs text-ink-400 text-center py-4">مفيش صور لسه. أضف أول صورة.</p>
+            @endif
+        </div>
+    @endif
 
     {{-- Reviews --}}
     @if(isset($reviews) && $reviews->isNotEmpty())

@@ -10,8 +10,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable([
     'name', 'category', 'sub_type', 'custom_sub_type', 'zone_id', 'owner_user_id',
     'description', 'phone', 'whatsapp', 'address', 'lat', 'lng',
-    'hours', 'is_24h', 'is_verified', 'is_active',
-    'rating_avg', 'ratings_count', 'emoji', 'photo_url',
+    'hours', 'is_24h', 'is_verified', 'promoted_until', 'is_active',
+    'rating_avg', 'ratings_count', 'views_count', 'phone_clicks', 'whatsapp_clicks',
+    'emoji', 'photo_url',
 ])]
 class Business extends Model
 {
@@ -112,13 +113,19 @@ class Business extends Model
     protected function casts(): array
     {
         return [
-            'is_24h'       => 'boolean',
-            'is_verified'  => 'boolean',
-            'is_active'    => 'boolean',
-            'lat'          => 'decimal:7',
-            'lng'          => 'decimal:7',
-            'rating_avg'   => 'decimal:1',
+            'is_24h'         => 'boolean',
+            'is_verified'    => 'boolean',
+            'is_active'      => 'boolean',
+            'promoted_until' => 'datetime',
+            'lat'            => 'decimal:7',
+            'lng'            => 'decimal:7',
+            'rating_avg'     => 'decimal:1',
         ];
+    }
+
+    public function isPromoted(): bool
+    {
+        return $this->promoted_until && $this->promoted_until->isFuture();
     }
 
     public function zone(): BelongsTo
@@ -134,6 +141,11 @@ class Business extends Model
     public function reviews(): HasMany
     {
         return $this->hasMany(BusinessReview::class)->latest('reviewed_at');
+    }
+
+    public function photos(): HasMany
+    {
+        return $this->hasMany(BusinessPhoto::class)->orderBy('sort');
     }
 
     public function categoryMeta(): array

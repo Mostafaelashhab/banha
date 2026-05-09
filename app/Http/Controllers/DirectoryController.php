@@ -13,6 +13,60 @@ use Illuminate\Validation\ValidationException;
 
 class DirectoryController extends Controller
 {
+    /**
+     * Businesses sorted by distance from user-provided lat/lng (Haversine).
+     * Cheap: just SQL math, no PHP loops, no extra storage.
+     */
+    public function nearby(Request $request)
+    {
+        $lat = (float) $request->query('lat', 0);
+        $lng = (float) $request->query('lng', 0);
+        $category = $request->query('category');
+
+        if ($lat === 0.0 || $lng === 0.0) {
+            return view('directory.nearby', [
+                'businesses' => collect(),
+                'lat'        => null,
+                'lng'        => null,
+                'category'   => $category,
+                'categories' => Business::CATEGORIES,
+            ]);
+        }
+
+        // Haversine in km — bounding box first for index efficiency, then exact distance
+        $deg = 0.18;  // ~20km bounding box (1° lat ≈ 111km)
+        $minLat = $lat - $deg; $maxLat = $lat + $deg;
+        $minLng = $lng - $deg; $maxLng = $lng + $deg;
+
+        $query = Business::query()
+            ->where('is_active', true)
+            ->whereNotNull('lat')->whereNotNull('lng')
+            ->whereBetween('lat', [$minLat, $maxLat])
+            ->whereBetween('lng', [$minLng, $maxLng])
+            ->selectRaw('*, (
+                6371 * acos(
+                    cos(radians(?)) * cos(radians(lat)) *
+                    cos(radians(lng) - radians(?)) +
+                    sin(radians(?)) * sin(radians(lat))
+                )
+            ) AS distance_km', [$lat, $lng, $lat])
+            ->with('zone:id,name')
+            ->orderBy('distance_km')
+            ->limit(40);
+
+        if ($category && isset(Business::CATEGORIES[$category])) {
+            $query->where('category', $category);
+        }
+
+        return view('directory.nearby', [
+            'businesses' => $query->get(),
+            'lat'        => $lat,
+            'lng'        => $lng,
+            'category'   => $category,
+            'categories' => Business::CATEGORIES,
+        ]);
+    }
+
     public function index()
     {
         $counts = DB::table('businesses')
@@ -63,7 +117,10 @@ class DirectoryController extends Controller
             });
         }
 
-        $businesses = $query->orderByDesc('is_verified')
+        // Promoted (paid) bumps to the top, then verified, then by rating
+        $businesses = $query
+            ->orderByRaw('CASE WHEN promoted_until > NOW() THEN 0 ELSE 1 END')
+            ->orderByDesc('is_verified')
             ->orderByDesc('rating_avg')
             ->orderByDesc('is_24h')
             ->paginate(20)
@@ -82,6 +139,10 @@ class DirectoryController extends Controller
             ->groupBy('sub_type')
             ->pluck('c', 'sub_type')
             ->all();
+
+        if ($request->boolean('partial') || $request->ajax()) {
+            return view('directory.partials.category-page', compact('businesses'));
+        }
 
         return view('directory.category', [
             'category'      => $category,
@@ -102,7 +163,12 @@ class DirectoryController extends Controller
             abort(404);
         }
 
-        $business->load(['zone', 'owner:id,username']);
+        $business->load(['zone', 'owner:id,username', 'photos']);
+
+        // Track view (don't count owner's own views)
+        if (! Auth::check() || Auth::id() !== $business->owner_user_id) {
+            $business->increment('views_count');
+        }
 
         $similar = Business::query()
             ->where('is_active', true)
@@ -228,6 +294,23 @@ class DirectoryController extends Controller
         $this->authorizeOwner($business);
         $business->update(['is_active' => false]);
         return redirect()->route('directory.mine')->with('flash', 'تم حذف النشاط.');
+    }
+
+    /** Track a contact click (phone or whatsapp). Returns 204 — used by JS beacon. */
+    public function trackClick(Business $business, Request $request)
+    {
+        $kind = $request->query('kind');
+        if ($kind === 'phone')    $business->increment('phone_clicks');
+        if ($kind === 'whatsapp') $business->increment('whatsapp_clicks');
+        return response()->noContent();
+    }
+
+    /** Owner analytics dashboard for a single business. */
+    public function stats(Business $business)
+    {
+        $this->authorizeOwner($business);
+        $business->loadCount('reviews');
+        return view('directory.stats', compact('business'));
     }
 
     private function authorizeOwner(Business $business): void

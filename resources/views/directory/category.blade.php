@@ -55,20 +55,16 @@
     </div>
 
     {{-- Results --}}
-    <div class="space-y-2">
-        @forelse($businesses as $b)
-            @include('directory.partials.business-row', ['business' => $b])
-        @empty
-            <div class="card-light p-10 text-center">
-                <div class="text-3xl mb-3">{{ $meta['emoji'] }}</div>
-                <h3 class="font-extrabold text-ink-950 mb-1">مفيش نتيجة</h3>
-                <p class="text-ink-500 text-sm">جرّب filter تاني أو اطلب من الإدارة تضيف نشاطك.</p>
-            </div>
-        @endforelse
-    </div>
-
-    @if($businesses->hasPages())
-        <div class="mt-6">{{ $businesses->links() }}</div>
+    @if($businesses->isEmpty())
+        <div class="card-light p-10 text-center">
+            <div class="text-3xl mb-3">{{ $meta['emoji'] }}</div>
+            <h3 class="font-extrabold text-ink-950 mb-1">مفيش نتيجة</h3>
+            <p class="text-ink-500 text-sm">جرّب filter تاني أو اطلب من الإدارة تضيف نشاطك.</p>
+        </div>
+    @else
+        <div class="space-y-2" data-infinite-scroll>
+            @include('directory.partials.category-page', ['businesses' => $businesses])
+        </div>
     @endif
 </div>
 @endsection

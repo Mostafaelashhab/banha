@@ -45,6 +45,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->n
 Route::get('/directory',                     [DirectoryController::class, 'index'])->name('directory.index');
 Route::get('/directory/business/{business}', [DirectoryController::class, 'show'])->name('directory.show');
 Route::get('/directory/c/{category}',        [DirectoryController::class, 'category'])->name('directory.category');
+Route::get('/directory/business/{business}/click', [DirectoryController::class, 'trackClick'])->name('directory.track');
 
 // Public marketplace + search + hashtag pages
 Route::get('/market',                  [\App\Http\Controllers\ListingController::class, 'index'])->name('marketplace.index');
@@ -52,6 +53,14 @@ Route::get('/market/{listing}',        [\App\Http\Controllers\ListingController:
 Route::get('/search',                  [\App\Http\Controllers\SearchController::class, 'index'])->name('search');
 Route::get('/tag/{tag}',               [\App\Http\Controllers\HashtagController::class, 'show'])->name('hashtag.show');
 Route::get('/tags',                    [\App\Http\Controllers\HashtagController::class, 'trending'])->name('hashtag.trending');
+
+// Public: users discovery + nearby + events + stories
+Route::get('/users',                   [BrowseController::class, 'users'])->name('users.index');
+Route::get('/nearby',                  [DirectoryController::class, 'nearby'])->name('directory.nearby');
+Route::get('/events',                  [\App\Http\Controllers\EventController::class, 'index'])->name('events.index');
+Route::get('/events/{event}',          [\App\Http\Controllers\EventController::class, 'show'])->name('events.show')->whereNumber('event');
+Route::get('/stories',                 [\App\Http\Controllers\StoryController::class, 'index'])->name('stories.index');
+Route::get('/stories/{story}',         [\App\Http\Controllers\StoryController::class, 'show'])->name('stories.show')->whereNumber('story');
 
 // Authenticated app routes
 Route::middleware('auth')->group(function () {
@@ -69,6 +78,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/directory',                               [DirectoryController::class, 'store'])->name('directory.store');
     Route::get('/directory/mine',                           [DirectoryController::class, 'myListings'])->name('directory.mine');
     Route::get('/directory/business/{business}/edit',       [DirectoryController::class, 'edit'])->name('directory.edit');
+    Route::get('/directory/business/{business}/stats',      [DirectoryController::class, 'stats'])->name('directory.stats');
     Route::patch('/directory/business/{business}',          [DirectoryController::class, 'update'])->name('directory.update');
     Route::delete('/directory/business/{business}',         [DirectoryController::class, 'destroy'])->name('directory.destroy');
 
@@ -101,6 +111,34 @@ Route::middleware('auth')->group(function () {
     // Polls
     Route::post('/polls/{poll}/vote', [\App\Http\Controllers\PollController::class, 'vote'])->name('polls.vote');
 
+    // Follow + personalized feed
+    Route::post('/users/{user}/follow', [\App\Http\Controllers\FollowController::class, 'toggle'])->name('users.follow');
+    Route::get('/following',            [\App\Http\Controllers\FollowController::class, 'followingFeed'])->name('feed.following');
+
+    // Business photo gallery (owner CRUD)
+    Route::post('/directory/business/{business}/photo',  [\App\Http\Controllers\BusinessPhotoController::class, 'store'])->name('business.photo.store');
+    Route::delete('/business-photos/{photo}',            [\App\Http\Controllers\BusinessPhotoController::class, 'destroy'])->name('business.photo.destroy');
+
+    // Events (owner CRUD)
+    Route::get('/events/new',           [\App\Http\Controllers\EventController::class, 'create'])->name('events.create');
+    Route::post('/events',              [\App\Http\Controllers\EventController::class, 'store'])->name('events.store');
+    Route::post('/events/{event}/attend',   [\App\Http\Controllers\EventController::class, 'attend'])->name('events.attend');
+    Route::post('/events/{event}/unattend', [\App\Http\Controllers\EventController::class, 'unattend'])->name('events.unattend');
+    Route::delete('/events/{event}',    [\App\Http\Controllers\EventController::class, 'destroy'])->name('events.destroy');
+
+    // Stories (owner CRUD)
+    Route::get('/stories/new',          [\App\Http\Controllers\StoryController::class, 'create'])->name('stories.create');
+    Route::post('/stories',             [\App\Http\Controllers\StoryController::class, 'store'])->name('stories.store');
+    Route::delete('/stories/{story}',   [\App\Http\Controllers\StoryController::class, 'destroy'])->name('stories.destroy');
+
+    // DMs
+    Route::get('/chat',                  [\App\Http\Controllers\ChatController::class, 'inbox'])->name('chat.inbox');
+    Route::get('/chat/with/{user}',      [\App\Http\Controllers\ChatController::class, 'open'])->name('chat.open');
+    Route::get('/chat/{thread}',         [\App\Http\Controllers\ChatController::class, 'show'])->name('chat.show')->whereNumber('thread');
+    Route::post('/chat/{thread}',        [\App\Http\Controllers\ChatController::class, 'send'])->name('chat.send')->whereNumber('thread');
+    Route::get('/chat/{thread}/poll',    [\App\Http\Controllers\ChatController::class, 'poll'])->name('chat.poll')->whereNumber('thread');
+    Route::post('/chat/{thread}/report', [\App\Http\Controllers\ChatController::class, 'report'])->name('chat.report')->whereNumber('thread');
+
     Route::get('/me',                 [ProfileController::class, 'show'])->name('profile.me');
     Route::post('/me/profile',        [ProfileSettingsController::class, 'updateProfile'])->name('profile.update');
     Route::post('/me/password',       [ProfileSettingsController::class, 'changePassword'])->name('profile.password');
@@ -125,8 +163,10 @@ Route::middleware('auth')->group(function () {
         Route::post('/reports/{report}/resolve',     [AdminController::class, 'reportResolve'])->name('reports.resolve');
 
         Route::get('/businesses',                    [AdminController::class, 'businesses'])->name('businesses');
-        Route::post('/businesses/{business}/verify', [AdminController::class, 'businessVerify'])->name('businesses.verify');
-        Route::post('/businesses/{business}/toggle', [AdminController::class, 'businessToggleActive'])->name('businesses.toggle');
+        Route::post('/businesses/{business}/verify',  [AdminController::class, 'businessVerify'])->name('businesses.verify');
+        Route::post('/businesses/{business}/toggle',  [AdminController::class, 'businessToggleActive'])->name('businesses.toggle');
+        Route::post('/businesses/{business}/promote', [AdminController::class, 'businessPromote'])->name('businesses.promote');
+        Route::post('/listings/{listing}/feature',    [AdminController::class, 'listingFeature'])->name('listings.feature');
 
         Route::get('/broadcast',                     [AdminController::class, 'broadcastForm'])->name('broadcast');
         Route::post('/broadcast',                    [AdminController::class, 'broadcastSend'])->name('broadcast.send');

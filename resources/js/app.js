@@ -238,7 +238,7 @@ setTimeout(() => document.querySelectorAll('[data-flash]').forEach(el => el.remo
     const fetchNext = async () => {
         if (loading || !hasMore || !nextUrl) return;
         loading = true;
-        loader?.classList.remove('hidden');
+        // No spinner — feel instant (next page is prefetched well before user reaches it)
 
         try {
             const url = new URL(nextUrl, location.origin);
@@ -286,7 +286,7 @@ setTimeout(() => document.querySelectorAll('[data-flash]').forEach(el => el.remo
         for (const e of entries) {
             if (e.isIntersecting) fetchNext();
         }
-    }, { rootMargin: '600px 0px 600px 0px' });
+    }, { rootMargin: '1500px 0px 1500px 0px' });
 
     const sentinel = list.querySelector('[data-feed-end]');
     if (sentinel) io.observe(sentinel);
@@ -326,7 +326,8 @@ window.addEventListener('beforeinstallprompt', (e) => {
 
 function recentlyDismissed() {
     const v = localStorage.getItem(dismissedKey);
-    return v && (Date.now() - Number(v)) < 7 * 24 * 60 * 60 * 1000;
+    // Re-prompt every 3 days (was 7 — too lenient for first-visit nudge)
+    return v && (Date.now() - Number(v)) < 3 * 24 * 60 * 60 * 1000;
 }
 
 function dismissInstall() {
@@ -415,12 +416,12 @@ function maybeShowInstallPrompt() {
     if (recentlyDismissed()) return;
 
     if (isIOS) {
-        // Show iOS sheet after 4s for first-time visitors
+        // Show iOS sheet after 2s for first-time visitors (faster nudge)
         setTimeout(() => {
-            if (!document.querySelector('.modal-wrap')) showIOSInstallSheet();
-        }, 4000);
+            if (!document.querySelector('.modal-wrap.open')) showIOSInstallSheet();
+        }, 2000);
     }
-    // Android/Desktop: handled via beforeinstallprompt event
+    // Android/Desktop: handled via beforeinstallprompt event (browser fires it)
 }
 
 // expose for manual trigger (e.g., from a "حمّل التطبيق" button)
@@ -501,8 +502,12 @@ window.banhawyPush = { subscribe: pushSubscribe, unsubscribe: pushUnsubscribe };
         if (Notification.permission !== 'default') return false;
         if (!document.querySelector('meta[name="csrf-token"]')) return false;
         if (!document.querySelector('.bottom-nav')) return false;
+        // Don't fight with PWA install banner / other modal
+        if (document.getElementById('install-banner')) return false;
+        if (document.querySelector('.modal-wrap.open')) return false;
         const last = localStorage.getItem(KEY);
-        if (last && (Date.now() - Number(last)) < 7 * 24 * 60 * 60 * 1000) return false;
+        // Re-ask after 3 days if dismissed (was 7 — too lenient)
+        if (last && (Date.now() - Number(last)) < 3 * 24 * 60 * 60 * 1000) return false;
         return true;
     };
 
@@ -545,9 +550,13 @@ window.banhawyPush = { subscribe: pushSubscribe, unsubscribe: pushUnsubscribe };
         };
     };
 
-    if (shouldAsk()) {
-        setTimeout(() => { if (shouldAsk()) askNow(); }, 3500);
-    }
+    // Try after 3.5s. If install banner is up, re-poll every 3s for up to 30s
+    let tries = 0;
+    const tryShow = () => {
+        if (shouldAsk()) { askNow(); return; }
+        if (++tries < 10 && Notification.permission === 'default') setTimeout(tryShow, 3000);
+    };
+    setTimeout(tryShow, 3500);
 })();
 
 document.addEventListener('click', async (e) => {
@@ -675,6 +684,75 @@ function showShareToast(text) {
         setTimeout(() => t.remove(), 300);
     }, 2200);
 }
+
+// ─── Client-side image compression (prevents PHP post_max_size silent fails) ──
+// Compresses any picked image file to < 1MB before upload, so even 4K phone photos work.
+async function compressImageFile(file) {
+    if (!file || !file.type || !file.type.startsWith('image/')) return file;
+    if (file.size < 800 * 1024) return file; // already small enough
+
+    return new Promise((resolve) => {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+            URL.revokeObjectURL(url);
+            const maxW = 1280;
+            const ratio = Math.min(1, maxW / img.naturalWidth);
+            const w = Math.round(img.naturalWidth * ratio);
+            const h = Math.round(img.naturalHeight * ratio);
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            canvas.toBlob((blob) => {
+                if (!blob) { resolve(file); return; }
+                const newFile = new File([blob], (file.name || 'photo').replace(/\.\w+$/, '') + '.jpg', { type: 'image/jpeg' });
+                resolve(newFile.size < file.size ? newFile : file);
+            }, 'image/jpeg', 0.78);
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+        img.src = url;
+    });
+}
+
+document.addEventListener('change', async (e) => {
+    const input = e.target;
+    if (!(input instanceof HTMLInputElement) || input.type !== 'file') return;
+    const accept = (input.accept || '').toLowerCase();
+    if (!accept.includes('image')) return;
+    if (!input.files || !input.files[0]) return;
+    if (input.dataset.compressed === '1') { input.dataset.compressed = ''; return; }
+
+    const original = input.files[0];
+    if (original.size > 12 * 1024 * 1024) {
+        alert('الصورة كبيرة قوي (لازم أقل من ١٢ ميجا). جرّب صورة أصغر.');
+        input.value = '';
+        return;
+    }
+
+    try {
+        const compressed = await compressImageFile(original);
+        if (compressed !== original) {
+            const dt = new DataTransfer();
+            dt.items.add(compressed);
+            input.dataset.compressed = '1';
+            input.files = dt.files;
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    } catch (err) { /* let server handle it */ }
+}, true);
+
+// ─── Business contact-click tracking (sendBeacon, doesn't block navigation) ──
+document.addEventListener('click', (e) => {
+    const a = e.target.closest('[data-track-click][data-business]');
+    if (!a) return;
+    const url = '/directory/business/' + encodeURIComponent(a.dataset.business) + '/click?kind=' + encodeURIComponent(a.dataset.trackClick);
+    if (navigator.sendBeacon) {
+        navigator.sendBeacon(url);
+    } else {
+        fetch(url, { method: 'GET', keepalive: true, credentials: 'same-origin' });
+    }
+});
 
 // ─── Bookmark toggle (AJAX) ──────────────────────────────────
 document.addEventListener('click', async (e) => {

@@ -298,6 +298,37 @@ class AdminController extends Controller
         return back()->with('flash', $business->is_active ? 'النشاط اترجع.' : 'النشاط اتقفل.');
     }
 
+    /** Admin: extend (or set) the business promotion by N days. days=0 cancels promotion. */
+    public function businessPromote(Business $business, Request $request)
+    {
+        $days = (int) $request->input('days', 7);
+        if ($days <= 0) {
+            $business->update(['promoted_until' => null]);
+            return back()->with('flash', 'تم إلغاء الترويج.');
+        }
+        // Extend from now or from existing promotion (whichever is later)
+        $start = ($business->promoted_until && $business->promoted_until->isFuture())
+            ? $business->promoted_until
+            : now();
+        $business->update(['promoted_until' => $start->copy()->addDays($days)]);
+        return back()->with('flash', "تم الترويج لمدة {$days} يوم — لحد ".$business->promoted_until->translatedFormat('d M Y'));
+    }
+
+    /** Admin: same for marketplace listings. */
+    public function listingFeature(\App\Models\Listing $listing, Request $request)
+    {
+        $days = (int) $request->input('days', 7);
+        if ($days <= 0) {
+            $listing->update(['featured_until' => null]);
+            return back()->with('flash', 'تم إلغاء التمييز.');
+        }
+        $start = ($listing->featured_until && $listing->featured_until->isFuture())
+            ? $listing->featured_until
+            : now();
+        $listing->update(['featured_until' => $start->copy()->addDays($days)]);
+        return back()->with('flash', "تم التمييز لمدة {$days} يوم");
+    }
+
     public function broadcastForm()
     {
         return view('admin.broadcast', [

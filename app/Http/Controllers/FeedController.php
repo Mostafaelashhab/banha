@@ -47,6 +47,16 @@ class FeedController extends Controller
             ->limit(20)
             ->get();
 
+        // Marketplace listings — featured first, then recent
+        $listings = \App\Models\Listing::query()
+            ->where('status', 'active')
+            ->with(['user:id,username,avatar_seed,avatar_url', 'zone:id,name'])
+            ->when($zoneId, fn ($q) => $q->where('zone_id', $zoneId))
+            ->orderByRaw('CASE WHEN featured_until > NOW() THEN 0 ELSE 1 END')
+            ->latest()
+            ->limit(20)
+            ->get();
+
         $businesses = Business::query()
             ->where('is_active', true)
             ->with('zone:id,name')
@@ -59,9 +69,10 @@ class FeedController extends Controller
 
         // ─── Build chronological content stream ───────────────
         $content = collect()
-            ->concat($posts->map(fn ($p)  => ['kind' => 'post',  'at' => $p->created_at, 'data' => $p]))
-            ->concat($alerts->map(fn ($a) => ['kind' => 'alert', 'at' => $a->created_at, 'data' => $a]))
-            ->concat($prices->map(fn ($p) => ['kind' => 'price', 'at' => $p->created_at, 'data' => $p]));
+            ->concat($posts->map(fn ($p)    => ['kind' => 'post',    'at' => $p->created_at, 'data' => $p]))
+            ->concat($alerts->map(fn ($a)   => ['kind' => 'alert',   'at' => $a->created_at, 'data' => $a]))
+            ->concat($prices->map(fn ($p)   => ['kind' => 'price',   'at' => $p->created_at, 'data' => $p]))
+            ->concat($listings->map(fn ($l) => ['kind' => 'listing', 'at' => $l->created_at, 'data' => $l]));
 
         if ($tab === 'hot') {
             $content = $content->sortBy(function ($i) {
@@ -130,6 +141,14 @@ class FeedController extends Controller
             ]);
         }
 
+        // Active stories for top strip — group by user, latest first
+        $stories = \App\Models\Story::query()
+            ->where('expires_at', '>', now())
+            ->with('user:id,username,avatar_seed,avatar_url')
+            ->orderByDesc('created_at')
+            ->get()
+            ->groupBy('user_id');
+
         return view('feed', [
             'items'      => $sliced,
             'paginator'  => $paginator,
@@ -138,6 +157,7 @@ class FeedController extends Controller
             'activeZone' => $zoneId ? (int) $zoneId : null,
             'userVotes'  => $userVotes,
             'categories' => Post::CATEGORIES,
+            'stories'    => $stories,
         ]);
     }
 }

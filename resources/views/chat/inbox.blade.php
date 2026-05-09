@@ -1,0 +1,39 @@
+@extends('layouts.app', ['title' => 'الرسايل · بنهاوي'])
+
+@section('content')
+<div class="max-w-2xl mx-auto">
+    <h1 class="text-xl font-extrabold text-ink-950 mb-4">💬 الرسايل</h1>
+
+    @if($threads->isEmpty())
+        <div class="card-light p-10 text-center">
+            <div class="icon-tile mx-auto mb-4 text-coral-600 w-16 h-16">
+                <x-icon name="comment" class="w-7 h-7"/>
+            </div>
+            <h3 class="text-xl font-extrabold text-ink-950 mb-1">مفيش رسايل لسه</h3>
+            <p class="text-ink-500 text-sm">لما حد يبعتلك أو تبعت لحد، الرسايل هتظهر هنا.</p>
+        </div>
+    @else
+        <div class="card-light p-2 space-y-1">
+            @foreach($threads as $t)
+                @php $other = $t->users->firstWhere('id', '!=', auth()->id()); @endphp
+                @if(! $other) @continue @endif
+                <a href="{{ route('chat.show', $t) }}" class="flex items-center gap-3 p-3 rounded-xl hover:bg-cream-100 transition">
+                    <x-avatar :user="$other" size="md"/>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-1.5 text-sm font-bold text-ink-950">
+                            {{ $other->username }}
+                            <x-verified-badge :tier="$other->verification_tier ?? 'none'"/>
+                        </div>
+                        @if($t->last_message_preview)
+                            <div class="text-xs text-ink-500 truncate">{{ $t->last_message_preview }}</div>
+                        @endif
+                    </div>
+                    @if($t->last_message_at)
+                        <div class="text-[10px] text-ink-400 shrink-0">{{ $t->last_message_at->diffForHumans() }}</div>
+                    @endif
+                </a>
+            @endforeach
+        </div>
+    @endif
+</div>
+@endsection

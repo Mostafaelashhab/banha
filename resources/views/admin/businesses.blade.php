@@ -72,6 +72,30 @@
                             </button>
                         </form>
                     </td>
+                    <td>
+                        @if($b->isPromoted())
+                            <span class="a-pill bg-honey-500 text-ink-950" title="ينتهي {{ $b->promoted_until->translatedFormat('d M') }}">
+                                ⭐ {{ (int) now()->diffInDays($b->promoted_until, false) }} يوم
+                            </span>
+                            <form method="POST" action="{{ route('admin.businesses.promote', $b) }}" class="inline">
+                                @csrf
+                                <input type="hidden" name="days" value="0">
+                                <button class="a-pill bg-blush-100 text-blush-500 px-2 py-1" title="إلغاء الترويج">✕</button>
+                            </form>
+                        @else
+                            <div class="inline-flex gap-1">
+                                @foreach([7, 30] as $d)
+                                    <form method="POST" action="{{ route('admin.businesses.promote', $b) }}" class="inline">
+                                        @csrf
+                                        <input type="hidden" name="days" value="{{ $d }}">
+                                        <button class="a-pill bg-honey-100 text-honey-700 hover:bg-honey-500 hover:text-ink-950 transition px-2 py-1" title="روّج لمدة {{ $d }} يوم">
+                                            ⭐ {{ $d }}ي
+                                        </button>
+                                    </form>
+                                @endforeach
+                            </div>
+                        @endif
+                    </td>
                     <td class="text-[10px] text-ink-400">{{ $b->created_at->diffForHumans(short: true) }}</td>
                     <td class="text-end">
                         <div class="inline-flex items-center gap-1">

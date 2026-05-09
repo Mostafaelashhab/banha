@@ -3,33 +3,100 @@
 @section('content')
 <div class="max-w-3xl mx-auto">
 
-    {{-- Compact action chips row (replaces orange welcome + 4 tiles) --}}
+    {{-- Stories strip (FB-style: avatar circles with ring) --}}
     <div class="overflow-x-auto scrollbar-hide -mx-4 mb-3">
-        <div class="flex gap-2 px-4 w-max">
+        <div class="flex gap-3 px-4 w-max">
+            @auth
+                {{-- "+ Add story" tile --}}
+                <a href="{{ route('stories.create') }}" class="flex flex-col items-center gap-1 shrink-0 w-16">
+                    <div class="w-16 h-16 rounded-full bg-cream-100 border-2 border-dashed border-coral-500 grid place-items-center text-coral-500">
+                        <x-icon name="plus" class="w-6 h-6"/>
+                    </div>
+                    <span class="text-[10px] font-bold text-ink-500 truncate w-full text-center">ستوري</span>
+                </a>
+            @endauth
+
+            @forelse($stories as $userId => $userStories)
+                @php $latest = $userStories->first(); @endphp
+                <a href="{{ route('stories.show', $latest) }}" class="flex flex-col items-center gap-1 shrink-0 w-16">
+                    <div class="w-16 h-16 rounded-full p-0.5 bg-gradient-to-tr from-coral-500 via-honey-500 to-coral-300">
+                        <div class="w-full h-full rounded-full bg-white p-0.5">
+                            <img src="{{ $latest->image_url }}" alt="" loading="lazy" class="w-full h-full object-cover rounded-full">
+                        </div>
+                    </div>
+                    <span class="text-[10px] font-bold text-ink-500 truncate w-full text-center">{{ $latest->user->username }}</span>
+                </a>
+            @empty
+                @guest
+                    <a href="{{ route('stories.index') }}" class="flex flex-col items-center gap-1 shrink-0 w-16">
+                        <div class="w-16 h-16 rounded-full bg-cream-100 grid place-items-center text-ink-400">
+                            <x-icon name="flame" class="w-6 h-6"/>
+                        </div>
+                        <span class="text-[10px] font-bold text-ink-400 truncate w-full text-center">مفيش</span>
+                    </a>
+                @endguest
+            @endforelse
+        </div>
+    </div>
+
+    {{-- Composer (FB-style: avatar + "what's on your mind") --}}
+    @auth
+        <a href="{{ route('posts.create') }}" class="card-light p-3 mb-3 flex items-center gap-3 hover:bg-cream-100 transition">
+            <x-avatar :user="auth()->user()" size="md"/>
+            <span class="flex-1 text-sm text-ink-400">إيه اللي بتفكر فيه يا {{ auth()->user()->username }}؟</span>
+        </a>
+    @endauth
+
+    {{-- 4 main quick actions (FB-style: evenly spaced row, not slider) --}}
+    <div class="card-light p-2 mb-3 grid grid-cols-4 gap-1">
+        @php
+            $main = [
+                ['route' => route('marketplace.index'), 'icon' => 'tag',     'label' => 'سوق',     'color' => 'text-coral-600'],
+                ['route' => route('feed.following'),    'icon' => 'heart',   'label' => 'متابعينك','color' => 'text-blush-500'],
+                ['route' => route('events.index'),      'icon' => 'bell',    'label' => 'أحداث',  'color' => 'text-mint-700'],
+                ['route' => route('directory.nearby'),  'icon' => 'map-pin', 'label' => 'حواليّا','color' => 'text-honey-700'],
+            ];
+        @endphp
+        @foreach($main as $m)
+            <a href="{{ $m['route'] }}" class="flex flex-col items-center gap-1 py-2 rounded-xl hover:bg-cream-100 transition">
+                <span class="{{ $m['color'] }}">
+                    <x-icon :name="$m['icon']" class="w-5 h-5"/>
+                </span>
+                <span class="text-[10px] font-bold text-ink-950">{{ $m['label'] }}</span>
+            </a>
+        @endforeach
+    </div>
+
+    {{-- Secondary chips (overflow menu) --}}
+    <details class="mb-3">
+        <summary class="card-light p-3 text-sm font-bold text-ink-500 cursor-pointer list-none flex items-center justify-between hover:bg-cream-100 transition">
+            <span class="inline-flex items-center gap-2">
+                <x-icon name="more" class="w-4 h-4"/>
+                المزيد
+            </span>
+            <x-icon name="chevron-down" class="w-4 h-4"/>
+        </summary>
+        <div class="grid grid-cols-4 gap-2 mt-2">
             @php
-                $chips = [
-                    ['route' => route('marketplace.index'),'icon' => 'tag',         'label' => 'بيع وشراء','tone' => 'coral'],
-                    ['route' => route('alerts.index'),    'icon' => 'bolt',        'label' => 'تنبيهات',  'tone' => 'blush'],
-                    ['route' => route('prices.index'),    'icon' => 'tag',         'label' => 'أسعار',    'tone' => 'mint'],
-                    ['route' => route('directory.index'), 'icon' => 'bag',         'label' => 'الدليل',   'tone' => 'coral'],
-                    ['route' => route('zones'),           'icon' => 'map-pin',     'label' => 'المناطق', 'tone' => 'honey'],
-                    ['route' => route('hashtag.trending'),'icon' => 'flame',       'label' => 'هاشتاجات', 'tone' => 'coral'],
-                    ['route' => route('bookmark.index'),  'icon' => 'heart',       'label' => 'محفوظاتي','tone' => 'blush'],
-                    ['route' => route('directory.category','food'),     'icon' => 'utensils',    'label' => 'مطاعم',   'tone' => 'coral'],
-                    ['route' => route('directory.category','medical'),  'icon' => 'stethoscope', 'label' => 'دكاترة',  'tone' => 'mint'],
-                    ['route' => route('directory.category','craftsmen'),'icon' => 'more',        'label' => 'صنايعية','tone' => 'honey'],
+                $extras = [
+                    ['route' => route('stories.index'),    'icon' => 'flame',       'label' => 'ستوريز'],
+                    ['route' => route('users.index'),      'icon' => 'user',        'label' => 'يوزرز'],
+                    ['route' => route('alerts.index'),     'icon' => 'bolt',        'label' => 'تنبيهات'],
+                    ['route' => route('prices.index'),     'icon' => 'tag',         'label' => 'أسعار'],
+                    ['route' => route('directory.index'),  'icon' => 'bag',         'label' => 'الدليل'],
+                    ['route' => route('zones'),            'icon' => 'map',         'label' => 'المناطق'],
+                    ['route' => route('hashtag.trending'), 'icon' => 'flame',       'label' => 'هاشتاجات'],
+                    ['route' => route('bookmark.index'),   'icon' => 'heart',       'label' => 'محفوظاتي'],
                 ];
             @endphp
-            @foreach($chips as $c)
-                <a href="{{ $c['route'] }}" class="action-chip">
-                    <span class="action-chip-icon pill-{{ $c['tone'] }}">
-                        <x-icon :name="$c['icon']" class="w-3.5 h-3.5"/>
-                    </span>
-                    <span>{{ $c['label'] }}</span>
+            @foreach($extras as $c)
+                <a href="{{ $c['route'] }}" class="card-light p-3 flex flex-col items-center gap-1 hover:bg-cream-100 transition">
+                    <x-icon :name="$c['icon']" class="w-4 h-4 text-coral-600"/>
+                    <span class="text-[10px] font-bold text-ink-950">{{ $c['label'] }}</span>
                 </a>
             @endforeach
         </div>
-    </div>
+    </details>
 
     {{-- Tiny inline filter row --}}
     @php

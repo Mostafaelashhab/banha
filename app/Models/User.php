@@ -73,4 +73,26 @@ class User extends Authenticatable
     {
         return (int) $this->created_at->diffInDays(now());
     }
+
+    /** Users I follow */
+    public function following(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'user_follows', 'follower_id', 'followed_id')
+            ->withTimestamps();
+    }
+
+    /** Users following me */
+    public function followers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'user_follows', 'followed_id', 'follower_id')
+            ->withTimestamps();
+    }
+
+    public function isFollowing(int $userId): bool
+    {
+        return \Illuminate\Support\Facades\DB::table('user_follows')
+            ->where('follower_id', $this->id)
+            ->where('followed_id', $userId)
+            ->exists();
+    }
 }

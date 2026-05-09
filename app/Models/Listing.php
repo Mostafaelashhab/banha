@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'user_id', 'zone_id', 'kind', 'category', 'title', 'description',
     'price', 'currency', 'negotiable', 'photo_url',
     'contact_phone', 'contact_whatsapp', 'status', 'expires_at',
+    'featured_until', 'phone_clicks', 'whatsapp_clicks',
 ])]
 class Listing extends Model
 {
@@ -39,10 +40,16 @@ class Listing extends Model
     protected function casts(): array
     {
         return [
-            'negotiable' => 'boolean',
-            'price'      => 'integer',
-            'expires_at' => 'datetime',
+            'negotiable'     => 'boolean',
+            'price'          => 'integer',
+            'expires_at'     => 'datetime',
+            'featured_until' => 'datetime',
         ];
+    }
+
+    public function isFeatured(): bool
+    {
+        return $this->featured_until && $this->featured_until->isFuture();
     }
 
     public function user(): BelongsTo

@@ -48,7 +48,7 @@
         </div>
 
         @forelse($results as $post)
-            @include('partials.post-card', ['post' => $post])
+            @include('partials.post-card', ['post' => $post, 'userVotes' => $userVotes ?? []])
         @empty
             <div class="card-light p-10 text-center">
                 <div class="icon-tile mx-auto mb-3 text-coral-600 w-14 h-14">
@@ -75,7 +75,7 @@
             </div>
 
             @foreach($topWeek as $post)
-                @include('partials.post-card', ['post' => $post])
+                @include('partials.post-card', ['post' => $post, 'userVotes' => $userVotes ?? []])
             @endforeach
         @else
             <div class="card-light p-10 text-center">

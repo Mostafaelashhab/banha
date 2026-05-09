@@ -16,7 +16,7 @@ class BrowseController extends Controller
         $q        = trim((string) $request->query('q', ''));
         $category = $request->query('category');
 
-        $base = Post::active()->with(['user:id,username,avatar_seed', 'zone:id,name']);
+        $base = Post::active()->with(['user:id,username,avatar_seed,avatar_url,verification_tier,is_admin', 'zone:id,name']);
 
         if ($q !== '') {
             $base->where(function ($w) use ($q) {
@@ -36,7 +36,7 @@ class BrowseController extends Controller
         // Top week
         $topWeek = ($q === '' && ! $category)
             ? Post::active()
-                ->with(['user:id,username,avatar_seed', 'zone:id,name'])
+                ->with(['user:id,username,avatar_seed,avatar_url,verification_tier,is_admin', 'zone:id,name'])
                 ->where('created_at', '>=', now()->subDays(7))
                 ->orderByDesc('hot_score')
                 ->limit(5)
@@ -73,6 +73,39 @@ class BrowseController extends Controller
         ]);
     }
 
+    public function users(Request $request)
+    {
+        $q = trim((string) $request->query('q', ''));
+
+        // Base: most active first (posts_count + reputation)
+        $query = \App\Models\User::query()
+            ->where('is_banned', false)
+            ->withCount(['posts as posts_count' => fn ($q) => $q->where('status', 'active')])
+            ->withCount(['followers as followers_count']);
+
+        if ($q !== '') {
+            $query->where('username', 'like', "%{$q}%");
+        }
+
+        $users = $query
+            ->orderByDesc('verification_tier')
+            ->orderByDesc('reputation')
+            ->orderByDesc('posts_count')
+            ->paginate(30)
+            ->withQueryString();
+
+        // Who I follow (so we can show "متابع/+ تابع" on each card)
+        $followingIds = Auth::check()
+            ? DB::table('user_follows')->where('follower_id', Auth::id())->pluck('followed_id')->all()
+            : [];
+
+        if ($request->boolean('partial') || $request->ajax()) {
+            return view('partials.users-page', compact('users', 'followingIds'));
+        }
+
+        return view('users', compact('users', 'q', 'followingIds'));
+    }
+
     public function zones(Request $request)
     {
         $zones = Zone::query()
@@ -92,7 +125,7 @@ class BrowseController extends Controller
             ->keyBy('zone_id');
 
         $hottest = Post::active()
-            ->with(['user:id,username,avatar_seed'])
+            ->with(['user:id,username,avatar_seed,avatar_url,verification_tier,is_admin'])
             ->whereNotNull('zone_id')
             ->where('created_at', '>=', now()->subHours(24))
             ->orderByDesc('hot_score')

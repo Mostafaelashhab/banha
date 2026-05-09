@@ -13,6 +13,9 @@
         @case('price')
             @include('partials.price-feed-card', ['price' => $item['data']])
             @break
+        @case('listing')
+            @include('partials.listing-feed-card', ['listing' => $item['data']])
+            @break
     @endswitch
 @endforeach
 

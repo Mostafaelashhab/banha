@@ -37,13 +37,50 @@
                 <div class="flex items-center gap-2 flex-wrap">
                     <h1 class="text-xl md:text-2xl font-black text-white truncate">{{ $user->username }}</h1>
                     @if($isMe)
-                        <a href="{{ route('profile.me', ['tab' => 'settings']) }}"
+                        <a href="{{ route('profile.me', ['tab' => 'settings']) }}#edit-profile"
+                           data-edit-profile
                            class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-white/20 text-white border border-white/30 hover:bg-white/30 transition">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3">
                                 <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z"/>
                             </svg>
                             عدّل
                         </a>
+                        @push('scripts')
+                        <script>
+                        document.addEventListener('DOMContentLoaded', () => {
+                            // Smooth scroll + highlight the form on click (works even if already on settings tab)
+                            document.querySelectorAll('[data-edit-profile]').forEach((a) => {
+                                a.addEventListener('click', (e) => {
+                                    const target = document.getElementById('edit-profile');
+                                    if (target && new URL(a.href).pathname === window.location.pathname && new URL(a.href).search === window.location.search) {
+                                        e.preventDefault();
+                                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                        target.classList.add('ring-4','ring-coral-500/40');
+                                        setTimeout(() => target.classList.remove('ring-4','ring-coral-500/40'), 1500);
+                                        target.querySelector('input[name="username"]')?.focus();
+                                    }
+                                });
+                            });
+                            // Auto-focus + highlight if landed via the #edit-profile hash
+                            if (location.hash === '#edit-profile') {
+                                const t = document.getElementById('edit-profile');
+                                if (t) {
+                                    t.classList.add('ring-4','ring-coral-500/40');
+                                    setTimeout(() => t.classList.remove('ring-4','ring-coral-500/40'), 1500);
+                                    t.querySelector('input[name="username"]')?.focus();
+                                }
+                            }
+                        });
+                        </script>
+                        @endpush
+                    @elseif(auth()->check())
+                        @php $isFollowing = auth()->user()->isFollowing($user->id); @endphp
+                        <form method="POST" action="{{ route('users.follow', $user) }}" class="inline">
+                            @csrf
+                            <button class="inline-flex items-center gap-1 text-[11px] font-bold px-3 py-1 rounded-full {{ $isFollowing ? 'bg-white/20 text-white border border-white/30' : 'bg-white text-coral-600' }} hover:scale-105 transition">
+                                {{ $isFollowing ? '✓ متابع' : '+ تابع' }}
+                            </button>
+                        </form>
                     @endif
                     @if($user->verification_tier === 'gold')
                         <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full text-white" style="background: #1D9BF0">
@@ -314,7 +351,7 @@
             @endif
 
             {{-- Update profile --}}
-            <form method="POST" action="{{ route('profile.update') }}" class="card-light p-5 space-y-3">
+            <form id="edit-profile" method="POST" action="{{ route('profile.update') }}" class="card-light p-5 space-y-3 transition-shadow scroll-mt-20">
                 @csrf
                 <h3 class="text-sm font-extrabold text-ink-950">معلوماتك</h3>
 

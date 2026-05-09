@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['user_id', 'type', 'title', 'body', 'url', 'read_at'])]
+#[Fillable(['user_id', 'type', 'title', 'body', 'url', 'read_at', 'created_at'])]
 class Notification extends Model
 {
     public $timestamps = false;

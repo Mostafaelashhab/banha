@@ -21,7 +21,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('head')
 </head>
-<body class="min-h-screen" style="padding-bottom: calc(7rem + env(safe-area-inset-bottom));">
+<body class="min-h-screen" data-install-prompt="auto" style="padding-bottom: calc(7rem + env(safe-area-inset-bottom));">
 
     {{-- ─── TOP BAR ─────────────────────────────────────── --}}
     <header class="sticky top-0 z-40 bg-cream-100/85 backdrop-blur border-b border-ink-950/5">
@@ -77,15 +77,16 @@
         @yield('content')
     </main>
 
-    {{-- ─── BOTTOM NAV ───────────────────────────────────── --}}
+    {{-- ─── BOTTOM NAV (FB-style: home / market / + / notifications / me) ─── --}}
     @auth
         @php
-            $route    = request()->route()->getName() ?? '';
-            $isHome   = $route === 'feed';
-            $isDisc   = $route === 'discover';
-            $isZones  = $route === 'zones';
-            $isCreate = $route === 'posts.create';
-            $isMe     = str_starts_with($route, 'profile');
+            $route       = request()->route()->getName() ?? '';
+            $isHome      = $route === 'feed';
+            $isMarket    = str_starts_with($route, 'marketplace');
+            $isCreate    = $route === 'posts.create';
+            $isNotif     = str_starts_with($route, 'notifications');
+            $isMe        = str_starts_with($route, 'profile');
+            $unreadCount = \App\Models\Notification::where('user_id', auth()->id())->whereNull('read_at')->count();
         @endphp
         <nav class="bottom-nav">
             <div class="bottom-nav-inner">
@@ -93,16 +94,21 @@
                     <x-icon name="home" class="w-5 h-5"/>
                     <span class="nav-label">الرئيسية</span>
                 </a>
-                <a href="{{ route('discover') }}" aria-label="اكتشف" class="nav-item {{ $isDisc ? 'is-active' : '' }}">
-                    <x-icon name="flame" class="w-5 h-5"/>
-                    <span class="nav-label">اكتشف</span>
+                <a href="{{ route('marketplace.index') }}" aria-label="بيع وشراء" class="nav-item {{ $isMarket ? 'is-active' : '' }}">
+                    <x-icon name="tag" class="w-5 h-5"/>
+                    <span class="nav-label">السوق</span>
                 </a>
                 <a href="{{ route('posts.create') }}" aria-label="بوست جديد" class="nav-fab {{ $isCreate ? 'is-active' : '' }}">
                     <x-icon name="plus" class="w-6 h-6"/>
                 </a>
-                <a href="{{ route('zones') }}" aria-label="المناطق" class="nav-item {{ $isZones ? 'is-active' : '' }}">
-                    <x-icon name="map-pin" class="w-5 h-5"/>
-                    <span class="nav-label">المناطق</span>
+                <a href="{{ route('notifications.index') }}" aria-label="إشعارات" class="nav-item relative {{ $isNotif ? 'is-active' : '' }}">
+                    <x-icon name="bell" class="w-5 h-5"/>
+                    @if($unreadCount > 0)
+                        <span class="absolute top-1 end-3 min-w-[16px] h-[16px] rounded-full bg-coral-500 text-white text-[9px] font-extrabold grid place-items-center px-1">
+                            {{ $unreadCount > 9 ? '9+' : $unreadCount }}
+                        </span>
+                    @endif
+                    <span class="nav-label">إشعارات</span>
                 </a>
                 <a href="{{ route('profile.me') }}" aria-label="حسابي" class="nav-item {{ $isMe ? 'is-active' : '' }}">
                     <x-icon name="user" class="w-5 h-5"/>

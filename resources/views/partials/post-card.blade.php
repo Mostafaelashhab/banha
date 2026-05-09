@@ -31,14 +31,20 @@
     @endif
     {{-- header --}}
     <header class="flex items-center gap-2.5 mb-3">
-        <x-avatar :user="$isAnon ? null : $post->user" :name="$display" :anon="$isAnon" size="md"/>
+        @if($isAnon)
+            <x-avatar :user="null" :name="$display" :anon="true" size="md"/>
+        @else
+            <a href="{{ route('profile.show', $post->user->username) }}" class="shrink-0">
+                <x-avatar :user="$post->user" :name="$display" :anon="false" size="md"/>
+            </a>
+        @endif
         <div class="flex-1 min-w-0">
             <div class="flex items-center gap-1.5 text-sm font-bold text-ink-950">
                 @if($isAnon)
                     <x-icon name="mask" class="w-3.5 h-3.5 text-coral-600"/>
-                @endif
-                <span class="truncate">{{ $display }}</span>
-                @if(! $isAnon)
+                    <span class="truncate">{{ $display }}</span>
+                @else
+                    <a href="{{ route('profile.show', $post->user->username) }}" class="truncate hover:text-coral-600 transition">{{ $display }}</a>
                     <x-verified-badge :tier="$tier"/>
                 @endif
                 @if($isAuthorAdmin)
