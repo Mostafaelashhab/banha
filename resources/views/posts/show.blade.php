@@ -24,7 +24,23 @@
     </div>
 
     {{-- post --}}
-    <article class="card-light {{ $tierCard }} p-5 mb-4 relative">
+    @php
+        $cardClass = match (true) {
+            $post->is_announcement => 'post-announcement',
+            $post->is_sponsored    => 'post-sponsored',
+            default                => $tierCard,
+        };
+    @endphp
+    <article class="card-light {{ $cardClass }} p-5 mb-4 relative">
+        @if($post->is_announcement)
+            <div class="-mx-5 -mt-5 mb-4 px-5 py-2 bg-mint-500 text-white text-xs font-extrabold rounded-t-2xl inline-flex items-center gap-2">
+                <x-icon name="bell" class="w-3.5 h-3.5"/> 📢 من فريق بنهاوي · إعلان
+            </div>
+        @elseif($post->is_sponsored)
+            <div class="-mx-5 -mt-5 mb-4 px-5 py-2 bg-honey-500 text-ink-950 text-xs font-extrabold rounded-t-2xl inline-flex items-center gap-2">
+                <x-icon name="check" class="w-3.5 h-3.5"/> ⭐ مُروَّج
+            </div>
+        @endif
         <header class="flex items-center gap-2.5 mb-4">
             <x-avatar :user="$isAnon ? null : $post->user" :name="$display" :anon="$isAnon" size="md"/>
             <div class="flex-1">
@@ -45,7 +61,7 @@
         @if($post->title)
             <h2 class="text-2xl font-black text-ink-950 mb-2 leading-tight">{{ $post->title }}</h2>
         @endif
-        <p class="text-ink-950 text-[16px] leading-loose whitespace-pre-line">{!! \App\Support\TextRenderer::renderHashtags($post->body) !!}</p>
+        <p class="text-ink-950 text-[16px] leading-loose whitespace-pre-line">{!! \App\Support\TextRenderer::renderHashtags($post->body, (bool) ($post->user->is_admin ?? false)) !!}</p>
 
         @if($post->image_url)
             <img src="{{ $post->image_url }}" alt="" class="mt-3 w-full rounded-2xl object-contain max-h-[600px] bg-cream-100">

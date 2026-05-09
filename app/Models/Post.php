@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-#[Fillable(['user_id', 'zone_id', 'is_anonymous', 'anon_seed', 'category', 'title', 'body', 'image_url', 'status'])]
+#[Fillable(['user_id', 'zone_id', 'is_anonymous', 'anon_seed', 'category', 'title', 'body', 'image_url', 'is_sponsored', 'is_announcement', 'status'])]
 class Post extends Model
 {
     public const CATEGORIES = [
@@ -27,7 +27,9 @@ class Post extends Model
     protected function casts(): array
     {
         return [
-            'is_anonymous' => 'boolean',
+            'is_anonymous'    => 'boolean',
+            'is_sponsored'    => 'boolean',
+            'is_announcement' => 'boolean',
         ];
     }
 

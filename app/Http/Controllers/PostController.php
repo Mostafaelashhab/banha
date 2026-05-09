@@ -82,7 +82,9 @@ class PostController extends Controller
         }
         RateLimiter::hit($key, 60);
 
-        $data = $request->validate([
+        $isAdmin = (bool) Auth::user()->is_admin;
+
+        $rules = [
             'category'        => ['required', 'in:'.implode(',', array_keys(Post::CATEGORIES))],
             'title'           => ['nullable', 'string', 'max:180'],
             'body'            => ['required', 'string', 'min:3', 'max:2000'],
@@ -92,7 +94,12 @@ class PostController extends Controller
             'poll_question'   => ['nullable', 'string', 'max:200'],
             'poll_options'    => ['nullable', 'array', 'max:4'],
             'poll_options.*'  => ['nullable', 'string', 'max:80'],
-        ]);
+        ];
+        if ($isAdmin) {
+            $rules['is_sponsored']    = ['nullable', 'boolean'];
+            $rules['is_announcement'] = ['nullable', 'boolean'];
+        }
+        $data = $request->validate($rules);
 
         $isAnon = (bool) ($data['is_anonymous'] ?? false);
 
@@ -102,22 +109,26 @@ class PostController extends Controller
         }
 
         $post = Post::create([
-            'user_id'      => Auth::id(),
-            'zone_id'      => $data['zone_id'] ?? Auth::user()->zone_id,
-            'is_anonymous' => $isAnon,
-            'anon_seed'    => $isAnon ? AnonSeed::generate() : null,
-            'category'     => $data['category'],
-            'title'        => $data['title'] ?? null,
-            'body'         => $data['body'],
-            'image_url'    => $imageUrl,
-            'status'       => 'active',
+            'user_id'         => Auth::id(),
+            'zone_id'         => $data['zone_id'] ?? Auth::user()->zone_id,
+            'is_anonymous'    => $isAnon,
+            'anon_seed'       => $isAnon ? AnonSeed::generate() : null,
+            'category'        => $data['category'],
+            'title'           => $data['title'] ?? null,
+            'body'            => $data['body'],
+            'image_url'       => $imageUrl,
+            'is_sponsored'    => $isAdmin && (bool) ($data['is_sponsored'] ?? false),
+            'is_announcement' => $isAdmin && (bool) ($data['is_announcement'] ?? false),
+            'status'          => 'active',
         ]);
 
         $post->recomputeHotScore();
         $post->save();
 
-        // Hashtags from title + body
-        \App\Models\Hashtag::syncForPost($post, ($data['title'] ?? '').' '.$data['body']);
+        // Hashtags only get indexed for admin posts (regular users' #text remains plain)
+        if ($isAdmin) {
+            \App\Models\Hashtag::syncForPost($post, ($data['title'] ?? '').' '.$data['body']);
+        }
 
         // Optional poll
         if (! empty($data['poll_question']) && ! empty($data['poll_options'])) {

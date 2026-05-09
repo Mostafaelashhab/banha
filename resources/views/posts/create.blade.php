@@ -99,6 +99,39 @@
             </select>
         </div>
 
+        @if(auth()->user()->is_admin)
+            {{-- Admin-only flags --}}
+            <div class="card-light !shadow-none border-coral-500/30 bg-coral-50 p-4 space-y-3">
+                <div class="text-[11px] font-extrabold text-coral-700 uppercase tracking-wide">للأدمن فقط</div>
+
+                <label class="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" name="is_sponsored" value="1" {{ old('is_sponsored') ? 'checked' : '' }} class="sr-only peer">
+                    <span class="w-11 h-6 rounded-full bg-ink-300 relative transition peer-checked:bg-honey-500">
+                        <span class="absolute top-0.5 start-0.5 w-5 h-5 rounded-full bg-white shadow transition peer-checked:translate-x-[-1.25rem] rtl:peer-checked:translate-x-5"></span>
+                    </span>
+                    <span class="flex-1">
+                        <span class="block font-bold text-ink-950 text-sm">⭐ Sponsor (مُروَّج)</span>
+                        <span class="block text-[10px] text-ink-500">هيظهر بإطار ذهبي + شارة "مُروَّج"</span>
+                    </span>
+                </label>
+
+                <label class="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" name="is_announcement" value="1" {{ old('is_announcement') ? 'checked' : '' }} class="sr-only peer">
+                    <span class="w-11 h-6 rounded-full bg-ink-300 relative transition peer-checked:bg-mint-500">
+                        <span class="absolute top-0.5 start-0.5 w-5 h-5 rounded-full bg-white shadow transition peer-checked:translate-x-[-1.25rem] rtl:peer-checked:translate-x-5"></span>
+                    </span>
+                    <span class="flex-1">
+                        <span class="block font-bold text-ink-950 text-sm">📢 إعلان للتطوير</span>
+                        <span class="block text-[10px] text-ink-500">هيظهر بإطار أخضر + شارة "من فريق بنهاوي"</span>
+                    </span>
+                </label>
+
+                <p class="text-[10px] text-coral-700 font-bold pt-1 border-t border-coral-500/20">
+                    💡 الهاشتاجات اللي تكتبها بـ # هتتفهرس وتبقى لينكات (للأدمن فقط).
+                </p>
+            </div>
+        @endif
+
         {{-- Anonymous toggle --}}
         <label class="flex items-center gap-3 bg-cream-100 rounded-2xl p-4 cursor-pointer border border-ink-950/8 has-[:checked]:bg-coral-100 has-[:checked]:border-coral-500/40 transition">
             <input type="checkbox" name="is_anonymous" value="1" {{ old('is_anonymous') ? 'checked' : '' }} class="sr-only peer">

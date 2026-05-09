@@ -11,9 +11,24 @@
         'silver' => 'tier-silver',
         default  => '',
     };
+    $isAuthorAdmin = ! $isAnon && ($post->user->is_admin ?? false);
+    $cardClass = match (true) {
+        $post->is_announcement => 'post-announcement',
+        $post->is_sponsored    => 'post-sponsored',
+        default                => $tierCard,
+    };
 @endphp
 
-<article class="card-light {{ $tierCard }} p-4 mb-3 relative" data-post-id="{{ $post->id }}">
+<article class="card-light {{ $cardClass }} p-4 mb-3 relative" data-post-id="{{ $post->id }}">
+    @if($post->is_announcement)
+        <div class="-mx-4 -mt-4 mb-3 px-4 py-1.5 bg-mint-500 text-white text-[11px] font-extrabold rounded-t-2xl inline-flex items-center gap-1.5">
+            <x-icon name="bell" class="w-3 h-3"/> 📢 من فريق بنهاوي · إعلان
+        </div>
+    @elseif($post->is_sponsored)
+        <div class="-mx-4 -mt-4 mb-3 px-4 py-1.5 bg-honey-500 text-ink-950 text-[11px] font-extrabold rounded-t-2xl inline-flex items-center gap-1.5">
+            <x-icon name="check" class="w-3 h-3"/> ⭐ مُروَّج
+        </div>
+    @endif
     {{-- header --}}
     <header class="flex items-center gap-2.5 mb-3">
         <x-avatar :user="$isAnon ? null : $post->user" :name="$display" :anon="$isAnon" size="md"/>
@@ -25,6 +40,11 @@
                 <span class="truncate">{{ $display }}</span>
                 @if(! $isAnon)
                     <x-verified-badge :tier="$tier"/>
+                @endif
+                @if($isAuthorAdmin)
+                    <span class="inline-flex items-center gap-0.5 text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-coral-500 text-white">
+                        ADMIN
+                    </span>
                 @endif
                 @if($post->zone)
                     <span class="text-ink-400 font-normal text-xs">· {{ $post->zone->name }}</span>
@@ -40,7 +60,7 @@
         @if($post->title)
             <h3 class="font-extrabold text-ink-950 mb-1.5 leading-tight">{{ $post->title }}</h3>
         @endif
-        <p class="text-ink-950 text-[15px] leading-relaxed whitespace-pre-line">{!! \App\Support\TextRenderer::renderHashtags(\Illuminate\Support\Str::limit($post->body, 280)) !!}</p>
+        <p class="text-ink-950 text-[15px] leading-relaxed whitespace-pre-line">{!! \App\Support\TextRenderer::renderHashtags(\Illuminate\Support\Str::limit($post->body, 280), (bool) ($post->user->is_admin ?? false)) !!}</p>
         @if($post->image_url)
             <img src="{{ $post->image_url }}" alt="" loading="lazy" class="mt-3 w-full rounded-2xl object-cover max-h-[420px]">
         @endif
