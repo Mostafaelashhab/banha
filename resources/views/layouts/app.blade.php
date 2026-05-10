@@ -93,7 +93,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('head')
 </head>
-<body class="min-h-screen" data-install-prompt="auto" style="padding-bottom: calc(7rem + env(safe-area-inset-bottom));">
+<body class="min-h-screen" data-install-prompt="auto" data-guest="{{ auth()->check() ? '0' : '1' }}" data-login-url="{{ route('login') }}" style="padding-bottom: calc(7rem + env(safe-area-inset-bottom));">
 
     {{-- ─── TOP BAR ─────────────────────────────────────── --}}
     <header class="sticky top-0 z-40 bg-cream-100/85 backdrop-blur border-b border-ink-950/5">
@@ -123,9 +123,12 @@
                         <x-avatar :user="auth()->user()" size="md"/>
                     </a>
                 @else
-                    <a href="{{ route('login') }}" class="text-xs font-bold px-3 py-1.5 rounded-full bg-coral-500 text-white hover:bg-coral-600 transition">
-                        دخول
-                    </a>
+                    @php $route = request()->route()?->getName() ?? ''; @endphp
+                    @if(! in_array($route, ['login', 'signup', 'forgot', 'forgot.verify'], true))
+                        <a href="{{ route('login') }}" class="text-xs font-bold px-3 py-1.5 rounded-full bg-coral-500 text-white hover:bg-coral-600 transition">
+                            دخول
+                        </a>
+                    @endif
                 @endauth
             </div>
         </div>
@@ -149,46 +152,55 @@
         @yield('content')
     </main>
 
-    {{-- ─── BOTTOM NAV (FB-style: home / market / + / notifications / me) ─── --}}
-    @auth
-        @php
-            $route       = request()->route()->getName() ?? '';
-            $isHome      = $route === 'feed';
-            $isMarket    = str_starts_with($route, 'marketplace');
-            $isCreate    = $route === 'posts.create';
-            $isNotif     = str_starts_with($route, 'notifications');
-            $isMe        = str_starts_with($route, 'profile');
-            $unreadCount = \App\Models\Notification::where('user_id', auth()->id())->whereNull('read_at')->count();
-        @endphp
-        <nav class="bottom-nav">
-            <div class="bottom-nav-inner">
-                <a href="{{ route('feed') }}" aria-label="الرئيسية" class="nav-item {{ $isHome ? 'is-active' : '' }}">
-                    <x-icon name="home" class="w-5 h-5"/>
-                    <span class="nav-label">الرئيسية</span>
-                </a>
-                <a href="{{ route('marketplace.index') }}" aria-label="بيع وشراء" class="nav-item {{ $isMarket ? 'is-active' : '' }}">
-                    <x-icon name="tag" class="w-5 h-5"/>
-                    <span class="nav-label">السوق</span>
-                </a>
-                <a href="{{ route('posts.create') }}" aria-label="بوست جديد" class="nav-fab {{ $isCreate ? 'is-active' : '' }}">
+    {{-- ─── BOTTOM NAV ─────────────────────────────────────── --}}
+    @php
+        $route    = request()->route()->getName() ?? '';
+        $isHome   = $route === 'feed' || $route === 'home';
+        $isDir    = str_starts_with($route, 'directory') && $route !== 'directory.map';
+        $isMap    = $route === 'directory.map';
+        $isCreate = $route === 'directory.create' || $route === 'posts.create';
+        $isMarket = str_starts_with($route, 'marketplace');
+        $isMe     = str_starts_with($route, 'profile');
+        $isAuthPage = in_array($route, ['login', 'login.attempt', 'signup', 'signup.attempt', 'forgot', 'forgot.send', 'forgot.verify', 'forgot.reset', 'verify.show', 'verify.send', 'verify.attempt'], true);
+    @endphp
+    @unless($isAuthPage)
+    <nav class="bottom-nav">
+        <div class="bottom-nav-inner">
+            <a href="{{ route('feed') }}" aria-label="الرئيسية" class="nav-item {{ $isHome ? 'is-active' : '' }}">
+                <x-icon name="home" class="w-5 h-5"/>
+                <span class="nav-label">الرئيسية</span>
+            </a>
+            <a href="{{ route('directory.index') }}" aria-label="الدليل" class="nav-item {{ $isDir ? 'is-active' : '' }}">
+                <x-icon name="bag" class="w-5 h-5"/>
+                <span class="nav-label">الدليل</span>
+            </a>
+            @auth
+                <a href="{{ route('directory.create') }}" aria-label="أضف نشاطك" class="nav-fab {{ $isCreate ? 'is-active' : '' }}">
                     <x-icon name="plus" class="w-6 h-6"/>
                 </a>
-                <a href="{{ route('notifications.index') }}" aria-label="إشعارات" class="nav-item relative {{ $isNotif ? 'is-active' : '' }}">
-                    <x-icon name="bell" class="w-5 h-5"/>
-                    @if($unreadCount > 0)
-                        <span class="absolute top-1 end-3 min-w-[16px] h-[16px] rounded-full bg-coral-500 text-white text-[9px] font-extrabold grid place-items-center px-1">
-                            {{ $unreadCount > 9 ? '9+' : $unreadCount }}
-                        </span>
-                    @endif
-                    <span class="nav-label">إشعارات</span>
+            @else
+                <a href="{{ route('directory.map') }}" aria-label="الخريطة" class="nav-fab {{ $isMap ? 'is-active' : '' }}">
+                    <x-icon name="map-pin" class="w-6 h-6"/>
                 </a>
+            @endauth
+            <a href="{{ route('marketplace.index') }}" aria-label="بيع وشراء" class="nav-item {{ $isMarket ? 'is-active' : '' }}">
+                <x-icon name="tag" class="w-5 h-5"/>
+                <span class="nav-label">السوق</span>
+            </a>
+            @auth
                 <a href="{{ route('profile.me') }}" aria-label="حسابي" class="nav-item {{ $isMe ? 'is-active' : '' }}">
                     <x-icon name="user" class="w-5 h-5"/>
                     <span class="nav-label">حسابي</span>
                 </a>
-            </div>
-        </nav>
-    @endauth
+            @else
+                <a href="{{ route('login') }}" aria-label="دخول" class="nav-item">
+                    <x-icon name="user" class="w-5 h-5"/>
+                    <span class="nav-label">دخول</span>
+                </a>
+            @endauth
+        </div>
+    </nav>
+    @endunless
 
     @stack('scripts')
 </body>

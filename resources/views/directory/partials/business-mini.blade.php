@@ -6,9 +6,9 @@
 
 <a href="{{ route('directory.show', $business) }}" class="card-light p-3 w-44 shrink-0 hover:-translate-y-0.5 hover:shadow-lg transition">
     <div class="flex items-center justify-between mb-2">
-        <span class="w-10 h-10 rounded-xl grid place-items-center text-xl"
-              style="background: {{ $cm['color'] }}20; border: 1px solid {{ $cm['color'] }}50">
-            {{ ($business->emoji && $business->emoji !== '🔥📦') ? $business->emoji : $sm['emoji'] }}
+        <span class="w-10 h-10 rounded-xl grid place-items-center"
+              style="background: {{ $cm['color'] }}14; color: {{ $cm['color'] }};">
+            <x-icon :name="$sm['icon'] ?? 'bag'" class="w-5 h-5"/>
         </span>
         @if($business->is_24h)
             <span class="pill-mint text-[10px] font-bold px-2 py-0.5 rounded-full">٢٤س</span>

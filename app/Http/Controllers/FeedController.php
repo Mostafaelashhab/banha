@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Alert;
 use App\Models\Business;
 use App\Models\Post;
-use App\Models\Price;
 use App\Models\Vote;
 use App\Models\Zone;
 use Illuminate\Http\Request;
@@ -40,12 +39,8 @@ class FeedController extends Controller
             ->limit(20)
             ->get();
 
-        $prices = Price::query()
-            ->with(['product:id,name,emoji,unit', 'zone:id,name', 'user:id,username,avatar_url'])
-            ->when($zoneId, fn ($q) => $q->where('zone_id', $zoneId))
-            ->latest()
-            ->limit(20)
-            ->get();
+        // Prices & stories are temporarily hidden — focus is on businesses
+        $prices = collect();
 
         // Marketplace listings — featured first, then recent
         $listings = \App\Models\Listing::query()
@@ -141,14 +136,6 @@ class FeedController extends Controller
             ]);
         }
 
-        // Active stories for top strip — group by user, latest first
-        $stories = \App\Models\Story::query()
-            ->where('expires_at', '>', now())
-            ->with('user:id,username,avatar_seed,avatar_url')
-            ->orderByDesc('created_at')
-            ->get()
-            ->groupBy('user_id');
-
         return view('feed', [
             'items'      => $sliced,
             'paginator'  => $paginator,
@@ -157,7 +144,6 @@ class FeedController extends Controller
             'activeZone' => $zoneId ? (int) $zoneId : null,
             'userVotes'  => $userVotes,
             'categories' => Post::CATEGORIES,
-            'stories'    => $stories,
         ]);
     }
 }

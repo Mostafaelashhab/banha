@@ -17,11 +17,18 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Business extends Model
 {
     public const CATEGORIES = [
-        'craftsmen' => ['label' => 'صنايعية',          'emoji' => '🔧', 'color' => '#FFB85C'],
-        'food'      => ['label' => 'مطاعم وكافيهات',  'emoji' => '🍽️', 'color' => '#FF7A4D'],
-        'medical'   => ['label' => 'دكاترة وصيدليات', 'emoji' => '🩺', 'color' => '#1FA857'],
-        'shops'     => ['label' => 'محلات',            'emoji' => '🛒', 'color' => '#7C3AED'],
-        'services'  => ['label' => 'خدمات تانية',     'emoji' => '🛎️', 'color' => '#0EA5E9'],
+        'food'        => ['label' => 'مطاعم وكافيهات',   'emoji' => '🍽️', 'icon' => 'utensils',    'color' => '#FF7A4D'],
+        'medical'     => ['label' => 'دكاترة وصيدليات',  'emoji' => '🩺', 'icon' => 'stethoscope', 'color' => '#1FA857'],
+        'shops'       => ['label' => 'محلات',             'emoji' => '🛒', 'icon' => 'cart',        'color' => '#7C3AED'],
+        'craftsmen'   => ['label' => 'صنايعية',           'emoji' => '🔧', 'icon' => 'wrench',      'color' => '#FFB85C'],
+        'services'    => ['label' => 'خدمات تانية',      'emoji' => '🛎️', 'icon' => 'briefcase',   'color' => '#0EA5E9'],
+        'government'  => ['label' => 'مصالح حكومية',     'emoji' => '🏛',  'icon' => 'briefcase',   'color' => '#4B5563'],
+        'education'   => ['label' => 'تعليم',             'emoji' => '🎓', 'icon' => 'graduation',  'color' => '#2563EB'],
+        'transport'   => ['label' => 'مواصلات',           'emoji' => '🚕', 'icon' => 'car',         'color' => '#DC2626'],
+        'religious'   => ['label' => 'مساجد وكنائس',      'emoji' => '🕌', 'icon' => 'check',       'color' => '#059669'],
+        'banks'       => ['label' => 'بنوك وATM',         'emoji' => '💳', 'icon' => 'cart',        'color' => '#0891B2'],
+        'tourist'     => ['label' => 'أماكن وحدائق',      'emoji' => '🌳', 'icon' => 'leaf',        'color' => '#10B981'],
+        'emergency'   => ['label' => 'طوارئ',             'emoji' => '🚨', 'icon' => 'bolt',        'color' => '#B91C1C'],
     ];
 
     public const SUB_TYPES = [
@@ -108,6 +115,60 @@ class Business extends Model
         'car_rental'      => ['label' => 'تأجير عربيات',      'category' => 'services',  'emoji' => '🚗', 'icon' => 'car'],
         'printing'        => ['label' => 'مطبعة',             'category' => 'services',  'emoji' => '🖨️', 'icon' => 'printer'],
         'services_other'  => ['label' => 'خدمة تانية',        'category' => 'services',  'emoji' => '💼', 'icon' => 'briefcase'],
+
+        // ── government ─────────────────────────────────────
+        'gov_traffic'     => ['label' => 'المرور',             'category' => 'government', 'emoji' => '🚦', 'icon' => 'car'],
+        'gov_registry'    => ['label' => 'الشهر العقاري',     'category' => 'government', 'emoji' => '📜', 'icon' => 'briefcase'],
+        'gov_court'       => ['label' => 'المحكمة',            'category' => 'government', 'emoji' => '⚖️', 'icon' => 'briefcase'],
+        'gov_post'        => ['label' => 'مكتب البريد',        'category' => 'government', 'emoji' => '📮', 'icon' => 'briefcase'],
+        'gov_electricity' => ['label' => 'شركة الكهرباء',     'category' => 'government', 'emoji' => '⚡', 'icon' => 'bolt'],
+        'gov_gas'         => ['label' => 'شركة الغاز',         'category' => 'government', 'emoji' => '🔥', 'icon' => 'flame'],
+        'gov_water'       => ['label' => 'شركة المياه',        'category' => 'government', 'emoji' => '💧', 'icon' => 'briefcase'],
+        'gov_tax'         => ['label' => 'الضرائب',            'category' => 'government', 'emoji' => '💰', 'icon' => 'briefcase'],
+        'gov_other'       => ['label' => 'مصلحة تانية',        'category' => 'government', 'emoji' => '🏛',  'icon' => 'briefcase'],
+
+        // ── education ──────────────────────────────────────
+        'edu_nursery'     => ['label' => 'حضانة',              'category' => 'education',  'emoji' => '🧸', 'icon' => 'baby'],
+        'edu_school_prim' => ['label' => 'مدرسة ابتدائي',      'category' => 'education',  'emoji' => '🏫', 'icon' => 'graduation'],
+        'edu_school_prep' => ['label' => 'مدرسة إعدادي',       'category' => 'education',  'emoji' => '🏫', 'icon' => 'graduation'],
+        'edu_school_sec'  => ['label' => 'مدرسة ثانوي',        'category' => 'education',  'emoji' => '🎒', 'icon' => 'graduation'],
+        'edu_university'  => ['label' => 'جامعة / كلية',       'category' => 'education',  'emoji' => '🎓', 'icon' => 'graduation'],
+        'edu_center'      => ['label' => 'سنتر دروس',          'category' => 'education',  'emoji' => '📚', 'icon' => 'book'],
+        'edu_lang'        => ['label' => 'لغات',               'category' => 'education',  'emoji' => '🗣',  'icon' => 'graduation'],
+        'edu_other'       => ['label' => 'تعليم تاني',         'category' => 'education',  'emoji' => '✏️', 'icon' => 'graduation'],
+
+        // ── transport ──────────────────────────────────────
+        'trn_microbus'    => ['label' => 'موقف ميكروباص',      'category' => 'transport',  'emoji' => '🚐', 'icon' => 'car'],
+        'trn_taxi'        => ['label' => 'موقف تاكسي',         'category' => 'transport',  'emoji' => '🚖', 'icon' => 'car'],
+        'trn_bus'         => ['label' => 'موقف أوتوبيس',       'category' => 'transport',  'emoji' => '🚌', 'icon' => 'car'],
+        'trn_railway'     => ['label' => 'محطة قطر',           'category' => 'transport',  'emoji' => '🚉', 'icon' => 'car'],
+        'trn_uber'        => ['label' => 'تاكسي تطبيق',         'category' => 'transport',  'emoji' => '🚗', 'icon' => 'car'],
+        'trn_other'       => ['label' => 'مواصلات تانية',      'category' => 'transport',  'emoji' => '🛣',  'icon' => 'car'],
+
+        // ── religious ──────────────────────────────────────
+        'rel_mosque'      => ['label' => 'جامع',               'category' => 'religious',  'emoji' => '🕌', 'icon' => 'check'],
+        'rel_church'      => ['label' => 'كنيسة',              'category' => 'religious',  'emoji' => '⛪', 'icon' => 'check'],
+        'rel_zawia'       => ['label' => 'زاوية',              'category' => 'religious',  'emoji' => '🕋', 'icon' => 'check'],
+
+        // ── banks ──────────────────────────────────────────
+        'bank_branch'     => ['label' => 'فرع بنك',            'category' => 'banks',      'emoji' => '🏦', 'icon' => 'cart'],
+        'bank_atm'        => ['label' => 'ATM ماكينة سحب',     'category' => 'banks',      'emoji' => '🏧', 'icon' => 'cart'],
+        'bank_exchange'   => ['label' => 'صرافة',              'category' => 'banks',      'emoji' => '💵', 'icon' => 'cart'],
+
+        // ── tourist / parks ────────────────────────────────
+        'tour_park'       => ['label' => 'حديقة عامة',         'category' => 'tourist',    'emoji' => '🌳', 'icon' => 'leaf'],
+        'tour_corniche'   => ['label' => 'كورنيش',             'category' => 'tourist',    'emoji' => '🌊', 'icon' => 'leaf'],
+        'tour_club'       => ['label' => 'نادي',               'category' => 'tourist',    'emoji' => '⚽', 'icon' => 'dumbbell'],
+        'tour_monument'   => ['label' => 'معلم تاريخي',        'category' => 'tourist',    'emoji' => '🏛',  'icon' => 'check'],
+        'tour_cinema'     => ['label' => 'سينما',              'category' => 'tourist',    'emoji' => '🎬', 'icon' => 'tv'],
+        'tour_other'      => ['label' => 'مكان تاني',          'category' => 'tourist',    'emoji' => '📍', 'icon' => 'map-pin'],
+
+        // ── emergency ──────────────────────────────────────
+        'emr_police'      => ['label' => 'قسم شرطة',           'category' => 'emergency',  'emoji' => '🚓', 'icon' => 'bolt'],
+        'emr_ambulance'   => ['label' => 'إسعاف',              'category' => 'emergency',  'emoji' => '🚑', 'icon' => 'bolt'],
+        'emr_fire'        => ['label' => 'مطافي',              'category' => 'emergency',  'emoji' => '🚒', 'icon' => 'flame'],
+        'emr_hospital'    => ['label' => 'مستشفى طوارئ',       'category' => 'emergency',  'emoji' => '🏥', 'icon' => 'stethoscope'],
+        'emr_civil'       => ['label' => 'حماية مدنية',        'category' => 'emergency',  'emoji' => '🛡',  'icon' => 'bolt'],
     ];
 
     protected function casts(): array

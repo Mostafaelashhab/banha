@@ -153,6 +153,22 @@ html[dir="rtl"] body {
     overflow: visible;
 }
 
+/* Promoted business card — paid-ad treatment (subtle but distinguishable) */
+.biz-card-promoted {
+    box-shadow:
+        0 12px 32px -10px rgba(255, 184, 92, .35),
+        0 0 0 1px rgba(255, 184, 92, .35);
+    position: relative;
+}
+.biz-card-promoted::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(135deg, rgba(255, 184, 92, .08), transparent 30%);
+}
+
 /* Sponsored post — gold/honey accent */
 .card-light.post-sponsored {
     background:

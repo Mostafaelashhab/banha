@@ -22,9 +22,9 @@
         @endphp
         <div class="card-light p-4 mb-2">
             <div class="flex items-center gap-3">
-                <span class="w-12 h-12 rounded-2xl grid place-items-center text-2xl shrink-0"
-                      style="background: {{ $cm['color'] }}20; border: 1px solid {{ $cm['color'] }}50">
-                    {{ $b->emoji ?: $sm['emoji'] }}
+                <span class="w-12 h-12 rounded-2xl grid place-items-center shrink-0"
+                      style="background: {{ $cm['color'] }}14; color: {{ $cm['color'] }};">
+                    <x-icon :name="$sm['icon'] ?? 'bag'" class="w-6 h-6"/>
                 </span>
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-1.5">

@@ -8,7 +8,9 @@
             <x-icon name="arrow-right" class="w-4 h-4"/>
         </a>
         <h1 class="text-xl font-extrabold text-ink-950 inline-flex items-center gap-2">
-            <span>{{ $meta['emoji'] }}</span>
+            <span class="inline-flex" style="color: {{ $meta['color'] }}">
+                <x-icon :name="$meta['icon'] ?? 'bag'" class="w-5 h-5"/>
+            </span>
             {{ $meta['label'] }}
         </h1>
         <span class="ms-auto text-xs text-ink-400">{{ $businesses->total() }} نشاط</span>
@@ -30,8 +32,9 @@
                class="chip {{ ! $activeSubType ? 'chip-active' : '' }}">الكل</a>
             @foreach($subTypes as $st)
                 <a href="{{ route('directory.category', ['category' => $category, 'type' => $st['key'], 'zone' => $activeZone]) }}"
-                   class="chip {{ $activeSubType === $st['key'] ? 'chip-active' : '' }}">
-                    <span>{{ $st['emoji'] }}</span> {{ $st['label'] }}
+                   class="chip inline-flex items-center gap-1.5 {{ $activeSubType === $st['key'] ? 'chip-active' : '' }}">
+                    <x-icon :name="$st['icon'] ?? 'bag'" class="w-3.5 h-3.5"/>
+                    {{ $st['label'] }}
                     @if(($subTypeCounts[$st['key']] ?? 0) > 0)
                         <span class="opacity-60 text-xs">{{ $subTypeCounts[$st['key']] }}</span>
                     @endif
@@ -57,12 +60,15 @@
     {{-- Results --}}
     @if($businesses->isEmpty())
         <div class="card-light p-10 text-center">
-            <div class="text-3xl mb-3">{{ $meta['emoji'] }}</div>
+            <div class="w-14 h-14 rounded-2xl mx-auto mb-3 grid place-items-center"
+                 style="background: {{ $meta['color'] }}14; color: {{ $meta['color'] }};">
+                <x-icon :name="$meta['icon'] ?? 'bag'" class="w-7 h-7"/>
+            </div>
             <h3 class="font-extrabold text-ink-950 mb-1">مفيش نتيجة</h3>
             <p class="text-ink-500 text-sm">جرّب filter تاني أو اطلب من الإدارة تضيف نشاطك.</p>
         </div>
     @else
-        <div class="space-y-2" data-infinite-scroll>
+        <div class="space-y-3" data-infinite-scroll>
             @include('directory.partials.category-page', ['businesses' => $businesses])
         </div>
     @endif

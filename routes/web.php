@@ -16,11 +16,8 @@ use App\Http\Controllers\SeoController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return Auth::check()
-        ? redirect()->route('feed')
-        : view('welcome');
-})->name('home');
+Route::get('/', fn () => redirect()->route('feed'))->name('home');
+Route::view('/welcome', 'welcome')->name('welcome');
 
 Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
 Route::get('/robots.txt',  [SeoController::class, 'robots'])->name('robots');
@@ -49,6 +46,10 @@ Route::get('/directory/business/{business}', [DirectoryController::class, 'show'
 Route::get('/directory/c/{category}',        [DirectoryController::class, 'category'])->name('directory.category');
 Route::get('/directory/business/{business}/click', [DirectoryController::class, 'trackClick'])->name('directory.track');
 
+// Public map (everything in Banha on one map)
+Route::get('/map',                  [DirectoryController::class, 'map'])->name('directory.map');
+Route::get('/map.json',             [DirectoryController::class, 'mapData'])->name('directory.map.data');
+
 // Public QR menu (the SEO money page)
 Route::get('/m/{business}', [\App\Http\Controllers\MenuController::class, 'publicMenu'])->name('menu.public');
 
@@ -67,16 +68,19 @@ Route::get('/events/{event}',          [\App\Http\Controllers\EventController::c
 Route::get('/stories',                 [\App\Http\Controllers\StoryController::class, 'index'])->name('stories.index');
 Route::get('/stories/{story}',         [\App\Http\Controllers\StoryController::class, 'show'])->name('stories.show')->whereNumber('story');
 
+// Public guest browsing — feed, discover, zones, posts & user profiles
+Route::get('/feed',                    [FeedController::class, 'index'])->name('feed');
+Route::get('/discover',                [BrowseController::class, 'discover'])->name('discover');
+Route::get('/zones',                   [BrowseController::class, 'zones'])->name('zones');
+Route::get('/posts/{post}',            [PostController::class, 'show'])->name('posts.show');
+Route::get('/u/{username}',            [ProfileController::class, 'show'])->name('profile.show');
+
 // Authenticated app routes
 Route::middleware('auth')->group(function () {
     // Activation (after signup)
     Route::get('/verify',       [OtpController::class, 'showActivate'])->name('verify.show');
     Route::post('/verify/send', [OtpController::class, 'sendActivate'])->name('verify.send');
     Route::post('/verify',      [OtpController::class, 'verifyActivate'])->name('verify.attempt');
-
-    Route::get('/feed',     [FeedController::class, 'index'])->name('feed');
-    Route::get('/discover', [BrowseController::class, 'discover'])->name('discover');
-    Route::get('/zones',    [BrowseController::class, 'zones'])->name('zones');
 
     // Directory — owner CRUD (auth-only)
     Route::get('/directory/new',                            [DirectoryController::class, 'create'])->name('directory.create');
@@ -98,7 +102,6 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/posts/new',  [PostController::class, 'create'])->name('posts.create');
     Route::post('/posts',     [PostController::class, 'store'])->name('posts.store');
-    Route::get('/posts/{post}', [PostController::class, 'show'])->name('posts.show');
     Route::delete('/posts/{post}', [PostController::class, 'destroy'])->name('posts.destroy');
 
     Route::post('/posts/{post}/vote',    [PostController::class, 'vote'])->name('posts.vote');
@@ -133,6 +136,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/directory/business/{business}/photo',  [\App\Http\Controllers\BusinessPhotoController::class, 'store'])->name('business.photo.store');
     Route::delete('/business-photos/{photo}',            [\App\Http\Controllers\BusinessPhotoController::class, 'destroy'])->name('business.photo.destroy');
 
+    // Business reviews (logged-in users)
+    Route::post('/directory/business/{business}/review',   [\App\Http\Controllers\BusinessReviewController::class, 'store'])->name('business.review.store');
+    Route::delete('/directory/business/{business}/review', [\App\Http\Controllers\BusinessReviewController::class, 'destroy'])->name('business.review.destroy');
+
     // Events (owner CRUD)
     Route::get('/events/new',           [\App\Http\Controllers\EventController::class, 'create'])->name('events.create');
     Route::post('/events',              [\App\Http\Controllers\EventController::class, 'store'])->name('events.store');
@@ -159,7 +166,6 @@ Route::middleware('auth')->group(function () {
     Route::post('/me/password',       [ProfileSettingsController::class, 'changePassword'])->name('profile.password');
     Route::post('/me/avatar',         [ProfileSettingsController::class, 'uploadAvatar'])->name('profile.avatar');
     Route::delete('/me/avatar',       [ProfileSettingsController::class, 'deleteAvatar'])->name('profile.avatar.delete');
-    Route::get('/u/{username}',       [ProfileController::class, 'show'])->name('profile.show');
 
     // ─── Admin ────────────────────────────────────────────────
     Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {

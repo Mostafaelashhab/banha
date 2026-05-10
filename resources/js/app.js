@@ -1,3 +1,37 @@
+// ─── Guest mode: redirect to login when an action needs auth ─
+// `requireAuth()` returns true if the user is logged in; otherwise it
+// sends them to /login?redirect=<current url> and returns false so the
+// calling handler can bail out.
+function requireAuth() {
+    const body = document.body;
+    if (body?.dataset.guest !== '1') return true;
+    const loginUrl = body?.dataset.loginUrl || '/login';
+    const back     = window.location.pathname + window.location.search;
+    window.location.href = loginUrl + '?redirect=' + encodeURIComponent(back);
+    return false;
+}
+window.requireAuth = requireAuth;
+
+// Catch any auth-required link/button: <a data-needs-auth> / <button data-needs-auth>
+document.addEventListener('click', (e) => {
+    const el = e.target.closest('[data-needs-auth]');
+    if (!el) return;
+    if (document.body?.dataset.guest !== '1') return;
+    e.preventDefault();
+    e.stopPropagation();
+    requireAuth();
+}, true);
+
+// Catch any auth-required form: <form data-needs-auth>
+document.addEventListener('submit', (e) => {
+    const form = e.target.closest('form[data-needs-auth]');
+    if (!form) return;
+    if (document.body?.dataset.guest !== '1') return;
+    e.preventDefault();
+    e.stopPropagation();
+    requireAuth();
+}, true);
+
 // ─── Post body "عرض المزيد" (Facebook-style inline expand) ────
 function wireExpandable(root = document) {
     root.querySelectorAll('[data-expandable]:not([data-expand-wired])').forEach((wrap) => {
@@ -20,20 +54,14 @@ document.addEventListener('DOMContentLoaded', () => wireExpandable());
 // Re-run after infinite-scroll appends new posts
 document.addEventListener('feed:appended', (e) => wireExpandable(e.target || document));
 
-// ─── Block pinch-zoom + double-tap zoom (iOS Safari ignores user-scalable=no) ──
+// ─── Block pinch-zoom (iOS Safari) without breaking scroll ──
+// Note: we removed the touchend double-tap blocker because it broke vertical scroll.
+// CSS `touch-action: manipulation` already kills double-tap zoom — no JS needed.
 document.addEventListener('gesturestart',  (e) => e.preventDefault());
 document.addEventListener('gesturechange', (e) => e.preventDefault());
 document.addEventListener('gestureend',    (e) => e.preventDefault());
 
-// Block double-tap zoom
-let lastTouch = 0;
-document.addEventListener('touchend', (e) => {
-    const now = Date.now();
-    if (now - lastTouch <= 300) e.preventDefault();
-    lastTouch = now;
-}, { passive: false });
-
-// Block ctrl+wheel zoom on desktop too
+// Block ctrl+wheel zoom on desktop only (passive false required to preventDefault)
 document.addEventListener('wheel', (e) => {
     if (e.ctrlKey) e.preventDefault();
 }, { passive: false });
@@ -416,12 +444,56 @@ function maybeShowInstallPrompt() {
     if (recentlyDismissed()) return;
 
     if (isIOS) {
-        // Show iOS sheet after 2s for first-time visitors (faster nudge)
+        // iOS doesn't fire beforeinstallprompt — show our manual sheet ASAP.
+        // Tiny delay so the page paints first; not the long 2s nudge.
         setTimeout(() => {
             if (!document.querySelector('.modal-wrap.open')) showIOSInstallSheet();
-        }, 2000);
+        }, 400);
+        return;
     }
-    // Android/Desktop: handled via beforeinstallprompt event (browser fires it)
+
+    // Android/Desktop: Chrome fires beforeinstallprompt only after the user
+    // has engaged with the page (a few seconds of interaction). If that fires,
+    // showInstallBanner() runs from the listener above. As a fallback for
+    // browsers that never fire it (Firefox, some Samsung builds, locked PWA)
+    // show a passive install hint after 8s — only if no native banner showed.
+    setTimeout(() => {
+        if (deferredPrompt) return;                                  // native path took over
+        if (document.getElementById('install-banner')) return;       // already shown
+        if (recentlyDismissed()) return;
+        showAndroidFallbackBanner();
+    }, 8000);
+}
+
+function showAndroidFallbackBanner() {
+    if (document.getElementById('install-banner')) return;
+    const ua = navigator.userAgent;
+    const isFirefox = /Firefox|FxiOS/i.test(ua);
+    const isChromium = /Chrome|CriOS|Edg|SamsungBrowser/i.test(ua) && !isFirefox;
+    // Only show fallback when there's no native path; Chromium without an event
+    // means heuristic not met — still useful to surface the option.
+    const el = document.createElement('div');
+    el.id = 'install-banner';
+    el.className = 'install-banner';
+    const hint = isFirefox
+        ? 'افتح القايمة (⋮) واختار "تثبيت" أو "Add to Home screen"'
+        : 'افتح قايمة Chrome (⋮) واختار "Add to Home screen"';
+    el.innerHTML = `
+        <div class="install-icon">
+            <img src="/icons/icon-192.png" width="44" height="44" alt="بنهاوي">
+        </div>
+        <div class="install-text">
+            <div class="install-title">حمّل بنهاوي</div>
+            <div class="install-sub">${hint}</div>
+        </div>
+        <button class="install-close" data-action="dismiss" aria-label="إغلاق">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+    `;
+    document.body.appendChild(el);
+    el.addEventListener('click', (e) => {
+        if (e.target.closest('[data-action="dismiss"]')) dismissInstall();
+    });
 }
 
 // expose for manual trigger (e.g., from a "حمّل التطبيق" button)
@@ -594,6 +666,7 @@ document.addEventListener('click', async (e) => {
     const btn = e.target.closest('[data-vote]');
     if (!btn) return;
     e.preventDefault();
+    if (!requireAuth()) return;
 
     const block = btn.closest('[data-vote-block]');
     if (!block || block.dataset.voting === '1') return;
@@ -761,6 +834,7 @@ document.addEventListener('click', async (e) => {
     const btn = e.target.closest('[data-bookmark]');
     if (!btn) return;
     e.preventDefault();
+    if (!requireAuth()) return;
     if (btn.dataset.busy === '1') return;
     btn.dataset.busy = '1';
 
@@ -818,6 +892,7 @@ document.addEventListener('submit', async (e) => {
     const form = e.target.closest('form[data-comment-like]');
     if (!form) return;
     e.preventDefault();
+    if (!requireAuth()) return;
 
     const btn      = form.querySelector('button[type="submit"]');
     if (!btn || btn.dataset.busy === '1') return;

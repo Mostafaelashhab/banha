@@ -15,8 +15,13 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    public function showLogin()
+    public function showLogin(Request $request)
     {
+        if ($r = $request->query('redirect')) {
+            if (str_starts_with($r, '/') && ! str_starts_with($r, '//')) {
+                $request->session()->put('url.intended', url($r));
+            }
+        }
         return view('auth.login');
     }
 
@@ -72,7 +77,6 @@ class AuthController extends Controller
             'username' => ['required', 'string', 'min:3', 'max:30', 'regex:/^[\p{Arabic}A-Za-z0-9_]+$/u', 'unique:users,username'],
             'password' => ['required', 'string', 'min:6', 'max:80', 'confirmed'],
             'zone_id'  => ['required', 'exists:zones,id'],
-            'persona'  => ['nullable', 'in:student,worker,homemaker,merchant,resident'],
             'agree'    => ['required', 'accepted'],
         ], [
             'phone.regex'        => 'لازم رقم موبايل مصري صحيح.',
@@ -89,7 +93,7 @@ class AuthController extends Controller
             'username'    => $data['username'],
             'password'    => $data['password'],
             'zone_id'     => $data['zone_id'],
-            'persona'     => $data['persona'] ?? 'resident',
+            'persona'     => 'resident',
             'avatar_seed' => AnonSeed::generate(),
             'reputation'  => 50,
         ]);
@@ -108,7 +112,7 @@ class AuthController extends Controller
         }
 
         return redirect()->route('verify.show')
-            ->with('flash', '✓ بعتنالك كود تفعيل على واتساب رقم '.$user->phone);
+            ->with('flash', 'بعتنالك كود تفعيل على واتساب: '.$user->phone);
     }
 
     public function logout(Request $request)

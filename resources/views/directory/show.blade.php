@@ -235,6 +235,78 @@
         </div>
     @endif
 
+    {{-- Rating form (logged-in users, non-owner) --}}
+    @auth
+        @if(! $isOwner)
+            @php $myRating = (int) ($myReview->rating ?? 0); @endphp
+            <div class="card-light p-4 mb-3">
+                <h3 class="text-sm font-extrabold text-ink-950 inline-flex items-center gap-2 mb-1">
+                    <svg viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-honey-500"><polygon points="12 2 15 9 22 9.5 17 14.5 18.5 22 12 18 5.5 22 7 14.5 2 9.5 9 9"/></svg>
+                    {{ $myReview ? 'تقييمك' : 'قيّم النشاط' }}
+                </h3>
+                <p class="text-[11px] text-ink-500 mb-3">{{ $myReview ? 'تقدر تعدّل تقييمك في أي وقت.' : 'دوسلك على نجمة وقول رأيك.' }}</p>
+
+                <form method="POST" action="{{ route('business.review.store', $business) }}" class="space-y-3" data-rate-form>
+                    @csrf
+                    <input type="hidden" name="rating" value="{{ $myRating }}" data-rate-input>
+
+                    <div class="flex items-center gap-1.5" dir="ltr" data-rate-stars>
+                        @for($i=1; $i<=5; $i++)
+                            <button type="button" data-rate-value="{{ $i }}"
+                                    class="w-10 h-10 rounded-full grid place-items-center transition {{ $i <= $myRating ? 'text-honey-500' : 'text-ink-300' }} hover:text-honey-500 hover:bg-honey-100/40"
+                                    aria-label="{{ $i }} نجوم">
+                                <svg viewBox="0 0 24 24" fill="currentColor" class="w-7 h-7"><polygon points="12 2 15 9 22 9.5 17 14.5 18.5 22 12 18 5.5 22 7 14.5 2 9.5 9 9"/></svg>
+                            </button>
+                        @endfor
+                        <span class="ms-2 text-xs font-bold text-ink-500" data-rate-label>{{ $myRating ? $myRating.'/5' : '' }}</span>
+                    </div>
+
+                    <textarea name="body" rows="3" maxlength="1000" placeholder="رأيك (اختياري)"
+                              class="w-full bg-cream-100 rounded-2xl px-4 py-3 text-ink-950 placeholder-ink-400 outline-0 border border-ink-950/8 focus:border-coral-500 transition resize-none">{{ old('body', $myReview->body ?? '') }}</textarea>
+
+                    @error('rating') <p class="text-blush-500 text-xs">{{ $message }}</p> @enderror
+                    @error('body') <p class="text-blush-500 text-xs">{{ $message }}</p> @enderror
+
+                    <div class="flex items-center gap-2">
+                        <button type="submit" class="btn-primary !py-2.5 text-xs">
+                            {{ $myReview ? 'حدّث التقييم' : 'إرسال التقييم' }}
+                            <x-icon name="check" class="w-3.5 h-3.5"/>
+                        </button>
+                        @if($myReview)
+                            <button type="submit" formaction="{{ route('business.review.destroy', $business) }}" formmethod="POST"
+                                    class="text-xs font-bold text-blush-500 hover:underline"
+                                    data-confirm="حذف تقييمك؟" data-confirm-tone="danger">
+                                @method('DELETE')
+                                احذف
+                            </button>
+                        @endif
+                    </div>
+                </form>
+            </div>
+
+            <script>
+                (function () {
+                    const form = document.querySelector('[data-rate-form]');
+                    if (!form) return;
+                    const input = form.querySelector('[data-rate-input]');
+                    const label = form.querySelector('[data-rate-label]');
+                    form.querySelectorAll('[data-rate-value]').forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            const v = parseInt(btn.dataset.rateValue, 10);
+                            input.value = v;
+                            if (label) label.textContent = v + '/5';
+                            form.querySelectorAll('[data-rate-value]').forEach(b => {
+                                const bv = parseInt(b.dataset.rateValue, 10);
+                                b.classList.toggle('text-honey-500', bv <= v);
+                                b.classList.toggle('text-ink-300', bv > v);
+                            });
+                        });
+                    });
+                })();
+            </script>
+        @endif
+    @endauth
+
     {{-- Reviews --}}
     @if(isset($reviews) && $reviews->isNotEmpty())
         <div class="card-light p-4 mb-3">
@@ -283,7 +355,7 @@
     {{-- Similar --}}
     @if($similar->isNotEmpty())
         <h3 class="text-sm font-extrabold text-ink-950 mb-2 mt-5">{{ $sm['label'] }} تاني في نفس المنطقة</h3>
-        <div class="space-y-2">
+        <div class="space-y-3">
             @foreach($similar as $b)
                 @include('directory.partials.business-row', ['business' => $b])
             @endforeach

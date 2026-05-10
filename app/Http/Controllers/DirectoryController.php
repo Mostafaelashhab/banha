@@ -185,7 +185,11 @@ class DirectoryController extends Controller
             ->limit(20)
             ->get();
 
-        return view('directory.show', compact('business', 'similar', 'reviews'));
+        $myReview = Auth::check()
+            ? $business->reviews()->where('user_id', Auth::id())->where('source', 'user')->first()
+            : null;
+
+        return view('directory.show', compact('business', 'similar', 'reviews', 'myReview'));
     }
 
     // ─── Owner CRUD ─────────────────────────────────────────────
@@ -294,6 +298,71 @@ class DirectoryController extends Controller
         $this->authorizeOwner($business);
         $business->update(['is_active' => false]);
         return redirect()->route('directory.mine')->with('flash', 'تم حذف النشاط.');
+    }
+
+    /** Map view of all businesses (public, fast). */
+    public function map()
+    {
+        return view('directory.map', [
+            'categories' => Business::CATEGORIES,
+        ]);
+    }
+
+    /** Lightweight JSON of businesses + events with lat/lng (used by /map). Cached. */
+    public function mapData(Request $request)
+    {
+        $cat = $request->query('category');
+
+        // Businesses (with `is_promoted` bubbled up so JS can style them differently)
+        $businesses = \Illuminate\Support\Facades\Cache::remember('map-data:v3:'.($cat ?: 'all'), 300, function () use ($cat) {
+            $q = Business::query()
+                ->where('is_active', true)
+                ->whereNotNull('lat')->whereNotNull('lng')
+                ->select('id', 'name', 'category', 'lat', 'lng', 'is_verified', 'has_menu', 'rating_avg', 'phone', 'promoted_until');
+            if ($cat) $q->where('category', $cat);
+            return $q->limit(500)->get()->map(fn ($b) => [
+                'id'          => (int) $b->id,
+                'name'        => (string) $b->name,
+                'category'    => (string) $b->category,
+                'lat'         => (float) $b->lat,
+                'lng'         => (float) $b->lng,
+                'is_verified' => (bool) $b->is_verified,
+                'has_menu'    => (bool) $b->has_menu,
+                'is_promoted' => (bool) ($b->promoted_until && $b->promoted_until->isFuture()),
+                'rating_avg'  => (float) $b->rating_avg,
+                'phone'       => $b->phone,
+            ])->values()->all();
+        });
+
+        // Live events (not category-filtered — they're a separate layer)
+        $events = \Illuminate\Support\Facades\Cache::remember('map-events:v1', 120, function () {
+            return \App\Models\Event::query()
+                ->where('status', 'active')
+                ->whereNotNull('lat')->whereNotNull('lng')
+                ->where(function ($q) {
+                    $q->where('starts_at', '>=', now()->subHours(6))
+                      ->orWhere('ends_at', '>=', now());
+                })
+                ->select('id', 'title', 'kind', 'lat', 'lng', 'starts_at', 'location')
+                ->limit(200)
+                ->get()
+                ->map(fn ($e) => [
+                    'id'        => (int) $e->id,
+                    'title'     => (string) $e->title,
+                    'kind'      => (string) $e->kind,
+                    'lat'       => (float) $e->lat,
+                    'lng'       => (float) $e->lng,
+                    'starts_at' => $e->starts_at?->toIso8601String(),
+                    'location'  => $e->location,
+                ])
+                ->values()->all();
+        });
+
+        return response()->json([
+            'businesses' => array_values((array) $businesses),
+            'events'     => array_values((array) $events),
+            'categories' => Business::CATEGORIES,
+        ]);
     }
 
     /** Track a contact click (phone or whatsapp). Returns 204 — used by JS beacon. */

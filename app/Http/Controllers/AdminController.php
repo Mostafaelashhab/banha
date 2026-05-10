@@ -304,14 +304,25 @@ class AdminController extends Controller
         $days = (int) $request->input('days', 7);
         if ($days <= 0) {
             $business->update(['promoted_until' => null]);
+            $this->bustMapCache();
             return back()->with('flash', 'تم إلغاء الترويج.');
         }
-        // Extend from now or from existing promotion (whichever is later)
         $start = ($business->promoted_until && $business->promoted_until->isFuture())
             ? $business->promoted_until
             : now();
         $business->update(['promoted_until' => $start->copy()->addDays($days)]);
+        $this->bustMapCache();
         return back()->with('flash', "تم الترويج لمدة {$days} يوم — لحد ".$business->promoted_until->translatedFormat('d M Y'));
+    }
+
+    /** Forget all map-data caches so the new promotion shows up immediately. */
+    private function bustMapCache(): void
+    {
+        \Illuminate\Support\Facades\Cache::forget('map-data:v3:all');
+        \Illuminate\Support\Facades\Cache::forget('map-events:v1');
+        foreach (array_keys(\App\Models\Business::CATEGORIES) as $cat) {
+            \Illuminate\Support\Facades\Cache::forget('map-data:v3:'.$cat);
+        }
     }
 
     /** Admin: same for marketplace listings. */
