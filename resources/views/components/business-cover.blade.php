@@ -5,10 +5,7 @@
     $cm = $business->categoryMeta();
     $sm = $business->subTypeMeta();
 
-    // Strip broken Firebase image URLs (expired SSL on d-innova.com)
-    $userPhoto = ($business->photo_url && ! str_contains($business->photo_url, 'd-innova.com'))
-        ? $business->photo_url
-        : null;
+    $userPhoto = $business->photo_url ?: null;
 
     $initial = mb_substr(trim($business->name ?: '?'), 0, 1);
     $color   = $cm['color'] ?? '#FF7A4D';

@@ -134,10 +134,13 @@ class DirectoryController extends Controller
             }
         }
 
-        // Promoted (paid) bumps to the top, then verified, then by rating
+        // Promoted (paid) > verified > has-working-photo > rating > 24h
+        // "has-working-photo" ranks entries with a real image above ones with no image,
+        // so the UX feels populated rather than gradient-only.
         $businesses = $query
             ->orderByRaw('CASE WHEN promoted_until > NOW() THEN 0 ELSE 1 END')
             ->orderByDesc('is_verified')
+            ->orderByRaw('CASE WHEN photo_url IS NOT NULL AND photo_url != "" THEN 0 ELSE 1 END')
             ->orderByDesc('rating_avg')
             ->orderByDesc('is_24h')
             ->paginate(20)

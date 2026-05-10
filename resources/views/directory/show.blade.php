@@ -148,7 +148,7 @@
 
     {{-- Hero: branded Banhawy cover when no user photo --}}
     @php
-        $heroPhoto = ($business->photo_url && ! str_contains($business->photo_url, 'd-innova.com')) ? $business->photo_url : null;
+        $heroPhoto = $business->photo_url ?: null;
         $heroInitial = mb_substr(trim($business->name ?: '?'), 0, 1);
         $heroColor   = $cm['color'] ?? '#FF7A4D';
     @endphp
