@@ -45,9 +45,18 @@ class ListingController extends Controller
             return view('marketplace._page', compact('listings'));
         }
 
+        // Per-kind active count, used to drive the segmented control labels
+        $kindCounts = Listing::query()
+            ->where('status', 'active')
+            ->selectRaw('kind, count(*) as c')
+            ->groupBy('kind')
+            ->pluck('c', 'kind')
+            ->all();
+
         return view('marketplace.index', [
             'listings'      => $listings,
             'kinds'         => Listing::KINDS,
+            'kindCounts'    => $kindCounts,
             'categories'    => Listing::CATEGORIES,
             'activeKind'    => $kind,
             'activeCategory'=> $category,

@@ -313,6 +313,27 @@
                 <x-business-extras :sub-type="$oldSub"/>
             </div>
 
+            {{-- Admin-only: create as "unowned" so the real owner can claim it later --}}
+            @if(auth()->user()->is_admin)
+                <div class="card-light p-4 border-coral-500/20 bg-coral-50/40">
+                    <label class="flex items-start gap-3 cursor-pointer">
+                        <input type="checkbox" name="unowned" value="1" {{ old('unowned') ? 'checked' : '' }} class="sr-only peer">
+                        <span class="w-12 h-7 rounded-full bg-ink-300 relative transition peer-checked:bg-coral-500 shrink-0 mt-0.5">
+                            <span class="absolute top-0.5 start-0.5 w-6 h-6 rounded-full bg-white shadow transition peer-checked:translate-x-[-1.25rem] rtl:peer-checked:translate-x-5"></span>
+                        </span>
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm font-extrabold text-ink-950 inline-flex items-center gap-1.5">
+                                <span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-coral-500 text-white">ADMIN</span>
+                                نشاط بدون صاحب
+                            </div>
+                            <p class="text-[11px] text-ink-500 mt-0.5 leading-relaxed">
+                                فعّل ده لو بتـcurate مكان عام (جامعة، جامع، حديقة…). صاحب النشاط الفعلي يقدر يـclaim النشاط بعدين عبر "ده نشاطي" + OTP على رقم التليفون.
+                            </p>
+                        </div>
+                    </label>
+                </div>
+            @endif
+
             {{-- Sticky submit --}}
             <div class="sticky-submit">
                 <button type="submit" class="btn-primary w-full justify-center !py-3.5 text-sm shadow-xl shadow-coral-500/30">

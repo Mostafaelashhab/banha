@@ -260,13 +260,17 @@ class DirectoryController extends Controller
 
         $photoUrl = $this->handlePhotoUpload($request);
 
+        // Admin can publish a place without an owner (curated listing). The real
+        // owner claims it later via the OTP flow on the show page.
+        $unowned = Auth::user()->is_admin && $request->boolean('unowned');
+
         $business = Business::create([
             'name'            => $data['name'],
             'category'        => $sm['category'],
             'sub_type'        => $data['sub_type'],
             'custom_sub_type' => $data['custom_sub_type'] ?? null,
             'zone_id'         => $data['zone_id'],
-            'owner_user_id'   => Auth::id(),
+            'owner_user_id'   => $unowned ? null : Auth::id(),
             'description'   => $data['description'] ?? null,
             'phone'         => $data['phone'] ?? null,
             'whatsapp'      => $data['whatsapp'] ?? null,
@@ -291,7 +295,9 @@ class DirectoryController extends Controller
         }
 
         return redirect()->route('directory.show', $business)
-            ->with('flash', '✓ نشاطك انضاف للدليل! هتراجعه فريق بنهاوي قريباً للتوثيق.');
+            ->with('flash', $unowned
+                ? '✓ تم إضافة المكان كنشاط بدون صاحب — صاحبه يقدر يـclaim عبر زرار "ده نشاطي؟" في الصفحة.'
+                : '✓ نشاطك انضاف للدليل! هتراجعه فريق بنهاوي قريباً للتوثيق.');
     }
 
     public function edit(Business $business)
