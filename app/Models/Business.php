@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'description', 'phone', 'whatsapp', 'address', 'lat', 'lng',
     'hours', 'is_24h', 'is_verified', 'promoted_until', 'is_active',
     'rating_avg', 'ratings_count', 'views_count', 'phone_clicks', 'whatsapp_clicks',
-    'emoji', 'photo_url', 'has_menu', 'menu_currency',
+    'emoji', 'photo_url', 'has_menu', 'menu_currency', 'external_id',
 ])]
 class Business extends Model
 {
