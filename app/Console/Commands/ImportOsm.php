@@ -36,14 +36,18 @@ class ImportOsm extends Command
      */
     private function mapTags(array $tags): ?array
     {
-        $a = $tags['amenity']     ?? null;
-        $s = $tags['shop']        ?? null;
-        $t = $tags['tourism']     ?? null;
-        $h = $tags['healthcare']  ?? null;
-        $l = $tags['leisure']     ?? null;
-        $r = $tags['religion']    ?? null;
-        $rail = $tags['railway']  ?? null;
-        $office = $tags['office'] ?? null;
+        $a    = $tags['amenity']          ?? null;
+        $s    = $tags['shop']             ?? null;
+        $t    = $tags['tourism']          ?? null;
+        $h    = $tags['healthcare']       ?? null;
+        $l    = $tags['leisure']          ?? null;
+        $r    = $tags['religion']         ?? null;
+        $rail = $tags['railway']          ?? null;
+        $o    = $tags['office']           ?? null;
+        $c    = $tags['craft']            ?? null;
+        $hist = $tags['historic']         ?? null;
+        $pt   = $tags['public_transport'] ?? null;
+        $hw   = $tags['highway']          ?? null;
 
         // ── Food ─────────────────────────────────────────
         if ($a === 'restaurant')          return ['food', 'restaurant'];
@@ -133,13 +137,54 @@ class ImportOsm extends Command
 
         // ── Services ───────────────────────────────────
         if ($a === 'laundry' || $s === 'laundry') return ['services', 'laundry'];
-        if ($s === 'tailor')              return ['services', 'tailor'];
-        if ($s === 'hairdresser') {
-            $genders = $tags['unisex'] ?? $tags['male'] ?? $tags['female'] ?? '';
-            return ['services', 'barber'];
-        }
-        if ($s === 'beauty')              return ['services', 'salon'];
+        if ($s === 'tailor' || $c === 'tailor')   return ['services', 'tailor'];
+        if ($s === 'hairdresser')                  return ['services', 'barber'];
+        if ($s === 'beauty')                       return ['services', 'salon'];
         if ($s === 'photo' || $s === 'photo_studio') return ['services', 'photographer'];
+
+        // ── Office (lawyers, real estate, accountants, IT) ─────
+        if ($o === 'lawyer' || $o === 'accountant' || $o === 'estate_agent'
+            || $o === 'insurance' || $o === 'tax_advisor' || $o === 'notary'
+            || $o === 'employment_agency' || $o === 'travel_agent'
+            || $o === 'it' || $o === 'company' || $o === 'consulting'
+            || $o === 'advertising_agency' || $o === 'financial' || $o === 'logistics'
+            || $o === 'private') {
+            return ['services', 'services_other'];
+        }
+        if ($o === 'government' || $o === 'governmental') return ['government', 'gov_other'];
+        if ($o === 'religion')                            return ['religious', 'rel_mosque'];
+        if ($o === 'newspaper' || $o === 'publisher')     return ['shops', 'bookshop'];
+
+        // ── Craft (independent skilled tradesmen mapped here) ──
+        if ($c === 'plumber')                              return ['craftsmen', 'plumber'];
+        if ($c === 'electrician')                          return ['craftsmen', 'electrician'];
+        if ($c === 'carpenter')                            return ['craftsmen', 'carpenter'];
+        if ($c === 'painter')                              return ['craftsmen', 'painter'];
+        if ($c === 'blacksmith' || $c === 'metal_construction') return ['craftsmen', 'blacksmith'];
+        if ($c === 'glaziery')                             return ['craftsmen', 'glazier'];
+        if ($c === 'locksmith')                            return ['craftsmen', 'locksmith'];
+        if ($c === 'photographer')                         return ['services', 'photographer'];
+        if ($c === 'shoemaker')                            return ['services', 'tailor'];
+        if ($c === 'bakery')                               return ['food', 'bakery'];
+        if ($c === 'caterer')                              return ['food', 'food_other'];
+        if ($c === 'gardener')                             return ['craftsmen', 'craftsmen_other'];
+        if ($c)                                            return ['craftsmen', 'craftsmen_other'];
+
+        // ── Historic ──────────────────────────────────
+        if ($hist === 'monument' || $hist === 'memorial' || $hist === 'archaeological_site'
+            || $hist === 'castle' || $hist === 'fort' || $hist === 'ruins'
+            || $hist === 'tower') {
+            return ['tourist', 'tour_monument'];
+        }
+
+        // ── Sports / leisure additions ────────────────
+        if ($l === 'stadium' || $l === 'sports_centre' || $l === 'pitch') return ['services', 'gym'];
+        if ($l === 'playground' || $l === 'garden')                       return ['tourist', 'tour_park'];
+
+        // ── Public transport / bus stops ───────────────
+        if ($pt === 'station')                            return ['transport', 'trn_bus'];
+        if ($hw === 'bus_stop')                            return ['transport', 'trn_microbus'];
+        if ($rail === 'tram_stop')                         return ['transport', 'trn_other'];
 
         return null; // unknown / not interesting
     }
@@ -158,33 +203,59 @@ class ImportOsm extends Command
             $this->info("Querying Overpass API for area '{$area}' (admin_level={$adminLevel})...");
             $areaQ = addslashes($area);
             // Resolve the area by Arabic OR generic name (OSM has both name and name:ar).
+            // We pull `node` AND `way` (some shops/buildings are mapped as polygons).
+            // Wider tag net: amenity, shop, tourism, healthcare, leisure, office, craft,
+            // historic, sport, railway/highway/public_transport stations.
             $query = <<<OQL
-[out:json][timeout:180];
+[out:json][timeout:240];
 (
   area["admin_level"="{$adminLevel}"]["name:ar"="{$areaQ}"];
   area["admin_level"="{$adminLevel}"]["name"="{$areaQ}"];
 )->.A;
 (
   node["amenity"](area.A);
+  way["amenity"](area.A);
   node["shop"](area.A);
+  way["shop"](area.A);
   node["tourism"](area.A);
+  way["tourism"](area.A);
   node["healthcare"](area.A);
-  node["leisure"~"park|fitness_centre|sports_centre"](area.A);
-  node["railway"~"station|halt"](area.A);
+  way["healthcare"](area.A);
+  node["leisure"~"park|fitness_centre|sports_centre|stadium|pitch|playground|garden"](area.A);
+  way["leisure"~"park|fitness_centre|sports_centre|stadium|pitch|playground|garden"](area.A);
+  node["office"](area.A);
+  way["office"](area.A);
+  node["craft"](area.A);
+  way["craft"](area.A);
+  node["historic"](area.A);
+  way["historic"](area.A);
+  node["railway"~"station|halt|tram_stop"](area.A);
+  node["public_transport"~"station|stop_position"](area.A);
+  node["highway"="bus_stop"](area.A);
 );
 out tags center;
 OQL;
         } else {
             $this->info("Querying Overpass API around [$lat, $lng] (radius {$radius}m)...");
             $query = <<<OQL
-[out:json][timeout:90];
+[out:json][timeout:120];
 (
   node["amenity"](around:$radius,$lat,$lng);
+  way["amenity"](around:$radius,$lat,$lng);
   node["shop"](around:$radius,$lat,$lng);
+  way["shop"](around:$radius,$lat,$lng);
   node["tourism"](around:$radius,$lat,$lng);
+  way["tourism"](around:$radius,$lat,$lng);
   node["healthcare"](around:$radius,$lat,$lng);
-  node["leisure"~"park|fitness_centre|sports_centre"](around:$radius,$lat,$lng);
-  node["railway"~"station|halt"](around:$radius,$lat,$lng);
+  way["healthcare"](around:$radius,$lat,$lng);
+  node["leisure"~"park|fitness_centre|sports_centre|stadium|pitch|playground|garden"](around:$radius,$lat,$lng);
+  way["leisure"~"park|fitness_centre|sports_centre|stadium|pitch|playground|garden"](around:$radius,$lat,$lng);
+  node["office"](around:$radius,$lat,$lng);
+  node["craft"](around:$radius,$lat,$lng);
+  node["historic"](around:$radius,$lat,$lng);
+  node["railway"~"station|halt|tram_stop"](around:$radius,$lat,$lng);
+  node["public_transport"~"station|stop_position"](around:$radius,$lat,$lng);
+  node["highway"="bus_stop"](around:$radius,$lat,$lng);
 );
 out tags center;
 OQL;
