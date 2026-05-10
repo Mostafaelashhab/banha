@@ -25,6 +25,7 @@ class ImportOsm extends Command
         {--area=القليوبية : Arabic name of an OSM admin area (governorate). Empty = use radius mode}
         {--admin-level=4 : OSM admin_level for the area (4=governorate, 6=district)}
         {--dry : Preview only, no DB writes}
+        {--no-images : Skip image downloads (faster)}
         {--limit= : Stop after N entries (debug)}';
 
     protected $description = 'Seed businesses from OpenStreetMap (Overpass API) — Banha + Qalyubia';
@@ -197,6 +198,7 @@ class ImportOsm extends Command
         $area       = trim((string) $this->option('area'));
         $adminLevel = (int) $this->option('admin-level');
         $dry        = (bool) $this->option('dry');
+        $skipImages = (bool) $this->option('no-images');
         $limit      = $this->option('limit') !== null ? (int) $this->option('limit') : null;
 
         if ($area !== '') {
@@ -331,6 +333,17 @@ OQL;
 
             $sm = Business::SUB_TYPES[$subType] ?? null;
 
+            // Image hint from OSM tags. `image` is a direct URL, `wikimedia_commons` is
+            // a "File:foo.jpg" reference that resolves to an upload.wikimedia.org URL.
+            $imageHint = $tags['image']
+                ?? $tags['image:0']
+                ?? (isset($tags['wikimedia_commons']) ? $this->resolveWikimedia($tags['wikimedia_commons']) : null);
+
+            $photoUrl = null;
+            if (! $dry && ! $skipImages && $imageHint) {
+                $photoUrl = $this->downloadOsmImage($osmId, $imageHint);
+            }
+
             $payload = [
                 'name'          => mb_substr(trim($name), 0, 120),
                 'category'      => $category,
@@ -343,6 +356,7 @@ OQL;
                 'lng'           => $coords[1],
                 'hours'         => $hours,
                 'is_24h'        => $is24h,
+                'photo_url'     => $photoUrl,
                 'is_verified'   => false,
                 'is_active'     => true,
                 'emoji'         => $sm['emoji'] ?? null,
@@ -357,7 +371,10 @@ OQL;
             if ($existing) {
                 // Only update if owner hasn't claimed it (to avoid overwriting their edits)
                 if ($existing->owner_user_id === null) {
-                    $existing->update($payload);
+                    // Never blank an existing photo with null — keep what's there if we got nothing new
+                    $update = $payload;
+                    if (! $update['photo_url']) unset($update['photo_url']);
+                    $existing->update($update);
                     $stats['updated']++;
                 } else {
                     $stats['skipped_existing']++;
@@ -382,12 +399,101 @@ OQL;
 
         // Bust map cache so /map shows the new entries immediately
         if (! $dry) {
-            \Illuminate\Support\Facades\Cache::forget('map-data:v4:all');
+            \Illuminate\Support\Facades\Cache::forget('map-data:v5:all');
             foreach (array_keys(Business::CATEGORIES) as $cat) {
-                \Illuminate\Support\Facades\Cache::forget('map-data:v4:'.$cat);
+                \Illuminate\Support\Facades\Cache::forget('map-data:v5:'.$cat);
             }
         }
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Resolve an OSM `wikimedia_commons` tag value into a direct upload.wikimedia.org URL.
+     * Handles three formats:
+     *   "File:Banha_railway_station.jpg"  → Special:FilePath direct
+     *   "Category:Banha"                  → first file in that category via Commons API
+     *   anything ending in .jpg/.png      → treated as a bare filename
+     * Returns null on miss.
+     */
+    private function resolveWikimedia(string $value): ?string
+    {
+        $value = trim($value);
+
+        // Already a fully-qualified URL — return as-is, don't re-wrap in FilePath
+        if (preg_match('#^https?://#i', $value)) {
+            return preg_match('/\.(jpe?g|png|webp|gif)(\?|$)/i', $value) ? $value : null;
+        }
+
+        // Category → resolve to first file member via Commons API
+        if (preg_match('/^Category:(.+)$/i', $value, $m)) {
+            $category = str_replace(' ', '_', trim($m[1]));
+            try {
+                $resp = Http::withHeaders(['User-Agent' => 'Banhawy/1.0 (osm-import)'])
+                    ->timeout(15)
+                    ->get('https://commons.wikimedia.org/w/api.php', [
+                        'action'    => 'query',
+                        'list'      => 'categorymembers',
+                        'cmtitle'   => 'Category:'.$category,
+                        'cmtype'    => 'file',
+                        'cmlimit'   => 1,
+                        'format'    => 'json',
+                    ]);
+            } catch (\Throwable) {
+                return null;
+            }
+            $member = $resp->json('query.categorymembers.0.title');
+            if (! $member) return null;
+            return $this->resolveWikimedia($member);   // recurse with "File:..."
+        }
+
+        // File / bare filename
+        $file = preg_replace('/^File:/i', '', $value);
+        $file = str_replace(' ', '_', $file);
+        if ($file === '' || ! preg_match('/\.(jpe?g|png|webp|gif)$/i', $file)) {
+            return null;
+        }
+        return 'https://commons.wikimedia.org/wiki/Special:FilePath/'.rawurlencode($file).'?width=1200';
+    }
+
+    /**
+     * Download an OSM-linked image into storage/app/public/businesses/osm/{slug}.{ext}.
+     * Returns the public /storage/... path, or null on failure.
+     */
+    private function downloadOsmImage(string $externalId, string $url): ?string
+    {
+        $slug = preg_replace('/[^a-z0-9_-]+/i', '-', $externalId);  // e.g. "osm:node:12345"
+        $extMatch = preg_match('/\.(jpe?g|png|webp|gif)(\?|$)/i', $url, $m);
+        $ext      = $extMatch ? strtolower($m[1]) : 'jpg';
+        if ($ext === 'jpeg') $ext = 'jpg';
+
+        $relPath = 'businesses/osm/'.$slug.'.'.$ext;
+        $disk    = \Illuminate\Support\Facades\Storage::disk('public');
+
+        if ($disk->exists($relPath)) {
+            return '/storage/'.$relPath;
+        }
+
+        try {
+            $resp = Http::withHeaders([
+                'User-Agent' => 'Banhawy/1.0 (osm-import)',
+                'Referer'    => 'https://www.openstreetmap.org/',
+            ])->timeout(20)->get($url);
+        } catch (\Throwable) {
+            return null;
+        }
+        if (! $resp->ok()) return null;
+
+        $body = $resp->body();
+        if (strlen($body) < 1024) return null;
+        $magic = substr($body, 0, 4);
+        $isImage = str_starts_with($magic, "\xFF\xD8")
+                || str_starts_with($magic, "\x89PNG")
+                || str_starts_with($magic, 'RIFF')
+                || str_starts_with($magic, 'GIF8');
+        if (! $isImage) return null;
+
+        $disk->put($relPath, $body);
+        return '/storage/'.$relPath;
     }
 }
