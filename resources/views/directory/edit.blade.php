@@ -92,6 +92,12 @@
                    class="w-full bg-cream-100 rounded-2xl px-4 py-3 text-ink-950 outline-0 border border-ink-950/8 focus:border-coral-500 transition">
         </div>
 
+        <x-map-picker
+            :lat="$business->lat"
+            :lng="$business->lng"
+            label="مكان النشاط على الخريطة"
+            help="دوس على الخريطة في مكان نشاطك. **لو شِلت المكان، نشاطك هيختفي من خريطة بنها** — تقدر ترجعه في أي وقت."/>
+
         <div class="grid grid-cols-2 gap-3">
             <div>
                 <label class="text-xs font-bold text-ink-500 mb-1 block">رقم تليفون</label>

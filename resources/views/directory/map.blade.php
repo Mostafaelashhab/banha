@@ -4,8 +4,19 @@
 ])
 
 @push('head')
+{{-- Preconnect: cuts TLS+DNS handshake time on mobile networks --}}
+<link rel="preconnect" href="https://unpkg.com" crossorigin>
+<link rel="preconnect" href="https://tile.openstreetmap.org" crossorigin>
+<link rel="dns-prefetch" href="https://a.tile.openstreetmap.org">
+<link rel="dns-prefetch" href="https://b.tile.openstreetmap.org">
+<link rel="dns-prefetch" href="https://c.tile.openstreetmap.org">
+
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+{{-- Start fetching Leaflet JS immediately while CSS + page parse --}}
+<link rel="preload" as="script" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin>
+{{-- Start fetching map data in parallel with Leaflet — saves a roundtrip --}}
+<link rel="preload" as="fetch" href="{{ route('directory.map.data') }}" crossorigin="use-credentials">
 <style>
     #banha-map {
         height: calc(100vh - 180px);
@@ -114,6 +125,9 @@
         pointer-events: none;
         backdrop-filter: blur(2px);
     }
+    /* Hide labels when zoomed out — too many overlap and tank mobile FPS.
+       Show only when user zooms in (>=15). Promoted labels stay visible. */
+    #banha-map.zoomed-out .biz-pin-label:not(.is-promoted-label) { display: none; }
     /* Promoted label: bigger, bolder, gold border */
     .biz-pin-label.is-promoted-label {
         font-size: 11px;
@@ -334,15 +348,29 @@
         scrollWheelZoom: true,
         zoomControl: window.matchMedia('(min-width: 641px)').matches,
         attributionControl: false,
+        preferCanvas: true,
     });
 
     // Tile layer with Arabic labels (OpenStreetMap default uses local language)
-    // For Egypt this shows Arabic city/street names. Falls back to OSM mirror if main is slow.
+    // For Egypt this shows Arabic city/street names.
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         crossOrigin: true,
         attribution: '© OpenStreetMap',
+        // mobile perf: keep recent tiles cached so pan/zoom feel instant
+        keepBuffer: 4,
+        updateWhenIdle: true,
+        updateWhenZooming: false,
     }).addTo(map);
+
+    // Toggle a class on the map container so CSS can hide labels at low zoom.
+    // 500 overlapping labels at zoom 13 kill mobile FPS — only show when zoomed in.
+    const mapEl = document.getElementById('banha-map');
+    function syncZoomClass() {
+        mapEl.classList.toggle('zoomed-out', map.getZoom() < 15);
+    }
+    map.on('zoomend', syncZoomClass);
+    syncZoomClass();
 
     // ── Icon SVG library (mirrors x-icon component) ──
     const SVG = {
@@ -494,57 +522,76 @@
             + '</div>';
     }
 
+    // Add markers in chunks so the main thread doesn't freeze on mobile when
+    // there are hundreds of pins. 60 markers per frame = smooth at 60fps.
+    let renderToken = 0;
+    function addMarkersChunked(makers, token) {
+        const CHUNK = 60;
+        let i = 0;
+        function step() {
+            if (token !== renderToken) return; // a new render() call superseded us
+            const end = Math.min(i + CHUNK, makers.length);
+            for (; i < end; i++) {
+                const m = makers[i]();
+                if (m) layerGroup.addLayer(m);
+            }
+            if (i < makers.length) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+    }
+
     async function render(cat) {
+        const myToken = ++renderToken;
         currentCat = cat;
         layerGroup.clearLayers();
         document.getElementById('biz-count').textContent = '…';
 
         const isEventsView = cat === '__events__';
         const data = await loadCategory(isEventsView ? '' : cat);
+        if (myToken !== renderToken) return; // user clicked another category
         const list  = Array.isArray(data.businesses) ? data.businesses : Object.values(data.businesses || {});
         const events = Array.isArray(data.events) ? data.events : Object.values(data.events || {});
         const cats  = data.categories || {};
 
         const bounds = [];
+        const makers = [];
 
         if (isEventsView) {
-            // Show ONLY events
             events.forEach((e) => {
                 const lat = parseFloat(e.lat); const lng = parseFloat(e.lng);
                 if (isNaN(lat) || isNaN(lng)) return;
-                const m = L.marker([lat, lng], { icon: makeEventPin(e) }).bindPopup(buildEventPopup(e), { closeButton: true, offset: [0, 4] });
-                layerGroup.addLayer(m); bounds.push([lat, lng]);
+                bounds.push([lat, lng]);
+                makers.push(() => L.marker([lat, lng], { icon: makeEventPin(e) }).bindPopup(buildEventPopup(e), { closeButton: true, offset: [0, 4] }));
             });
             document.getElementById('biz-count').textContent = events.length + ' حدث';
         } else {
-            // Businesses (with promoted on top — Leaflet renders later markers above earlier ones)
+            // Businesses — promoted last so they paint on top
             const ordered = list.slice().sort((a, b) => (a.is_promoted ? 1 : 0) - (b.is_promoted ? 1 : 0));
             ordered.forEach((b) => {
                 const meta = cats[b.category] || {};
                 const lat = parseFloat(b.lat); const lng = parseFloat(b.lng);
                 if (isNaN(lat) || isNaN(lng)) return;
-                const m = L.marker([lat, lng], { icon: makePin(b, meta), zIndexOffset: b.is_promoted ? 1000 : 0 })
-                    .bindPopup(buildPopup(b, meta), { closeButton: true, offset: [0, 4] });
-                layerGroup.addLayer(m);
                 bounds.push([lat, lng]);
+                makers.push(() => L.marker([lat, lng], { icon: makePin(b, meta), zIndexOffset: b.is_promoted ? 1000 : 0 })
+                    .bindPopup(buildPopup(b, meta), { closeButton: true, offset: [0, 4] }));
             });
 
-            // ALWAYS overlay events on top of businesses (so users see what's happening today)
             if (! cat) {
                 events.forEach((e) => {
                     const lat = parseFloat(e.lat); const lng = parseFloat(e.lng);
                     if (isNaN(lat) || isNaN(lng)) return;
-                    const m = L.marker([lat, lng], { icon: makeEventPin(e), zIndexOffset: 500 }).bindPopup(buildEventPopup(e), { closeButton: true, offset: [0, 4] });
-                    layerGroup.addLayer(m);
+                    makers.push(() => L.marker([lat, lng], { icon: makeEventPin(e), zIndexOffset: 500 }).bindPopup(buildEventPopup(e), { closeButton: true, offset: [0, 4] }));
                 });
             }
 
             document.getElementById('biz-count').textContent = list.length + ' نشاط' + (events.length && ! cat ? ' · ' + events.length + ' حدث' : '');
         }
 
+        // Fit bounds first (so paint focuses on the right area), then add markers chunked
         if (bounds.length > 1 && cat !== currentCat) {
             map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
         }
+        addMarkersChunked(makers, myToken);
     }
 
     // Wire filter chips

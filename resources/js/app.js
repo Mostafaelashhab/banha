@@ -401,41 +401,28 @@ function showInstallBanner() {
 }
 
 function showIOSInstallSheet() {
-    if (recentlyDismissed()) return;
-    const html = `
-        <div class="p-5">
-            <h3 class="text-lg font-extrabold text-ink-950 mb-3 inline-flex items-center gap-2">
-                <img src="/icons/icon-192.png" width="32" height="32" alt="" class="rounded-lg">
-                نزّل بنهاوي على iPhone
-            </h3>
-            <p class="text-ink-500 text-sm mb-5 leading-relaxed">عشان تفتحه زي أي تطبيق من الشاشة الرئيسية، اعمل الخطوات دي:</p>
-            <ol class="space-y-3 text-sm text-ink-950">
-                <li class="flex items-start gap-3">
-                    <span class="w-7 h-7 rounded-full brand-bg text-white grid place-items-center font-black shrink-0">1</span>
-                    <span>اضغط على زر <b>المشاركة</b> في الـ Safari (المربّع بسهم لفوق <span class="text-coral-600 font-bold">⬆️</span>) من شريط الأدوات.</span>
-                </li>
-                <li class="flex items-start gap-3">
-                    <span class="w-7 h-7 rounded-full brand-bg text-white grid place-items-center font-black shrink-0">2</span>
-                    <span>اعمل scroll لتحت واختار <b>"Add to Home Screen"</b> (أضف إلى الشاشة الرئيسية).</span>
-                </li>
-                <li class="flex items-start gap-3">
-                    <span class="w-7 h-7 rounded-full brand-bg text-white grid place-items-center font-black shrink-0">3</span>
-                    <span>اضغط <b>إضافة</b>، وهتلاقي بنهاوي بأيقونته على الـ home screen 🎉</span>
-                </li>
-            </ol>
-            <div class="card-light !shadow-none border-coral-500/20 bg-coral-50 p-3 mt-5">
-                <p class="text-xs text-ink-500">
-                    <b class="text-ink-950">ملاحظة:</b>
-                    لازم تستخدم <b>Safari</b> — الـ Chrome على iOS مش بيدعم Add to Home Screen.
-                </p>
-            </div>
-            <div class="flex gap-2 mt-5">
-                <button type="button" class="btn-ghost flex-1 justify-center" data-close>تمام</button>
-            </div>
-        </div>`;
-    if (window.banhawyModal) {
-        window.banhawyModal.show(html);
-    }
+    if (isStandalone || recentlyDismissed() || document.getElementById('install-banner')) return;
+
+    const el = document.createElement('div');
+    el.id = 'install-banner';
+    el.className = 'install-banner';
+    // Tiny banner mirroring the Android one. Tap "إزاي" to expand inline steps.
+    el.innerHTML = `
+        <div class="install-icon">
+            <img src="/icons/icon-192.png" width="44" height="44" alt="بنهاوي">
+        </div>
+        <div class="install-text">
+            <div class="install-title">حمّل بنهاوي على iPhone</div>
+            <div class="install-sub" data-ios-sub>اضغط <b>المشاركة</b> ↑ &gt; <b>Add to Home Screen</b></div>
+        </div>
+        <button class="install-close" data-action="dismiss" aria-label="إغلاق">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+    `;
+    document.body.appendChild(el);
+    el.addEventListener('click', (e) => {
+        if (e.target.closest('[data-action="dismiss"]')) dismissInstall();
+    });
 }
 
 // Trigger banners on landing only after a slight delay

@@ -104,6 +104,10 @@
                    class="w-full bg-cream-100 rounded-2xl px-4 py-3 text-ink-950 placeholder-ink-400 outline-0 border border-ink-950/8 focus:border-coral-500 transition">
         </div>
 
+        <x-map-picker
+            label="حدّد مكان النشاط على الخريطة (اختياري)"
+            help="دوس على الخريطة في مكان نشاطك أو استخدم موقعك. **لو ما حددتش مكان، نشاطك مش هيظهر على خريطة بنها** — بس تقدر تعدّل دلوقتي أو في أي وقت."/>
+
         <div class="grid grid-cols-2 gap-3">
             <div>
                 <label class="text-xs font-bold text-ink-500 mb-1 block">رقم تليفون</label>

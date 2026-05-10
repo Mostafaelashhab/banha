@@ -242,6 +242,8 @@ class DirectoryController extends Controller
             'address'       => $data['address'] ?? null,
             'hours'         => $data['hours'] ?? null,
             'is_24h'        => (bool) ($data['is_24h'] ?? false),
+            'lat'           => $data['lat'] ?? null,
+            'lng'           => $data['lng'] ?? null,
             'is_verified'   => false,
             'is_active'     => true,
             'emoji'         => $sm['emoji'],
@@ -249,6 +251,11 @@ class DirectoryController extends Controller
         ]);
 
         \App\Services\AdminNotificationService::onBusinessCreated($business->fresh()->load('owner'));
+
+        if ($business->lat && $business->lng) {
+            \Illuminate\Support\Facades\Cache::forget('map-data:v3:all');
+            \Illuminate\Support\Facades\Cache::forget('map-data:v3:'.$business->category);
+        }
 
         return redirect()->route('directory.show', $business)
             ->with('flash', '✓ نشاطك انضاف للدليل! هتراجعه فريق بنهاوي قريباً للتوثيق.');
@@ -285,9 +292,15 @@ class DirectoryController extends Controller
             'address'     => $data['address'] ?? null,
             'hours'       => $data['hours'] ?? null,
             'is_24h'      => (bool) ($data['is_24h'] ?? false),
+            'lat'         => array_key_exists('lat', $data) ? $data['lat'] : $business->lat,
+            'lng'         => array_key_exists('lng', $data) ? $data['lng'] : $business->lng,
             'emoji'       => $sm['emoji'],
             'photo_url'   => $newPhoto ?: $business->photo_url,
         ]);
+
+        // Bust map cache so location changes show up immediately on /map
+        \Illuminate\Support\Facades\Cache::forget('map-data:v3:all');
+        \Illuminate\Support\Facades\Cache::forget('map-data:v3:'.$business->category);
 
         return redirect()->route('directory.show', $business)
             ->with('flash', '✓ تم تحديث النشاط.');
@@ -403,6 +416,8 @@ class DirectoryController extends Controller
             'address'         => ['nullable', 'string', 'max:200'],
             'hours'           => ['nullable', 'string', 'max:100'],
             'is_24h'          => ['nullable', 'boolean'],
+            'lat'             => ['nullable', 'numeric', 'between:-90,90', 'required_with:lng'],
+            'lng'             => ['nullable', 'numeric', 'between:-180,180', 'required_with:lat'],
             'photo'           => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:3072'],
         ], [
             'phone.regex'    => 'لازم رقم موبايل مصري صحيح.',
@@ -410,6 +425,8 @@ class DirectoryController extends Controller
             'photo.image'    => 'الملف لازم يكون صورة.',
             'photo.mimes'    => 'لازم JPG / PNG / WEBP.',
             'photo.max'      => 'حجم الصورة لازم أقل من ٣ ميجا.',
+            'lat.required_with' => 'حدّد المكان كامل من على الخريطة.',
+            'lng.required_with' => 'حدّد المكان كامل من على الخريطة.',
         ]);
 
         // Only keep custom_sub_type when an "_other" type was picked
