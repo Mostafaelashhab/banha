@@ -161,18 +161,23 @@
     </div>
 
     {{-- ─── TABS ─── --}}
+    @php
+        $tabUrl = fn ($t) => $isMe
+            ? route('profile.me', ['tab' => $t])
+            : route('profile.show', ['username' => $user->username, 'tab' => $t]);
+    @endphp
     <div class="flex items-center gap-2 mb-4 -mx-4 px-4 overflow-x-auto scrollbar-hide">
-        <a href="{{ route('profile.me', ['tab' => 'posts']) }}"
+        <a href="{{ $tabUrl('posts') }}"
            class="chip {{ $tab === 'posts' ? 'chip-active' : '' }}">
             <x-icon name="home" class="w-3.5 h-3.5"/> بوستات
             <span class="opacity-60 text-xs">{{ $stats['posts'] }}</span>
         </a>
-        <a href="{{ route('profile.me', ['tab' => 'listings']) }}"
+        <a href="{{ $tabUrl('listings') }}"
            class="chip {{ $tab === 'listings' ? 'chip-active' : '' }}">
             <x-icon name="tag" class="w-3.5 h-3.5"/> إعلانات
             <span class="opacity-60 text-xs">{{ $stats['listings'] ?? 0 }}</span>
         </a>
-        <a href="{{ route('profile.me', ['tab' => 'badges']) }}"
+        <a href="{{ $tabUrl('badges') }}"
            class="chip {{ $tab === 'badges' ? 'chip-active' : '' }}">
             🏅 شارات
             <span class="opacity-60 text-xs">{{ $earnedBadges->count() }}</span>
