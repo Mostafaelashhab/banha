@@ -10,18 +10,20 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable([
     'name', 'category', 'sub_type', 'custom_sub_type', 'zone_id', 'owner_user_id',
     'description', 'phone', 'whatsapp', 'address', 'lat', 'lng',
-    'hours', 'is_24h', 'is_verified', 'promoted_until', 'is_active',
+    'hours', 'hours_schedule', 'is_24h', 'is_verified', 'promoted_until', 'is_active',
     'rating_avg', 'ratings_count', 'views_count', 'phone_clicks', 'whatsapp_clicks',
-    'emoji', 'photo_url', 'has_menu', 'menu_currency', 'external_id',
+    'emoji', 'photo_url', 'has_menu', 'menu_currency', 'external_id', 'extra',
 ])]
 class Business extends Model
 {
     public const CATEGORIES = [
         'food'        => ['label' => 'مطاعم وكافيهات',   'emoji' => '🍽️', 'icon' => 'utensils',    'color' => '#FF7A4D'],
+        'hotels'      => ['label' => 'فنادق ومنتجعات',    'emoji' => '🏨', 'icon' => 'briefcase',   'color' => '#9333EA'],
         'medical'     => ['label' => 'دكاترة وصيدليات',  'emoji' => '🩺', 'icon' => 'stethoscope', 'color' => '#1FA857'],
         'shops'       => ['label' => 'محلات',             'emoji' => '🛒', 'icon' => 'cart',        'color' => '#7C3AED'],
         'craftsmen'   => ['label' => 'صنايعية',           'emoji' => '🔧', 'icon' => 'wrench',      'color' => '#FFB85C'],
         'services'    => ['label' => 'خدمات تانية',      'emoji' => '🛎️', 'icon' => 'briefcase',   'color' => '#0EA5E9'],
+        'companies'   => ['label' => 'شركات ومصانع',      'emoji' => '🏢', 'icon' => 'briefcase',   'color' => '#475569'],
         'government'  => ['label' => 'مصالح حكومية',     'emoji' => '🏛',  'icon' => 'briefcase',   'color' => '#4B5563'],
         'education'   => ['label' => 'تعليم',             'emoji' => '🎓', 'icon' => 'graduation',  'color' => '#2563EB'],
         'transport'   => ['label' => 'مواصلات',           'emoji' => '🚕', 'icon' => 'car',         'color' => '#DC2626'],
@@ -169,7 +171,389 @@ class Business extends Model
         'emr_fire'        => ['label' => 'مطافي',              'category' => 'emergency',  'emoji' => '🚒', 'icon' => 'flame'],
         'emr_hospital'    => ['label' => 'مستشفى طوارئ',       'category' => 'emergency',  'emoji' => '🏥', 'icon' => 'stethoscope'],
         'emr_civil'       => ['label' => 'حماية مدنية',        'category' => 'emergency',  'emoji' => '🛡',  'icon' => 'bolt'],
+
+        // ── hotels ─────────────────────────────────────────
+        'hotel_3star'     => ['label' => 'فندق ٣ نجوم',         'category' => 'hotels',     'emoji' => '🏨', 'icon' => 'briefcase'],
+        'hotel_4star'     => ['label' => 'فندق ٤ نجوم',         'category' => 'hotels',     'emoji' => '🏨', 'icon' => 'briefcase'],
+        'hotel_5star'     => ['label' => 'فندق ٥ نجوم',         'category' => 'hotels',     'emoji' => '🏨', 'icon' => 'briefcase'],
+        'hotel_resort'    => ['label' => 'منتجع / قرية سياحية',  'category' => 'hotels',     'emoji' => '🌴', 'icon' => 'leaf'],
+        'hotel_apart'     => ['label' => 'شقق فندقية',           'category' => 'hotels',     'emoji' => '🛏', 'icon' => 'briefcase'],
+        'hotel_guesthouse'=> ['label' => 'بيت ضيافة / نُزُل',     'category' => 'hotels',     'emoji' => '🛌', 'icon' => 'briefcase'],
+        'hotel_other'     => ['label' => 'مكان إقامة تاني',     'category' => 'hotels',     'emoji' => '🏨', 'icon' => 'briefcase'],
+
+        // ── companies ──────────────────────────────────────
+        'comp_factory'    => ['label' => 'مصنع',                'category' => 'companies',  'emoji' => '🏭', 'icon' => 'briefcase'],
+        'comp_office'     => ['label' => 'مكتب شركة',           'category' => 'companies',  'emoji' => '🏢', 'icon' => 'briefcase'],
+        'comp_construction'=> ['label' => 'مقاولات وإنشاءات',   'category' => 'companies',  'emoji' => '🏗', 'icon' => 'tools'],
+        'comp_logistics'  => ['label' => 'شحن ولوجستيات',       'category' => 'companies',  'emoji' => '🚚', 'icon' => 'truck'],
+        'comp_realestate' => ['label' => 'تطوير عقاري',         'category' => 'companies',  'emoji' => '🏢', 'icon' => 'briefcase'],
+        'comp_legal'      => ['label' => 'مكتب محاماة',          'category' => 'companies',  'emoji' => '⚖️', 'icon' => 'briefcase'],
+        'comp_accounting' => ['label' => 'مكتب محاسبة',          'category' => 'companies',  'emoji' => '📊', 'icon' => 'briefcase'],
+        'comp_marketing'  => ['label' => 'دعاية وتسويق',         'category' => 'companies',  'emoji' => '📣', 'icon' => 'briefcase'],
+        'comp_tech'       => ['label' => 'شركة تكنولوجيا',       'category' => 'companies',  'emoji' => '💻', 'icon' => 'briefcase'],
+        'comp_other'      => ['label' => 'شركة تانية',           'category' => 'companies',  'emoji' => '🏢', 'icon' => 'briefcase'],
     ];
+
+    /**
+     * Per-sub_type extra fields. The form renders only fields whose
+     * `applies_to` matches the picked sub_type (or its category prefix).
+     *
+     * Each field: ['label', 'type' (text|number|select|checkbox), 'options'?, 'placeholder'?, 'help'?, 'applies_to' => array of sub_types or category keys].
+     */
+    public const EXTRA_FIELDS = [
+        // ── Hotels ─────────────────────────────────────
+        'stars' => [
+            'label' => 'تصنيف النجوم', 'type' => 'select',
+            'options' => ['1' => '⭐', '2' => '⭐⭐', '3' => '⭐⭐⭐', '4' => '⭐⭐⭐⭐', '5' => '⭐⭐⭐⭐⭐'],
+            'applies_to' => ['hotels'],
+        ],
+        'rooms' => [
+            'label' => 'عدد الغرف', 'type' => 'number',
+            'placeholder' => 'مثلاً: 50',
+            'applies_to' => ['hotels'],
+        ],
+        'has_pool' => [
+            'label' => 'حمام سباحة', 'type' => 'checkbox',
+            'applies_to' => ['hotels'],
+        ],
+        'has_breakfast' => [
+            'label' => 'إفطار شامل', 'type' => 'checkbox',
+            'applies_to' => ['hotels'],
+        ],
+        'has_wifi' => [
+            'label' => 'واي فاي مجاني', 'type' => 'checkbox',
+            'applies_to' => ['hotels', 'food'],
+        ],
+
+        // ── Food ────────────────────────────────────────
+        'cuisine' => [
+            'label' => 'نوع المطبخ', 'type' => 'select',
+            'options' => [
+                'مصري' => 'مصري', 'شرقي' => 'شرقي', 'إيطالي' => 'إيطالي', 'أمريكي' => 'أمريكي',
+                'صيني وآسيوي' => 'صيني وآسيوي', 'لبناني وشامي' => 'لبناني وشامي',
+                'بحري وأسماك' => 'بحري وأسماك', 'حلويات ومخبوزات' => 'حلويات ومخبوزات',
+                'فاست فود' => 'فاست فود', 'متنوع' => 'متنوع',
+            ],
+            'applies_to' => ['food'],
+        ],
+        'has_delivery' => [
+            'label' => 'بيوصّل دليفري', 'type' => 'checkbox',
+            'applies_to' => ['food'],
+        ],
+        'family_section' => [
+            'label' => 'قسم عائلات', 'type' => 'checkbox',
+            'applies_to' => ['food'],
+        ],
+        'avg_price' => [
+            'label' => 'متوسط السعر للشخص', 'type' => 'select',
+            'options' => [
+                '50_below'  => 'أقل من ٥٠ ج',
+                '50_100'    => '٥٠–١٠٠ ج',
+                '100_200'   => '١٠٠–٢٠٠ ج',
+                '200_500'   => '٢٠٠–٥٠٠ ج',
+                '500_above' => 'فوق ٥٠٠ ج',
+            ],
+            'applies_to' => ['food'],
+        ],
+
+        // ── Medical: doctors / clinics ─────────────────
+        // Pharmacies, labs, and vets get DIFFERENT fields below.
+        'specialty' => [
+            'label' => 'التخصص الدقيق', 'type' => 'text',
+            'placeholder' => 'مثلاً: جلدية تجميلية، أسنان أطفال…',
+            'applies_to' => ['doctor', 'pediatrician', 'dentist', 'gynecologist', 'orthopedic', 'ent', 'dermatology', 'physio', 'nurse', 'medical_other'],
+        ],
+        'clinic_days' => [
+            'label' => 'أيام الكشف', 'type' => 'text',
+            'placeholder' => 'مثلاً: السبت والثلاثاء',
+            'applies_to' => ['doctor', 'pediatrician', 'dentist', 'gynecologist', 'orthopedic', 'ent', 'dermatology', 'physio', 'medical_other'],
+        ],
+        'has_appointment' => [
+            'label' => 'بالحجز المسبق', 'type' => 'checkbox',
+            'applies_to' => ['doctor', 'pediatrician', 'dentist', 'gynecologist', 'orthopedic', 'ent', 'dermatology', 'physio', 'medical_other'],
+        ],
+
+        // ── Pharmacy ───────────────────────────────────
+        'pharmacy_delivery' => [
+            'label' => 'بيوصّل دواء للبيت', 'type' => 'checkbox',
+            'applies_to' => ['pharmacy'],
+        ],
+        'pharmacy_has_lab' => [
+            'label' => 'بيقيس ضغط/سكر', 'type' => 'checkbox',
+            'applies_to' => ['pharmacy'],
+        ],
+
+        // ── Lab ────────────────────────────────────────
+        'lab_home_collection' => [
+            'label' => 'بيجي يسحب عينة من البيت', 'type' => 'checkbox',
+            'applies_to' => ['lab'],
+        ],
+        'lab_results_whatsapp' => [
+            'label' => 'النتايج على واتساب', 'type' => 'checkbox',
+            'applies_to' => ['lab'],
+        ],
+
+        // ── Vet ────────────────────────────────────────
+        'vet_animals' => [
+            'label' => 'بيعالج إيه؟', 'type' => 'select',
+            'options' => [
+                'pets'      => 'حيوانات أليفة (قطط، كلاب)',
+                'livestock' => 'مواشي وحيوانات مزرعة',
+                'birds'     => 'طيور',
+                'all'       => 'الكل',
+            ],
+            'applies_to' => ['vet'],
+        ],
+        'vet_home_visits' => [
+            'label' => 'بيجي للبيت/المزرعة', 'type' => 'checkbox',
+            'applies_to' => ['vet'],
+        ],
+
+        // ── Education ──────────────────────────────────
+        'school_type' => [
+            'label' => 'نوع المدرسة/المؤسسة', 'type' => 'select',
+            'options' => [
+                'حكومية'      => 'حكومية',
+                'خاصة'        => 'خاصة',
+                'لغات'        => 'لغات',
+                'تجريبية'     => 'تجريبية',
+                'دولية'       => 'دولية',
+                'أزهرية'      => 'أزهرية',
+            ],
+            'applies_to' => ['education'],
+        ],
+        'languages' => [
+            'label' => 'اللغات المتاحة', 'type' => 'text',
+            'placeholder' => 'مثلاً: عربي، إنجليزي، فرنساوي',
+            'applies_to' => ['education'],
+        ],
+
+        // ── Companies ──────────────────────────────────
+        'industry' => [
+            'label' => 'المجال', 'type' => 'text',
+            'placeholder' => 'مثلاً: تصنيع غذائي، عقارات، استشارات…',
+            'applies_to' => ['companies'],
+        ],
+        'employees_range' => [
+            'label' => 'عدد الموظفين', 'type' => 'select',
+            'options' => [
+                'under_10'  => 'أقل من ١٠',
+                '10_50'     => '١٠–٥٠',
+                '50_200'    => '٥٠–٢٠٠',
+                '200_1000'  => '٢٠٠–١٠٠٠',
+                'over_1000' => 'أكتر من ١٠٠٠',
+            ],
+            'applies_to' => ['companies'],
+        ],
+        'year_founded' => [
+            'label' => 'سنة التأسيس', 'type' => 'number',
+            'placeholder' => 'مثلاً: 2010',
+            'applies_to' => ['companies'],
+        ],
+        'website' => [
+            'label' => 'الموقع الإلكتروني', 'type' => 'text',
+            'placeholder' => 'https://example.com',
+            'applies_to' => ['hotels', 'companies', 'education'],
+        ],
+
+        // ── Craftsmen (all sub-types) ─────────────────
+        'experience_years' => [
+            'label' => 'سنين الخبرة', 'type' => 'number',
+            'placeholder' => 'مثلاً: 10',
+            'applies_to' => ['craftsmen'],
+        ],
+        'visit_price' => [
+            'label' => 'سعر الكشف/المعاينة', 'type' => 'text',
+            'placeholder' => 'مثلاً: ٥٠ ج · أو مجاني',
+            'applies_to' => ['craftsmen'],
+        ],
+        'emergency_call' => [
+            'label' => 'بيرد على الطوارئ', 'type' => 'checkbox',
+            'applies_to' => ['craftsmen'],
+        ],
+        'service_area' => [
+            'label' => 'بيشتغل في إيه من المناطق', 'type' => 'text',
+            'placeholder' => 'مثلاً: بنها وقها وكفر شكر',
+            'applies_to' => ['craftsmen', 'driver', 'tuktuk', 'delivery', 'house_cleaning', 'moving'],
+        ],
+
+        // ── Shops ──────────────────────────────────────
+        'shop_delivery' => [
+            'label' => 'بيوصّل', 'type' => 'checkbox',
+            'applies_to' => ['grocery', 'supermarket', 'butcher', 'fish_shop', 'fruit_veg', 'baby_shop', 'toys', 'bookshop', 'mobile_shop', 'electronics', 'furniture'],
+        ],
+        'accepts_cards' => [
+            'label' => 'بيقبل فيزا/InstaPay', 'type' => 'checkbox',
+            'applies_to' => ['shops'],
+        ],
+        'has_warranty' => [
+            'label' => 'بيدّي ضمان على المنتجات', 'type' => 'checkbox',
+            'applies_to' => ['mobile_shop', 'electronics', 'hardware', 'furniture', 'gold_shop'],
+        ],
+        'fuel_types' => [
+            'label' => 'أنواع البنزين', 'type' => 'text',
+            'placeholder' => 'مثلاً: ٨٠ + ٩٢ + سولار',
+            'applies_to' => ['gas_station'],
+        ],
+
+        // ── Services ───────────────────────────────────
+        'salon_gender' => [
+            'label' => 'القسم متاح لـ', 'type' => 'select',
+            'options' => ['men' => 'رجالي', 'women' => 'حريمي', 'unisex' => 'مختلط'],
+            'applies_to' => ['barber', 'salon'],
+        ],
+        'salon_home_visits' => [
+            'label' => 'بيجي للبيت', 'type' => 'checkbox',
+            'applies_to' => ['barber', 'salon', 'house_cleaning'],
+        ],
+        'gym_gender' => [
+            'label' => 'الجيم لـ', 'type' => 'select',
+            'options' => ['men' => 'رجالي', 'women' => 'حريمي', 'mixed' => 'مختلط'],
+            'applies_to' => ['gym'],
+        ],
+        'monthly_price' => [
+            'label' => 'الاشتراك الشهري', 'type' => 'text',
+            'placeholder' => 'مثلاً: ٣٠٠ ج',
+            'applies_to' => ['gym'],
+        ],
+        'has_classes' => [
+            'label' => 'فيه كلاسات (يوجا، كروس فيت، إلخ)', 'type' => 'checkbox',
+            'applies_to' => ['gym'],
+        ],
+        'tutor_subjects' => [
+            'label' => 'المواد', 'type' => 'text',
+            'placeholder' => 'مثلاً: رياضيات، فيزياء، إنجليزي',
+            'applies_to' => ['tutor', 'school'],
+        ],
+        'photographer_styles' => [
+            'label' => 'بيصوّر إيه', 'type' => 'text',
+            'placeholder' => 'مثلاً: أفراح، خطوبات، منتجات، بورتريه',
+            'applies_to' => ['photographer'],
+        ],
+
+        // ── Religious ──────────────────────────────────
+        'has_madrasah' => [
+            'label' => 'فيه مدرسة قرآن/كنسية', 'type' => 'checkbox',
+            'applies_to' => ['rel_mosque', 'rel_church'],
+        ],
+        'friday_imam' => [
+            'label' => 'إمام الجمعة', 'type' => 'text',
+            'placeholder' => 'مثلاً: الشيخ محمد عبدالعزيز',
+            'applies_to' => ['rel_mosque'],
+        ],
+        'rel_capacity' => [
+            'label' => 'سعة المصلين/الحضور', 'type' => 'number',
+            'placeholder' => 'مثلاً: 500',
+            'applies_to' => ['religious'],
+        ],
+
+        // ── Banks ──────────────────────────────────────
+        'has_atm' => [
+            'label' => 'فيه ATM', 'type' => 'checkbox',
+            'applies_to' => ['bank_branch'],
+        ],
+        'atm_24h' => [
+            'label' => 'الـATM شغال ٢٤ ساعة', 'type' => 'checkbox',
+            'applies_to' => ['bank_atm', 'bank_branch'],
+        ],
+        'currencies_traded' => [
+            'label' => 'العملات اللي بتتعامل فيها', 'type' => 'text',
+            'placeholder' => 'مثلاً: USD، EUR، GBP، SAR',
+            'applies_to' => ['bank_exchange'],
+        ],
+
+        // ── Tourist / parks / leisure ─────────────────
+        'free_entry' => [
+            'label' => 'دخول مجاني', 'type' => 'checkbox',
+            'applies_to' => ['tour_park', 'tour_corniche', 'tour_monument'],
+        ],
+        'kids_play' => [
+            'label' => 'فيه ألعاب أطفال', 'type' => 'checkbox',
+            'applies_to' => ['tour_park', 'tour_corniche', 'tour_club'],
+        ],
+        'entrance_fee' => [
+            'label' => 'سعر الدخول', 'type' => 'text',
+            'placeholder' => 'مثلاً: ١٠ ج للبالغين',
+            'applies_to' => ['tour_park', 'tour_monument', 'tour_cinema', 'tour_club'],
+        ],
+        'membership_fee' => [
+            'label' => 'الاشتراك السنوي', 'type' => 'text',
+            'placeholder' => 'مثلاً: ٢٠٠٠ ج',
+            'applies_to' => ['tour_club'],
+        ],
+
+        // ── Government ─────────────────────────────────
+        'gov_appointment' => [
+            'label' => 'محتاج موعد مسبق', 'type' => 'checkbox',
+            'applies_to' => ['government'],
+        ],
+        'gov_required_papers' => [
+            'label' => 'الأوراق المطلوبة', 'type' => 'text',
+            'placeholder' => 'مثلاً: بطاقة + إيصال مرافق',
+            'applies_to' => ['government'],
+        ],
+
+        // ── Transport ──────────────────────────────────
+        'transport_routes' => [
+            'label' => 'الخطوط/الوجهات', 'type' => 'text',
+            'placeholder' => 'مثلاً: بنها → القاهرة، طوخ، قها',
+            'applies_to' => ['trn_microbus', 'trn_bus', 'trn_taxi'],
+        ],
+        'transport_fare' => [
+            'label' => 'متوسط الأجرة', 'type' => 'text',
+            'placeholder' => 'مثلاً: ٥-١٠ ج',
+            'applies_to' => ['trn_microbus', 'trn_taxi', 'trn_uber', 'tuktuk'],
+        ],
+
+        // ── Emergency ──────────────────────────────────
+        'response_area' => [
+            'label' => 'بيغطّي إيه من مناطق', 'type' => 'text',
+            'placeholder' => 'مثلاً: بنها كاملة + قها + طوخ',
+            'applies_to' => ['emergency'],
+        ],
+    ];
+
+    /**
+     * Per-category labels for the "menu/services" feature so the UI adapts
+     * (a restaurant has أقسام/أصناف، a hotel has باقات/غرف، a doctor has كشوفات).
+     * Falls back to "الخدمات/الصنف" if category isn't in the map.
+     */
+    public static function menuLabels(string $category): array
+    {
+        $map = [
+            'food'       => ['title' => 'المنيو',           'cta_show' => 'شوف المنيو والأسعار', 'category_label' => 'القسم',       'item_label' => 'الصنف',     'price_label' => 'السعر',           'cat_examples' => 'بيتزا، مشروبات، حلو…',                 'item_placeholder' => 'مثلاً: مارجريتا'],
+            'hotels'     => ['title' => 'الغرف والباقات',   'cta_show' => 'شوف الغرف والأسعار',   'category_label' => 'الفئة',       'item_label' => 'الغرفة/الباقة', 'price_label' => 'السعر/الليلة',     'cat_examples' => 'غرف عادية، أجنحة، شاليهات…',          'item_placeholder' => 'مثلاً: غرفة دبل'],
+            'medical'    => ['title' => 'الخدمات والكشوفات','cta_show' => 'شوف الخدمات والأسعار', 'category_label' => 'القسم',       'item_label' => 'الخدمة',     'price_label' => 'السعر',           'cat_examples' => 'كشوفات، متابعة، أشعة، تحاليل…',         'item_placeholder' => 'مثلاً: كشف عام'],
+            'shops'      => ['title' => 'المنتجات',         'cta_show' => 'شوف المنتجات والأسعار', 'category_label' => 'القسم',       'item_label' => 'المنتج',     'price_label' => 'السعر',           'cat_examples' => 'موبايلات، إكسسوارات، أجهزة…',           'item_placeholder' => 'مثلاً: iPhone 15'],
+            'craftsmen'  => ['title' => 'الخدمات والأسعار', 'cta_show' => 'شوف الخدمات والأسعار',  'category_label' => 'النوع',       'item_label' => 'الخدمة',     'price_label' => 'السعر',           'cat_examples' => 'تركيبات، صيانة، طوارئ…',                'item_placeholder' => 'مثلاً: تركيب سخان'],
+            'services'   => ['title' => 'الخدمات والباقات', 'cta_show' => 'شوف الخدمات والأسعار',  'category_label' => 'القسم',       'item_label' => 'الخدمة',     'price_label' => 'السعر',           'cat_examples' => 'كلاسات، باقات شهرية، خدمات إضافية…',  'item_placeholder' => 'مثلاً: قص شعر'],
+            'companies'  => ['title' => 'الخدمات والمنتجات','cta_show' => 'شوف الخدمات والأسعار',  'category_label' => 'القسم',       'item_label' => 'الخدمة',     'price_label' => 'السعر',           'cat_examples' => 'استشارة، تنفيذ، تطوير…',                'item_placeholder' => 'مثلاً: استشارة قانونية'],
+            'education'  => ['title' => 'الكورسات والمراحل','cta_show' => 'شوف الكورسات والأسعار', 'category_label' => 'المرحلة',     'item_label' => 'الكورس',     'price_label' => 'المصاريف',         'cat_examples' => 'KG، ابتدائي، إعدادي، ثانوي…',           'item_placeholder' => 'مثلاً: KG2'],
+            'tourist'    => ['title' => 'التذاكر والباقات', 'cta_show' => 'شوف التذاكر والأسعار',  'category_label' => 'الفئة',       'item_label' => 'التذكرة',     'price_label' => 'السعر',           'cat_examples' => 'تذاكر بالغين، أطفال، اشتراكات…',       'item_placeholder' => 'مثلاً: تذكرة بالغ'],
+            'banks'      => ['title' => 'الخدمات والرسوم',  'cta_show' => 'شوف الخدمات',            'category_label' => 'النوع',       'item_label' => 'الخدمة',     'price_label' => 'الرسوم',           'cat_examples' => 'تحويلات، حسابات، قروض…',                'item_placeholder' => 'مثلاً: تحويل دولي'],
+            'transport'  => ['title' => 'الخطوط والأجرة',   'cta_show' => 'شوف الخطوط والأجرة',    'category_label' => 'الجهة',       'item_label' => 'الخط',       'price_label' => 'الأجرة',           'cat_examples' => 'القاهرة، طوخ، قها…',                    'item_placeholder' => 'مثلاً: بنها → القاهرة'],
+            'government' => ['title' => 'الخدمات',          'cta_show' => 'شوف الخدمات',            'category_label' => 'القسم',       'item_label' => 'الخدمة',     'price_label' => 'الرسوم',           'cat_examples' => 'تجديد، استخراج، شكاوى…',               'item_placeholder' => 'مثلاً: تجديد رخصة'],
+            'religious'  => ['title' => 'الأنشطة والدروس',  'cta_show' => 'شوف الأنشطة',           'category_label' => 'النوع',       'item_label' => 'النشاط',     'price_label' => 'المساهمة',         'cat_examples' => 'دروس، حلقات، أنشطة…',                  'item_placeholder' => 'مثلاً: درس مغرب'],
+            'emergency'  => ['title' => 'الخدمات',          'cta_show' => 'شوف الخدمات',            'category_label' => 'النوع',       'item_label' => 'الخدمة',     'price_label' => '',                  'cat_examples' => 'إسعاف، إخلاء، حماية…',                  'item_placeholder' => 'مثلاً: إسعاف منزلي'],
+        ];
+        return $map[$category] ?? $map['services'];
+    }
+
+    /** Return the extra-field definitions that apply to a given sub_type. */
+    public static function extraFieldsFor(string $subType): array
+    {
+        $st = self::SUB_TYPES[$subType] ?? null;
+        $cat = $st['category'] ?? null;
+        $applicable = [];
+        foreach (self::EXTRA_FIELDS as $key => $def) {
+            $rules = $def['applies_to'] ?? [];
+            // Match by category key (e.g., 'food', 'hotels') or exact sub_type
+            if (in_array($cat, $rules, true) || in_array($subType, $rules, true)) {
+                $applicable[$key] = $def;
+            }
+        }
+        return $applicable;
+    }
 
     protected function casts(): array
     {
@@ -182,7 +566,122 @@ class Business extends Model
             'lat'            => 'decimal:7',
             'lng'            => 'decimal:7',
             'rating_avg'     => 'decimal:1',
+            'extra'          => 'array',
+            'hours_schedule' => 'array',
         ];
+    }
+
+    /** Day codes used by hours_schedule. Saturday-first to match Egyptian week. */
+    public const WEEKDAYS = [
+        'sat' => 'السبت',
+        'sun' => 'الأحد',
+        'mon' => 'الإتنين',
+        'tue' => 'الثلاثاء',
+        'wed' => 'الأربعاء',
+        'thu' => 'الخميس',
+        'fri' => 'الجمعة',
+    ];
+
+    private const DOW_TO_KEY = [
+        6 => 'sat',  0 => 'sun',  1 => 'mon',
+        2 => 'tue',  3 => 'wed',  4 => 'thu', 5 => 'fri',
+    ];
+
+    /**
+     * Check whether the business is currently open based on hours_schedule.
+     * Returns null if no schedule is set (caller should fall back to is_24h or freeform `hours`).
+     */
+    public function isOpenNow(?\DateTimeInterface $now = null): ?bool
+    {
+        if ($this->is_24h) return true;
+        $schedule = $this->hours_schedule;
+        if (! is_array($schedule) || empty($schedule)) return null;
+
+        $now ??= now('Africa/Cairo');
+        $todayKey     = self::DOW_TO_KEY[(int) $now->format('w')];
+        $yesterdayKey = self::DOW_TO_KEY[(int) ((int) $now->format('w') + 6) % 7];
+
+        // Today's shift
+        if ($shift = $this->parseShift($schedule[$todayKey] ?? null)) {
+            [$startMin, $endMin, $overnight] = $shift;
+            $nowMin = ((int) $now->format('G')) * 60 + (int) $now->format('i');
+            if (! $overnight) {
+                if ($nowMin >= $startMin && $nowMin <= $endMin) return true;
+            } else {
+                // Shift wraps past midnight (e.g., 20:00-03:00) — open if past start tonight
+                if ($nowMin >= $startMin) return true;
+            }
+        }
+        // Yesterday's overnight tail (e.g., yesterday 20:00-03:00, now is 02:30 today)
+        if ($shift = $this->parseShift($schedule[$yesterdayKey] ?? null)) {
+            [$startMin, $endMin, $overnight] = $shift;
+            if ($overnight) {
+                $nowMin = ((int) $now->format('G')) * 60 + (int) $now->format('i');
+                if ($nowMin <= $endMin) return true;
+            }
+        }
+        return false;
+    }
+
+    /** Returns "مفتوح · 9ص-11م" / "مغلق · يفتح 9ص" / null when no schedule. */
+    public function openStatusLabel(?\DateTimeInterface $now = null): ?string
+    {
+        if ($this->is_24h) return 'مفتوح · ٢٤ ساعة';
+        $open = $this->isOpenNow($now);
+        if ($open === null) return null;
+
+        $now ??= now('Africa/Cairo');
+        $todayKey = self::DOW_TO_KEY[(int) $now->format('w')];
+        $shift = $this->parseShift(($this->hours_schedule ?? [])[$todayKey] ?? null);
+
+        if ($open && $shift) {
+            return 'مفتوح · ' . $this->prettyTime($shift[0]) . '-' . $this->prettyTime($shift[1]);
+        }
+        // Find next opening day
+        $next = $this->nextOpeningTime($now);
+        if (! $next) return 'مغلق';
+        return 'مغلق · يفتح ' . $next;
+    }
+
+    /** Find the next opening label, e.g. "9ص" or "السبت 9ص". */
+    private function nextOpeningTime(\DateTimeInterface $from): ?string
+    {
+        $schedule = $this->hours_schedule ?? [];
+        $dow = (int) $from->format('w');
+        for ($i = 0; $i < 7; $i++) {
+            $key = self::DOW_TO_KEY[($dow + $i) % 7];
+            $shift = $this->parseShift($schedule[$key] ?? null);
+            if (! $shift) continue;
+
+            // Today: only count if start is still in the future
+            if ($i === 0) {
+                $nowMin = ((int) $from->format('G')) * 60 + (int) $from->format('i');
+                if ($shift[0] <= $nowMin) continue;
+                return $this->prettyTime($shift[0]);
+            }
+            return self::WEEKDAYS[$key] . ' ' . $this->prettyTime($shift[0]);
+        }
+        return null;
+    }
+
+    /** "09:00-23:30" → [540, 1410, false]. Returns null if invalid/empty. */
+    private function parseShift(?string $raw): ?array
+    {
+        if (! $raw || ! preg_match('/^(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})$/', trim($raw), $m)) return null;
+        $startMin = ((int) $m[1]) * 60 + (int) $m[2];
+        $endMin   = ((int) $m[3]) * 60 + (int) $m[4];
+        $overnight = $endMin < $startMin;
+        return [$startMin, $overnight ? $endMin + 24 * 60 : $endMin, $overnight];
+    }
+
+    /** 540 → "9ص"; 1410 → "11:30م". */
+    private function prettyTime(int $totalMin): string
+    {
+        $h = (int) ($totalMin / 60) % 24;
+        $m = $totalMin % 60;
+        $suffix = $h < 12 ? 'ص' : 'م';
+        $h12 = $h % 12 ?: 12;
+        return $m === 0 ? "{$h12}{$suffix}" : sprintf('%d:%02d%s', $h12, $m, $suffix);
     }
 
     public function isPromoted(): bool

@@ -318,10 +318,10 @@ class AdminController extends Controller
     /** Forget all map-data caches so the new promotion shows up immediately. */
     private function bustMapCache(): void
     {
-        \Illuminate\Support\Facades\Cache::forget('map-data:v3:all');
+        \Illuminate\Support\Facades\Cache::forget('map-data:v4:all');
         \Illuminate\Support\Facades\Cache::forget('map-events:v1');
         foreach (array_keys(\App\Models\Business::CATEGORIES) as $cat) {
-            \Illuminate\Support\Facades\Cache::forget('map-data:v3:'.$cat);
+            \Illuminate\Support\Facades\Cache::forget('map-data:v4:'.$cat);
         }
     }
 
@@ -374,6 +374,91 @@ class AdminController extends Controller
             : PushService::sendToSubscriptions(PushSubscription::all(), $payload);
 
         return back()->with('flash', "تم الإرسال — وصل لـ {$result['sent']} جهاز · فشل {$result['failed']} · مسحنا {$result['pruned']}.");
+    }
+
+    /**
+     * Admin form to publish an official infrastructure outage (electricity / water).
+     * Creates an Alert (verified=true) and pushes a notification to subscribers in
+     * the affected zone(s).
+     */
+    public function outageForm()
+    {
+        return view('admin.outage', [
+            'zones'      => Zone::orderBy('sort')->get(),
+            'recent'     => \App\Models\Alert::active()
+                ->whereIn('type', ['electricity', 'water'])
+                ->where('is_verified', true)
+                ->with('zone:id,name')
+                ->latest()
+                ->limit(10)
+                ->get(),
+        ]);
+    }
+
+    public function outageStore(Request $request)
+    {
+        $data = $request->validate([
+            'type'        => ['required', 'in:electricity,water'],
+            'zone_id'     => ['nullable', 'exists:zones,id'],
+            'description' => ['required', 'string', 'min:8', 'max:500'],
+            'starts_at'   => ['nullable', 'date'],
+            'ends_at'     => ['nullable', 'date', 'after_or_equal:starts_at'],
+            'send_push'   => ['nullable', 'boolean'],
+        ], [
+            'description.min' => 'اكتب تفاصيل أوضح (التوقيت + الشارع/المنطقة).',
+        ]);
+
+        // Build a clean description that includes the schedule when given
+        $body = trim($data['description']);
+        if (! empty($data['starts_at'])) {
+            $start = \Carbon\Carbon::parse($data['starts_at'])->translatedFormat('D j M · H:i');
+            $end   = ! empty($data['ends_at'])
+                ? \Carbon\Carbon::parse($data['ends_at'])->translatedFormat('H:i')
+                : null;
+            $body  = $body . "\nالتوقيت: {$start}" . ($end ? " إلى {$end}" : '');
+        }
+
+        // Expire when the outage ends (default 24h)
+        $expiresAt = ! empty($data['ends_at'])
+            ? \Carbon\Carbon::parse($data['ends_at'])->addHours(2)
+            : now()->addHours(24);
+
+        $alert = \App\Models\Alert::create([
+            'user_id'      => Auth::id(),
+            'zone_id'      => $data['zone_id'] ?? null,
+            'type'         => $data['type'],
+            'description'  => $body,
+            'is_verified'  => true,
+            'is_resolved'  => false,
+            'confirmations'=> 0,
+            'expires_at'   => $expiresAt,
+        ]);
+
+        // Push to relevant subscribers
+        $sent = $failed = 0;
+        if ($request->boolean('send_push', true)) {
+            $payload = [
+                'title' => $data['type'] === 'electricity' ? 'انقطاع كهرباء' : 'انقطاع مياه',
+                'body'  => mb_strlen($body) > 140 ? mb_substr($body, 0, 137).'…' : $body,
+                'url'   => route('alerts.show', $alert),
+                'tag'   => 'outage-'.$alert->id,
+            ];
+            $result = $data['zone_id']
+                ? PushService::sendToZone($data['zone_id'], $payload)
+                : PushService::sendToSubscriptions(PushSubscription::all(), $payload);
+            $sent   = $result['sent']   ?? 0;
+            $failed = $result['failed'] ?? 0;
+        }
+
+        return back()->with('flash',
+            "تم النشر — وصل لـ {$sent} جهاز" . ($failed ? " · فشل {$failed}" : '') . '.'
+        );
+    }
+
+    public function outageResolve(\App\Models\Alert $alert)
+    {
+        $alert->update(['is_resolved' => true]);
+        return back()->with('flash', 'تم إنهاء التنبيه.');
     }
 
     public function recheckTiers()

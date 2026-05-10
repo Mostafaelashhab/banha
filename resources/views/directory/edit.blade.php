@@ -1,154 +1,442 @@
 @extends('layouts.app', ['title' => 'تعديل ' . $business->name])
 
+@push('head')
+<style>
+    [data-step] { display: none; }
+    [data-step].is-active { display: block; animation: stepFadeIn .35s cubic-bezier(.2,.9,.3,1); }
+    @keyframes stepFadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+    .cat-card {
+        background: #fff;
+        border: 2px solid rgba(11,11,12,.06);
+        border-radius: 22px;
+        padding: 14px 10px;
+        text-align: center;
+        cursor: pointer;
+        transition: transform .15s, border-color .15s, box-shadow .15s;
+        position: relative;
+        overflow: hidden;
+    }
+    .cat-card:hover { transform: translateY(-3px); box-shadow: 0 10px 24px -8px rgba(11,11,12,.18); }
+    .cat-card:active { transform: scale(.97); }
+    .cat-card.is-selected {
+        border-color: var(--cat-color);
+        background: linear-gradient(135deg, var(--cat-color), color-mix(in srgb, var(--cat-color) 85%, white));
+        color: #fff;
+        box-shadow: 0 10px 24px -8px var(--cat-color);
+    }
+    .cat-card.is-selected .cat-icon { background: rgba(255,255,255,.2); color: #fff; }
+    .cat-icon {
+        width: 42px; height: 42px; margin: 0 auto 8px;
+        border-radius: 14px;
+        display: grid; place-items: center;
+        transition: all .2s;
+    }
+    .cat-label { font-size: 11px; font-weight: 800; line-height: 1.2; }
+
+    .sub-chip {
+        background: #fff;
+        border: 1.5px solid rgba(11,11,12,.08);
+        border-radius: 999px;
+        padding: 7px 12px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #0B0B0C;
+        cursor: pointer;
+        display: inline-flex; align-items: center; gap: 5px;
+        transition: all .15s;
+    }
+    .sub-chip:hover { border-color: var(--cat-color); }
+    .sub-chip.is-selected {
+        background: var(--cat-color);
+        color: #fff;
+        border-color: var(--cat-color);
+        box-shadow: 0 4px 12px -2px var(--cat-color);
+    }
+
+    .type-pill {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: var(--cat-color);
+        color: #fff;
+        padding: 5px 12px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 800;
+    }
+    .type-pill .change {
+        margin-inline-start: 4px;
+        background: rgba(255,255,255,.25);
+        border-radius: 999px;
+        padding: 2px 8px;
+        font-size: 10px;
+        cursor: pointer;
+    }
+
+    .step-num {
+        width: 26px; height: 26px;
+        border-radius: 50%;
+        background: var(--cat-color, #FF7A4D);
+        color: #fff;
+        display: grid; place-items: center;
+        font-weight: 900;
+        font-size: 12px;
+        flex-shrink: 0;
+    }
+
+    .sticky-submit {
+        position: sticky;
+        bottom: calc(6rem + env(safe-area-inset-bottom));
+        z-index: 30;
+        backdrop-filter: blur(8px);
+    }
+</style>
+<script>
+    window.__BIZ_SUB_TO_CAT__ = @json(collect(\App\Models\Business::SUB_TYPES)->map(fn($s) => $s['category']));
+</script>
+@endpush
+
 @section('content')
+@php
+    $cm        = $business->categoryMeta();
+    $sm        = $business->subTypeMeta();
+    $oldSub    = old('sub_type', $business->sub_type);
+    $oldCat    = $oldSub ? (\App\Models\Business::SUB_TYPES[$oldSub]['category'] ?? $business->category) : $business->category;
+@endphp
+
 <div class="max-w-2xl mx-auto">
+
+    {{-- Header --}}
     <div class="flex items-center gap-2 mb-4">
-        <a href="{{ route('directory.show', $business) }}" class="w-9 h-9 rounded-full bg-white border border-ink-950/8 grid place-items-center text-ink-950">
+        <a href="{{ route('directory.show', $business) }}" class="w-9 h-9 rounded-full bg-white border border-ink-950/8 grid place-items-center text-ink-950 hover:bg-cream-100 transition">
             <x-icon name="arrow-right" class="w-4 h-4"/>
         </a>
-        <h1 class="text-xl font-extrabold text-ink-950">تعديل النشاط</h1>
+        <div class="flex-1 min-w-0">
+            <h1 class="text-lg font-black text-ink-950 truncate">تعديل · {{ $business->name }}</h1>
+            <p class="text-[11px] text-ink-500">حدّث بياناتك في أي وقت — التغيير يبان فوراً.</p>
+        </div>
     </div>
 
-    <form method="POST" action="{{ route('directory.update', $business) }}" class="card-light p-5 space-y-4" enctype="multipart/form-data">
+    <form method="POST" action="{{ route('directory.update', $business) }}" enctype="multipart/form-data"
+          class="space-y-4" id="edit-form">
         @csrf
         @method('PATCH')
+        <input type="hidden" name="sub_type" value="{{ $oldSub }}" data-sub-type-input required>
+        <input type="hidden" name="category" value="{{ $oldCat }}" data-category-input>
 
-        {{-- Photo --}}
-        <div>
-            <label class="text-xs font-bold text-ink-500 mb-2 block">صورة النشاط</label>
-            <div class="flex items-center gap-3">
-                @if($business->photo_url)
-                    <img src="{{ $business->photo_url }}" alt="" class="w-16 h-16 rounded-xl object-cover shrink-0">
-                @else
-                    @php $cm = $business->categoryMeta(); $sm = $business->subTypeMeta(); @endphp
-                    <span class="w-16 h-16 rounded-xl grid place-items-center shrink-0"
-                          style="background: {{ $cm['color'] }}14; color: {{ $cm['color'] }};">
-                        <x-icon :name="$sm['icon'] ?? 'bag'" class="w-7 h-7"/>
-                    </span>
-                @endif
-                <label class="flex-1 cursor-pointer bg-cream-100 rounded-2xl p-3 border border-ink-950/8 hover:border-coral-500/40 transition text-sm font-bold text-ink-950">
-                    <span data-photo-name>{{ $business->photo_url ? 'استبدل الصورة' : 'ارفع صورة' }}</span>
-                    <span class="block text-[10px] text-ink-500 font-normal mt-0.5">JPG / PNG / WEBP · حتى ٣ ميجا</span>
-                    <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" class="hidden" onchange="this.parentElement.querySelector('[data-photo-name]').textContent = this.files[0]?.name || 'استبدل الصورة'">
-                </label>
+        {{-- ──── STEP 1: Category picker (hidden by default; shown when "غيّر النوع" clicked) ──── --}}
+        <section data-step="category" class="card-light p-5">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="step-num" style="--cat-color: #FF7A4D">١</span>
+                <div>
+                    <h2 class="text-sm font-extrabold text-ink-950">غيّر نوع نشاطك</h2>
+                    <p class="text-[11px] text-ink-500">دوس على الفئة الجديدة.</p>
+                </div>
             </div>
-            @error('photo') <p class="text-blush-500 text-xs mt-1">{{ $message }}</p> @enderror
-        </div>
 
-        <div data-subtype-picker>
-            <label class="text-xs font-bold text-ink-500 mb-2 block">نوع النشاط *</label>
-            @foreach(\App\Models\Business::CATEGORIES as $catKey => $catMeta)
-                <div class="mb-4">
-                    <div class="text-[11px] font-bold text-ink-400 mb-2">{{ $catMeta['label'] }}</div>
-                    <div class="flex flex-wrap gap-2">
-                        @foreach($subTypes as $key => $st)
+            <div class="grid grid-cols-3 gap-2.5">
+                @foreach(\App\Models\Business::CATEGORIES as $catKey => $catMeta)
+                    <button type="button" class="cat-card {{ $catKey === $oldCat ? 'is-selected' : '' }}" data-pick-cat="{{ $catKey }}"
+                            style="--cat-color: {{ $catMeta['color'] }}">
+                        <span class="cat-icon" style="background: {{ $catMeta['color'] }}1a; color: {{ $catMeta['color'] }};">
+                            <x-icon :name="$catMeta['icon'] ?? 'bag'" class="w-5 h-5"/>
+                        </span>
+                        <span class="cat-label">{{ $catMeta['label'] }}</span>
+                    </button>
+                @endforeach
+            </div>
+        </section>
+
+        {{-- ──── STEP 2+: Form (visible by default in edit mode) ──── --}}
+        <section data-step="details" class="is-active space-y-4">
+
+            {{-- Type breadcrumb --}}
+            <div class="card-light p-3 flex items-center gap-2" data-type-breadcrumb style="--cat-color: {{ $cm['color'] }};">
+                <span class="text-xs font-bold text-ink-500">نوع النشاط:</span>
+                <span class="type-pill" data-bcrumb-pill>
+                    <x-icon :name="$cm['icon'] ?? 'bag'" class="w-3 h-3"/>
+                    <span data-bcrumb-label>{{ $cm['label'] }} <span class="opacity-80">· {{ $sm['label'] }}</span></span>
+                    <button type="button" class="change" data-back-to-cat>غيّر</button>
+                </span>
+            </div>
+
+            {{-- Sub-type chips --}}
+            <div class="card-light p-5" data-subtype-wrap>
+                <div class="flex items-center gap-3 mb-3">
+                    <span class="step-num" style="--cat-color: {{ $cm['color'] }};">٢</span>
+                    <h2 class="text-sm font-extrabold text-ink-950">التخصص</h2>
+                </div>
+
+                @foreach(\App\Models\Business::CATEGORIES as $catKey => $catMeta)
+                    <div data-cat-subs="{{ $catKey }}" class="{{ $catKey === $oldCat ? '' : 'hidden' }} flex flex-wrap gap-2"
+                         style="--cat-color: {{ $catMeta['color'] }};">
+                        @foreach(\App\Models\Business::SUB_TYPES as $key => $st)
                             @if($st['category'] === $catKey)
                                 @php $isOther = str_ends_with($key, '_other'); @endphp
-                                <label class="cursor-pointer">
-                                    <input type="radio" name="sub_type" value="{{ $key }}" class="peer sr-only"
-                                           {{ old('sub_type', $business->sub_type) === $key ? 'checked' : '' }}
-                                           data-is-other="{{ $isOther ? '1' : '0' }}">
-                                    <span class="block px-3 py-1.5 rounded-full text-xs font-bold bg-cream-100 border border-ink-950/8 peer-checked:bg-coral-500 peer-checked:text-white peer-checked:border-coral-500 transition inline-flex items-center gap-1.5">
-                                        <x-icon :name="$st['icon'] ?? 'briefcase'" class="w-3.5 h-3.5"/>
-                                        {{ $st['label'] }}
-                                    </span>
-                                </label>
+                                <button type="button" class="sub-chip {{ $oldSub === $key ? 'is-selected' : '' }}"
+                                        data-pick-sub="{{ $key }}"
+                                        data-is-other="{{ $isOther ? '1' : '0' }}">
+                                    <x-icon :name="$st['icon'] ?? 'briefcase'" class="w-3.5 h-3.5"/>
+                                    {{ $st['label'] }}
+                                </button>
                             @endif
                         @endforeach
                     </div>
-                </div>
-            @endforeach
-
-            <div class="mt-2 {{ str_ends_with(old('sub_type', $business->sub_type), '_other') ? '' : 'hidden' }}" data-custom-subtype-wrap>
-                <label class="text-xs font-bold text-ink-500 mb-1 block">اكتب نوع نشاطك</label>
-                <input type="text" name="custom_sub_type" maxlength="80"
-                       value="{{ old('custom_sub_type', $business->custom_sub_type) }}"
-                       placeholder="مثلاً: محل ساعات، مدرّس عربي…"
-                       class="w-full bg-cream-100 rounded-2xl px-4 py-3 text-ink-950 placeholder-ink-400 outline-0 border border-ink-950/8 focus:border-coral-500 transition">
-                @error('custom_sub_type') <p class="text-blush-500 text-xs mt-1">{{ $message }}</p> @enderror
-            </div>
-        </div>
-
-        <div>
-            <label class="text-xs font-bold text-ink-500 mb-1 block">اسم النشاط *</label>
-            <input type="text" name="name" required minlength="3" maxlength="120" value="{{ old('name', $business->name) }}"
-                   class="w-full bg-cream-100 rounded-2xl px-4 py-3 text-ink-950 outline-0 border border-ink-950/8 focus:border-coral-500 transition">
-            @error('name') <p class="text-blush-500 text-xs mt-1">{{ $message }}</p> @enderror
-        </div>
-
-        <div>
-            <label class="text-xs font-bold text-ink-500 mb-1 block">المنطقة *</label>
-            <select name="zone_id" required
-                    class="select-styled w-full bg-cream-100 rounded-2xl px-4 py-3 text-ink-950 outline-0 border border-ink-950/8 focus:border-coral-500 transition">
-                @foreach($zones as $z)
-                    <option value="{{ $z->id }}" {{ old('zone_id', $business->zone_id) == $z->id ? 'selected' : '' }}>{{ $z->name }}</option>
                 @endforeach
-            </select>
-        </div>
 
-        <div>
-            <label class="text-xs font-bold text-ink-500 mb-1 block">العنوان</label>
-            <input type="text" name="address" maxlength="200" value="{{ old('address', $business->address) }}"
-                   class="w-full bg-cream-100 rounded-2xl px-4 py-3 text-ink-950 outline-0 border border-ink-950/8 focus:border-coral-500 transition">
-        </div>
-
-        <x-map-picker
-            :lat="$business->lat"
-            :lng="$business->lng"
-            label="مكان النشاط على الخريطة"
-            help="دوس على الخريطة في مكان نشاطك. **لو شِلت المكان، نشاطك هيختفي من خريطة بنها** — تقدر ترجعه في أي وقت."/>
-
-        <div class="grid grid-cols-2 gap-3">
-            <div>
-                <label class="text-xs font-bold text-ink-500 mb-1 block">رقم تليفون</label>
-                <input type="tel" name="phone" inputmode="numeric" maxlength="11" value="{{ old('phone', $business->phone) }}"
-                       class="w-full bg-cream-100 rounded-2xl px-4 py-3 text-ink-950 outline-0 border border-ink-950/8 focus:border-coral-500 transition">
+                <div class="mt-3 {{ str_ends_with($oldSub, '_other') ? '' : 'hidden' }}" data-custom-subtype-wrap>
+                    <label class="text-xs font-bold text-ink-500 mb-1 block">اكتب نوع نشاطك بالظبط</label>
+                    <input type="text" name="custom_sub_type" maxlength="80"
+                           value="{{ old('custom_sub_type', $business->custom_sub_type) }}"
+                           placeholder="مثلاً: محل ساعات، مدرّس عربي…"
+                           class="w-full bg-cream-100 rounded-2xl px-4 py-3 text-ink-950 placeholder-ink-400 outline-0 border border-ink-950/8 focus:border-coral-500 focus:bg-white transition text-sm">
+                    @error('custom_sub_type') <p class="text-blush-500 text-xs mt-1">{{ $message }}</p> @enderror
+                </div>
+                @error('sub_type') <p class="text-blush-500 text-xs mt-2">{{ $message }}</p> @enderror
             </div>
-            <div>
-                <label class="text-xs font-bold text-ink-500 mb-1 block">رقم واتساب</label>
-                <input type="tel" name="whatsapp" inputmode="numeric" maxlength="11" value="{{ old('whatsapp', $business->whatsapp) }}"
-                       class="w-full bg-cream-100 rounded-2xl px-4 py-3 text-ink-950 outline-0 border border-ink-950/8 focus:border-coral-500 transition">
+
+            {{-- Basic info --}}
+            <div class="card-light p-5 space-y-4">
+                <div class="flex items-center gap-3 mb-1">
+                    <span class="step-num" style="--cat-color: {{ $cm['color'] }};">٣</span>
+                    <h2 class="text-sm font-extrabold text-ink-950">البيانات الأساسية</h2>
+                </div>
+
+                {{-- Photo: shows current photo or fallback --}}
+                <div>
+                    <label class="text-xs font-bold text-ink-500 mb-2 block">صورة النشاط</label>
+                    <div class="flex items-center gap-3">
+                        @if($business->photo_url)
+                            <img src="{{ $business->photo_url }}" alt="" class="w-16 h-16 rounded-xl object-cover shrink-0">
+                        @else
+                            <span class="w-16 h-16 rounded-xl grid place-items-center shrink-0"
+                                  style="background: {{ $cm['color'] }}14; color: {{ $cm['color'] }};">
+                                <x-icon :name="$sm['icon'] ?? 'bag'" class="w-7 h-7"/>
+                            </span>
+                        @endif
+                        <label class="flex-1 cursor-pointer bg-cream-100 rounded-2xl p-3 border border-ink-950/8 hover:border-coral-500/40 transition">
+                            <span class="text-sm font-bold text-ink-950 block" data-photo-name>
+                                {{ $business->photo_url ? 'استبدل الصورة' : 'ارفع صورة' }}
+                            </span>
+                            <span class="block text-[10px] text-ink-500 mt-0.5">JPG / PNG / WEBP · حتى ٣ ميجا</span>
+                            <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" class="hidden"
+                                   onchange="this.parentElement.querySelector('[data-photo-name]').textContent = this.files[0]?.name || '{{ $business->photo_url ? 'استبدل الصورة' : 'ارفع صورة' }}'">
+                        </label>
+                    </div>
+                    @error('photo') <p class="text-blush-500 text-xs mt-1">{{ $message }}</p> @enderror
+                </div>
+
+                <div>
+                    <label class="text-xs font-bold text-ink-500 mb-1.5 block">اسم النشاط *</label>
+                    <input type="text" name="name" required minlength="3" maxlength="120"
+                           value="{{ old('name', $business->name) }}"
+                           class="w-full bg-cream-100 rounded-2xl px-4 py-3 text-ink-950 placeholder-ink-400 outline-0 border border-ink-950/8 focus:border-coral-500 focus:bg-white transition">
+                    @error('name') <p class="text-blush-500 text-xs mt-1">{{ $message }}</p> @enderror
+                </div>
+
+                <div>
+                    <label class="text-xs font-bold text-ink-500 mb-1.5 block">المنطقة *</label>
+                    <select name="zone_id" required
+                            class="select-styled w-full bg-cream-100 rounded-2xl px-4 py-3 text-ink-950 outline-0 border border-ink-950/8 focus:border-coral-500 focus:bg-white transition">
+                        @foreach($zones as $z)
+                            <option value="{{ $z->id }}" {{ old('zone_id', $business->zone_id) == $z->id ? 'selected' : '' }}>{{ $z->name }}</option>
+                        @endforeach
+                    </select>
+                    @error('zone_id') <p class="text-blush-500 text-xs mt-1">{{ $message }}</p> @enderror
+                </div>
+
+                <div>
+                    <label class="text-xs font-bold text-ink-500 mb-1.5 block">العنوان</label>
+                    <input type="text" name="address" maxlength="200"
+                           value="{{ old('address', $business->address) }}"
+                           placeholder="شارع · حي · معلم قريب"
+                           class="w-full bg-cream-100 rounded-2xl px-4 py-3 text-ink-950 placeholder-ink-400 outline-0 border border-ink-950/8 focus:border-coral-500 focus:bg-white transition">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-bold text-ink-500 mb-1.5 block">رقم تليفون</label>
+                        <input type="tel" name="phone" inputmode="numeric" maxlength="11" dir="ltr"
+                               value="{{ old('phone', $business->phone) }}"
+                               placeholder="010xxxxxxxx"
+                               class="w-full bg-cream-100 rounded-2xl px-4 py-3 text-ink-950 placeholder-ink-400 outline-0 border border-ink-950/8 focus:border-coral-500 focus:bg-white transition">
+                        @error('phone') <p class="text-blush-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-ink-500 mb-1.5 block">رقم واتساب</label>
+                        <input type="tel" name="whatsapp" inputmode="numeric" maxlength="11" dir="ltr"
+                               value="{{ old('whatsapp', $business->whatsapp) }}"
+                               placeholder="010xxxxxxxx"
+                               class="w-full bg-cream-100 rounded-2xl px-4 py-3 text-ink-950 placeholder-ink-400 outline-0 border border-ink-950/8 focus:border-coral-500 focus:bg-white transition">
+                        @error('whatsapp') <p class="text-blush-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    </div>
+                </div>
+
+                <x-hours-picker :schedule="$business->hours_schedule" :hours-text="$business->hours"/>
+
+                <label class="flex items-center gap-3 bg-cream-100 rounded-2xl p-3 cursor-pointer border border-ink-950/8 has-[:checked]:bg-mint-100/50 has-[:checked]:border-mint-500/40 transition">
+                    <input type="checkbox" name="is_24h" value="1" {{ old('is_24h', $business->is_24h) ? 'checked' : '' }} class="sr-only peer">
+                    <span class="w-12 h-7 rounded-full bg-ink-300 relative transition peer-checked:bg-mint-500">
+                        <span class="absolute top-0.5 start-0.5 w-6 h-6 rounded-full bg-white shadow transition peer-checked:translate-x-[-1.25rem] rtl:peer-checked:translate-x-5"></span>
+                    </span>
+                    <span class="text-sm font-bold text-ink-950">شغّال ٢٤ ساعة</span>
+                </label>
+
+                <div>
+                    <label class="text-xs font-bold text-ink-500 mb-1.5 block">وصف مختصر</label>
+                    <textarea name="description" rows="3" maxlength="1000"
+                              class="w-full bg-cream-100 rounded-2xl px-4 py-3 text-ink-950 placeholder-ink-400 outline-0 border border-ink-950/8 focus:border-coral-500 focus:bg-white transition resize-none">{{ old('description', $business->description) }}</textarea>
+                </div>
             </div>
-        </div>
 
-        <div>
-            <label class="text-xs font-bold text-ink-500 mb-1 block">المواعيد</label>
-            <input type="text" name="hours" maxlength="100" value="{{ old('hours', $business->hours) }}"
-                   class="w-full bg-cream-100 rounded-2xl px-4 py-3 text-ink-950 outline-0 border border-ink-950/8 focus:border-coral-500 transition">
-        </div>
+            {{-- Map picker --}}
+            <div class="card-light p-5">
+                <div class="flex items-center gap-3 mb-3">
+                    <span class="step-num" style="--cat-color: {{ $cm['color'] }};">٤</span>
+                    <h2 class="text-sm font-extrabold text-ink-950">المكان على الخريطة</h2>
+                </div>
+                <x-map-picker
+                    :lat="$business->lat"
+                    :lng="$business->lng"
+                    label=""
+                    help="**لو شِلت المكان، نشاطك هيختفي من خريطة بنها** — تقدر ترجعه في أي وقت."/>
+            </div>
 
-        <label class="flex items-center gap-3 bg-cream-100 rounded-2xl p-3 cursor-pointer border border-ink-950/8 has-[:checked]:bg-mint-100/50 has-[:checked]:border-mint-500/40 transition">
-            <input type="checkbox" name="is_24h" value="1" {{ old('is_24h', $business->is_24h) ? 'checked' : '' }} class="sr-only peer">
-            <span class="w-12 h-7 rounded-full bg-ink-300 relative transition peer-checked:bg-mint-500">
-                <span class="absolute top-0.5 start-0.5 w-6 h-6 rounded-full bg-white shadow transition peer-checked:translate-x-[-1.25rem] rtl:peer-checked:translate-x-5"></span>
-            </span>
-            <span class="text-sm font-bold text-ink-950">شغّال ٢٤ ساعة</span>
-        </label>
+            {{-- Type-specific extras --}}
+            <div class="card-light p-5" data-extras-section>
+                <div class="flex items-center gap-3 mb-3">
+                    <span class="step-num" style="--cat-color: {{ $cm['color'] }};">٥</span>
+                    <div>
+                        <h2 class="text-sm font-extrabold text-ink-950" data-extras-title>تفاصيل {{ $cm['label'] }}</h2>
+                        <p class="text-[11px] text-ink-500">الحقول هنا بتتغيّر حسب النوع.</p>
+                    </div>
+                </div>
 
-        <div>
-            <label class="text-xs font-bold text-ink-500 mb-1 block">وصف مختصر</label>
-            <textarea name="description" rows="3" maxlength="1000"
-                      class="w-full bg-cream-100 rounded-2xl px-4 py-3 text-ink-950 outline-0 border border-ink-950/8 focus:border-coral-500 transition resize-none">{{ old('description', $business->description) }}</textarea>
-        </div>
+                <x-business-extras :sub-type="$oldSub" :values="$business->extra ?? []"/>
+            </div>
 
-        <button type="submit" class="btn-primary w-full justify-center !py-3">
-            احفظ التعديلات
-            <x-icon name="check" class="w-4 h-4"/>
-        </button>
+            {{-- Sticky submit --}}
+            <div class="sticky-submit">
+                <button type="submit" class="btn-primary w-full justify-center !py-3.5 text-sm shadow-xl shadow-coral-500/30">
+                    احفظ التعديلات
+                    <x-icon name="check" class="w-4 h-4"/>
+                </button>
+            </div>
+        </section>
     </form>
 
+    {{-- Delete (separate form, danger zone) --}}
     <form method="POST" action="{{ route('directory.destroy', $business) }}"
-          class="mt-3"
+          class="mt-6"
           data-confirm="حذف النشاط؟"
           data-confirm-body="هينحذف خالص ومش هيرجع تاني."
           data-confirm-action="احذف"
           data-confirm-tone="danger">
         @csrf
         @method('DELETE')
-        <button type="submit" class="card-light p-3 w-full text-blush-500 font-bold text-sm hover:bg-blush-100/50 transition flex items-center justify-center gap-2">
+        <button type="submit" class="card-light p-3 w-full text-blush-500 font-bold text-sm hover:bg-blush-100/50 transition flex items-center justify-center gap-2 border border-blush-500/20">
             <x-icon name="trash" class="w-4 h-4"/>
             احذف النشاط نهائياً
         </button>
     </form>
 </div>
+
+<script>
+    (function () {
+        const form         = document.getElementById('edit-form');
+        const subInput     = form.querySelector('[data-sub-type-input]');
+        const catInput     = form.querySelector('[data-category-input]');
+        const stepCategory = form.querySelector('[data-step="category"]');
+        const stepDetails  = form.querySelector('[data-step="details"]');
+        const subWrap      = form.querySelector('[data-subtype-wrap]');
+        const customWrap   = form.querySelector('[data-custom-subtype-wrap]');
+        const breadcrumb   = form.querySelector('[data-type-breadcrumb]');
+        const bcrumbLabel  = form.querySelector('[data-bcrumb-label]');
+
+        const CATEGORIES = @json(\App\Models\Business::CATEGORIES);
+        const SUB_TYPES  = @json(\App\Models\Business::SUB_TYPES);
+
+        function pickCategory(catKey) {
+            const meta = CATEGORIES[catKey];
+            if (!meta) return;
+            catInput.value = catKey;
+
+            breadcrumb.style.setProperty('--cat-color', meta.color);
+
+            // Show this category's sub-types only
+            subWrap.querySelectorAll('[data-cat-subs]').forEach(div => {
+                div.classList.toggle('hidden', div.dataset.catSubs !== catKey);
+            });
+
+            // Mark selected category card
+            stepCategory.querySelectorAll('[data-pick-cat]').forEach(c => {
+                c.classList.toggle('is-selected', c.dataset.pickCat === catKey);
+            });
+
+            // Reset sub-type if it doesn't belong to this category
+            if (subInput.value && SUB_TYPES[subInput.value]?.category !== catKey) {
+                subInput.value = '';
+                bcrumbLabel.textContent = meta.label;
+                form.querySelectorAll('.sub-chip.is-selected').forEach(c => c.classList.remove('is-selected'));
+                customWrap.classList.add('hidden');
+            } else if (SUB_TYPES[subInput.value]) {
+                bcrumbLabel.innerHTML = meta.label + ' <span class="opacity-80">· ' + SUB_TYPES[subInput.value].label + '</span>';
+            }
+
+            // Move to step 2
+            stepCategory.classList.remove('is-active');
+            stepDetails.classList.add('is-active');
+            window.scrollTo({ top: stepDetails.offsetTop - 60, behavior: 'smooth' });
+
+            document.dispatchEvent(new CustomEvent('biz-type-changed'));
+        }
+
+        function pickSubType(key) {
+            subInput.value = key;
+            form.querySelectorAll('.sub-chip').forEach(c => {
+                c.classList.toggle('is-selected', c.dataset.pickSub === key);
+            });
+            const isOther = key.endsWith('_other');
+            customWrap.classList.toggle('hidden', !isOther);
+            if (isOther) customWrap.querySelector('input')?.focus();
+
+            const sm = SUB_TYPES[key];
+            if (sm) {
+                const cat = CATEGORIES[sm.category];
+                bcrumbLabel.innerHTML = cat.label + ' <span class="opacity-80">· ' + sm.label + '</span>';
+
+                const extrasTitle = form.querySelector('[data-extras-title]');
+                if (extrasTitle) extrasTitle.textContent = 'تفاصيل ' + (cat?.label || 'النشاط');
+            }
+
+            subInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        stepCategory.querySelectorAll('[data-pick-cat]').forEach(card => {
+            card.addEventListener('click', () => pickCategory(card.dataset.pickCat));
+        });
+
+        subWrap.addEventListener('click', (e) => {
+            const chip = e.target.closest('[data-pick-sub]');
+            if (!chip) return;
+            pickSubType(chip.dataset.pickSub);
+        });
+
+        // "غيّر" — go back to step 1
+        form.querySelector('[data-back-to-cat]')?.addEventListener('click', () => {
+            stepDetails.classList.remove('is-active');
+            stepCategory.classList.add('is-active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        form.addEventListener('submit', (e) => {
+            if (!subInput.value) {
+                e.preventDefault();
+                alert('اختار نوع نشاطك الأول.');
+                stepDetails.classList.remove('is-active');
+                stepCategory.classList.add('is-active');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        });
+    })();
+</script>
 @endsection

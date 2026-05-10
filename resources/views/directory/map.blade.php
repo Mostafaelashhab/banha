@@ -260,6 +260,11 @@
         border-color: transparent !important;
         background: var(--cat-color, #FF7A4D) !important;
     }
+    .map-filter-chip.is-active {
+        color: #fff !important;
+        border-color: transparent !important;
+        background: #FF7A4D !important;
+    }
 
     /* ── "My location" floating button — sits well above bottom-nav ── */
     .map-locate-btn {
@@ -336,6 +341,30 @@
                     {{ $cat['label'] }}
                 </button>
             @endforeach
+        </div>
+    </div>
+
+    {{-- Filter row: open-now / verified / 24h --}}
+    <div class="overflow-x-auto scrollbar-hide -mx-4 mb-3 pb-1">
+        <div class="flex gap-2 px-4 w-max">
+            <button type="button" data-mfilter="open_now"
+                    class="map-filter-chip shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-extrabold bg-white border border-ink-950/8 text-ink-700 transition">
+                <span class="w-1.5 h-1.5 rounded-full bg-mint-500"></span>
+                مفتوح دلوقتي
+            </button>
+            <button type="button" data-mfilter="verified"
+                    class="map-filter-chip shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-extrabold bg-white border border-ink-950/8 text-ink-700 transition">
+                <x-icon name="check" class="w-3 h-3"/>
+                موثّق
+            </button>
+            <button type="button" data-mfilter="open24"
+                    class="map-filter-chip shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-extrabold bg-white border border-ink-950/8 text-ink-700 transition">
+                ٢٤ ساعة
+            </button>
+            <button type="button" data-mfilter="has_menu"
+                    class="map-filter-chip shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-extrabold bg-white border border-ink-950/8 text-ink-700 transition">
+                عنده منيو
+            </button>
         </div>
     </div>
 
@@ -489,11 +518,19 @@
         },
     }).addTo(map);
     const cache = {};
+    const activeFilters = new Set();   // 'open_now' | 'verified' | 'open24' | 'has_menu'
 
     async function loadCategory(cat) {
-        const key = cat || 'all';
+        // Cache key includes both category AND active filters
+        const filterTag = [...activeFilters].sort().join(',') || 'none';
+        const key = (cat || 'all') + '|' + filterTag;
         if (cache[key]) return cache[key];
-        const url = '{{ route('directory.map.data') }}' + (cat ? '?category=' + encodeURIComponent(cat) : '');
+
+        const params = new URLSearchParams();
+        if (cat) params.set('category', cat);
+        activeFilters.forEach(f => params.set(f, '1'));
+        const url = '{{ route('directory.map.data') }}' + (params.toString() ? '?' + params : '');
+
         try {
             const res = await fetch(url, { credentials: 'same-origin' });
             const data = await res.json();
@@ -645,6 +682,17 @@
             document.querySelectorAll('[data-cat]').forEach(x => x.classList.remove('is-active'));
             btn.classList.add('is-active');
             render(btn.dataset.cat || '');
+        });
+    });
+
+    // Wire boolean filter chips (open-now / verified / 24h / has_menu)
+    document.querySelectorAll('[data-mfilter]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const key = btn.dataset.mfilter;
+            const wasActive = activeFilters.has(key);
+            wasActive ? activeFilters.delete(key) : activeFilters.add(key);
+            btn.classList.toggle('is-active', !wasActive);
+            render(currentCat);
         });
     });
 

@@ -75,6 +75,9 @@ Route::get('/zones',                   [BrowseController::class, 'zones'])->name
 Route::get('/posts/{post}',            [PostController::class, 'show'])->name('posts.show');
 Route::get('/u/{username}',            [ProfileController::class, 'show'])->name('profile.show');
 
+// Support (live chat for users; fallback page for guests)
+Route::get('/support', [\App\Http\Controllers\SupportController::class, 'open'])->name('support');
+
 // Authenticated app routes
 Route::middleware('auth')->group(function () {
     // Activation (after signup)
@@ -140,6 +143,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/directory/business/{business}/review',   [\App\Http\Controllers\BusinessReviewController::class, 'store'])->name('business.review.store');
     Route::delete('/directory/business/{business}/review', [\App\Http\Controllers\BusinessReviewController::class, 'destroy'])->name('business.review.destroy');
 
+    // Claim ownership of an unowned (OSM) business via WhatsApp OTP
+    Route::get('/directory/business/{business}/claim',          [\App\Http\Controllers\BusinessClaimController::class, 'show'])->name('directory.claim.show');
+    Route::post('/directory/business/{business}/claim/request', [\App\Http\Controllers\BusinessClaimController::class, 'requestOtp'])->name('directory.claim.request');
+    Route::post('/directory/business/{business}/claim/verify',  [\App\Http\Controllers\BusinessClaimController::class, 'verify'])->name('directory.claim.verify');
+
     // Events (owner CRUD)
     Route::get('/events/new',           [\App\Http\Controllers\EventController::class, 'create'])->name('events.create');
     Route::post('/events',              [\App\Http\Controllers\EventController::class, 'store'])->name('events.store');
@@ -164,6 +172,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/me',                 [ProfileController::class, 'show'])->name('profile.me');
     Route::post('/me/profile',        [ProfileSettingsController::class, 'updateProfile'])->name('profile.update');
     Route::post('/me/password',       [ProfileSettingsController::class, 'changePassword'])->name('profile.password');
+    Route::post('/me/prayer-notify',  [ProfileSettingsController::class, 'togglePrayerNotify'])->name('profile.prayer.notify');
     Route::post('/me/avatar',         [ProfileSettingsController::class, 'uploadAvatar'])->name('profile.avatar');
     Route::delete('/me/avatar',       [ProfileSettingsController::class, 'deleteAvatar'])->name('profile.avatar.delete');
 
@@ -191,6 +200,10 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/broadcast',                     [AdminController::class, 'broadcastForm'])->name('broadcast');
         Route::post('/broadcast',                    [AdminController::class, 'broadcastSend'])->name('broadcast.send');
+
+        Route::get('/outages',                       [AdminController::class, 'outageForm'])->name('outages');
+        Route::post('/outages',                      [AdminController::class, 'outageStore'])->name('outages.store');
+        Route::post('/outages/{alert}/resolve',      [AdminController::class, 'outageResolve'])->name('outages.resolve');
 
         Route::post('/recheck-tiers',                [AdminController::class, 'recheckTiers'])->name('recheck.tiers');
     });

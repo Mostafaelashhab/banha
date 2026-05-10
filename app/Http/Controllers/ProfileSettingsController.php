@@ -25,6 +25,26 @@ class ProfileSettingsController extends Controller
         return back()->with('flash', 'تم تحديث البيانات.');
     }
 
+    /**
+     * Toggle the prayer-time push notifications preference.
+     * Accepts an explicit `enabled` boolean (defaults to "flip").
+     * Returns JSON for AJAX clients (the prayer widget toggle).
+     */
+    public function togglePrayerNotify(Request $request)
+    {
+        $user = Auth::user();
+        $next = $request->has('enabled')
+            ? $request->boolean('enabled')
+            : ! $user->prayer_notify;
+
+        $user->update(['prayer_notify' => $next]);
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json(['enabled' => $next]);
+        }
+        return back()->with('flash', $next ? 'تم تشغيل تنبيه الصلاة.' : 'تم إيقاف تنبيه الصلاة.');
+    }
+
     public function changePassword(Request $request)
     {
         $user = Auth::user();

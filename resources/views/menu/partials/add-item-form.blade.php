@@ -1,15 +1,24 @@
+@php
+    $L = $L ?? \App\Models\Business::menuLabels($business->category);
+    $hasPrice = ! empty($L['price_label']);
+@endphp
+
 <form method="POST" action="{{ route('menu.item.store', $business) }}" enctype="multipart/form-data" class="space-y-2 bg-cream-100/70 rounded-xl p-3 border border-ink-950/8">
     @csrf
     <input type="hidden" name="category_id" value="{{ $categoryId ?? '' }}">
 
-    <div class="grid grid-cols-3 gap-2">
-        <input type="text" name="name" required maxlength="120" placeholder="اسم الصنف *"
-               class="col-span-2 bg-white rounded-lg px-3 py-2.5 text-ink-950 placeholder-ink-400 outline-0 border border-ink-950/8 focus:border-coral-500 transition text-sm">
-        <div class="relative">
-            <input type="number" name="price" min="0" max="99999.99" step="0.5" placeholder="السعر"
-                   class="w-full bg-white rounded-lg ps-3 pe-7 py-2.5 text-ink-950 placeholder-ink-400 outline-0 border border-ink-950/8 focus:border-coral-500 transition text-sm">
-            <span class="absolute end-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-ink-400 pointer-events-none">ج.م</span>
-        </div>
+    <div class="grid {{ $hasPrice ? 'grid-cols-3' : 'grid-cols-1' }} gap-2">
+        <input type="text" name="name" required maxlength="120"
+               placeholder="{{ $L['item_placeholder'] ?? 'الاسم *' }}"
+               class="{{ $hasPrice ? 'col-span-2' : '' }} bg-white rounded-lg px-3 py-2.5 text-ink-950 placeholder-ink-400 outline-0 border border-ink-950/8 focus:border-coral-500 transition text-sm">
+        @if($hasPrice)
+            <div class="relative">
+                <input type="number" name="price" min="0" max="999999.99" step="0.5"
+                       placeholder="{{ $L['price_label'] }}"
+                       class="w-full bg-white rounded-lg ps-3 pe-7 py-2.5 text-ink-950 placeholder-ink-400 outline-0 border border-ink-950/8 focus:border-coral-500 transition text-sm">
+                <span class="absolute end-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-ink-400 pointer-events-none">ج.م</span>
+            </div>
+        @endif
     </div>
 
     <textarea name="description" rows="2" maxlength="500" placeholder="وصف بسيط (اختياري)"

@@ -11,6 +11,7 @@ class OtpService
 {
     public const PURPOSE_ACTIVATE = 'activate';
     public const PURPOSE_PASSWORD = 'password';
+    public const PURPOSE_CLAIM    = 'claim';
 
     public const TTL_MINUTES   = 5;
     public const MAX_ATTEMPTS  = 5;
@@ -55,6 +56,7 @@ class OtpService
 
         $purposeLabel = match ($purpose) {
             self::PURPOSE_PASSWORD => 'تغيير الباسورد',
+            self::PURPOSE_CLAIM    => 'تأكيد ملكية النشاط',
             default                => 'التفعيل',
         };
         $result = WaapiService::sendOtp($phone, $code, $purposeLabel);

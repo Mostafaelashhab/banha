@@ -235,9 +235,9 @@ SPARQL;
         ]);
 
         if (! $dry) {
-            \Illuminate\Support\Facades\Cache::forget('map-data:v3:all');
+            \Illuminate\Support\Facades\Cache::forget('map-data:v4:all');
             foreach (array_keys(Business::CATEGORIES) as $cat) {
-                \Illuminate\Support\Facades\Cache::forget('map-data:v3:'.$cat);
+                \Illuminate\Support\Facades\Cache::forget('map-data:v4:'.$cat);
             }
         }
 

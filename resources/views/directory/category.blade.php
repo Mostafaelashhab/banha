@@ -44,7 +44,7 @@
     </div>
 
     {{-- Zone chips --}}
-    <div class="overflow-x-auto scrollbar-hide -mx-4 mb-4 pb-1">
+    <div class="overflow-x-auto scrollbar-hide -mx-4 mb-3 pb-1">
         <div class="flex gap-2 px-4 w-max">
             <a href="{{ route('directory.category', ['category' => $category, 'type' => $activeSubType]) }}"
                class="chip {{ ! $activeZone ? 'chip-active' : '' }}">كل المناطق</a>
@@ -52,6 +52,55 @@
                 <a href="{{ route('directory.category', ['category' => $category, 'type' => $activeSubType, 'zone' => $z->id]) }}"
                    class="chip {{ $activeZone === $z->id ? 'chip-active' : '' }}">
                     {{ $z->name }}
+                </a>
+            @endforeach
+        </div>
+    </div>
+
+    {{-- Filter chips: verified / 24h / has menu / per-category boolean extras --}}
+    @php
+        // Build the current query string with one filter toggled on/off (preserves other params)
+        $toggleUrl = function (string $param, $value, $isActive) use ($category, $activeSubType, $activeZone, $activeFilters) {
+            $base = ['category' => $category];
+            if ($activeSubType) $base['type'] = $activeSubType;
+            if ($activeZone)    $base['zone'] = $activeZone;
+            if ($activeFilters['verified']) $base['verified'] = 1;
+            if ($activeFilters['open24'])   $base['open24']   = 1;
+            if ($activeFilters['has_menu']) $base['has_menu'] = 1;
+            if (! empty($activeFilters['extra'])) $base['extra'] = $activeFilters['extra'];
+
+            if ($param === 'extra') {
+                $list = (array) ($base['extra'] ?? []);
+                $list = $isActive ? array_values(array_diff($list, [$value])) : array_values(array_unique([...$list, $value]));
+                if (empty($list)) unset($base['extra']); else $base['extra'] = $list;
+            } else {
+                if ($isActive) unset($base[$param]); else $base[$param] = 1;
+            }
+            return route('directory.category', $base);
+        };
+    @endphp
+    <div class="overflow-x-auto scrollbar-hide -mx-4 mb-4 pb-1">
+        <div class="flex gap-2 px-4 w-max">
+            <a href="{{ $toggleUrl('verified', null, $activeFilters['verified']) }}"
+               class="chip inline-flex items-center gap-1 {{ $activeFilters['verified'] ? 'chip-active' : '' }}">
+                <x-icon name="check" class="w-3 h-3"/>
+                موثّق
+            </a>
+            <a href="{{ $toggleUrl('open24', null, $activeFilters['open24']) }}"
+               class="chip {{ $activeFilters['open24'] ? 'chip-active' : '' }}">
+                ٢٤ ساعة
+            </a>
+            @if($category === 'food')
+                <a href="{{ $toggleUrl('has_menu', null, $activeFilters['has_menu']) }}"
+                   class="chip {{ $activeFilters['has_menu'] ? 'chip-active' : '' }}">
+                    عنده منيو
+                </a>
+            @endif
+            @foreach($checkboxExtras as $key => $def)
+                @php $isActive = in_array($key, $activeFilters['extra'], true); @endphp
+                <a href="{{ $toggleUrl('extra', $key, $isActive) }}"
+                   class="chip {{ $isActive ? 'chip-active' : '' }}">
+                    {{ $def['label'] }}
                 </a>
             @endforeach
         </div>

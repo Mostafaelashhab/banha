@@ -98,23 +98,40 @@ class DirectoryController extends Controller
             abort(404);
         }
 
-        $subType = $request->query('type');
-        $zoneId  = $request->query('zone');
-        $q       = trim((string) $request->query('q', ''));
+        $subType   = $request->query('type');
+        $zoneId    = $request->query('zone');
+        $q         = trim((string) $request->query('q', ''));
+        $verified  = $request->boolean('verified');
+        $is24h     = $request->boolean('open24');
+        $openNow   = $request->boolean('open_now');
+        $hasMenu   = $request->boolean('has_menu');
+        $extraKeys = (array) $request->query('extra', []);   // ?extra[]=has_delivery&extra[]=family_section
 
         $query = Business::query()
             ->where('is_active', true)
             ->where('category', $category)
             ->with('zone:id,name');
 
-        if ($subType) $query->where('sub_type', $subType);
-        if ($zoneId)  $query->where('zone_id', $zoneId);
+        if ($subType)  $query->where('sub_type', $subType);
+        if ($zoneId)   $query->where('zone_id', $zoneId);
+        if ($verified) $query->where('is_verified', true);
+        if ($is24h)    $query->where('is_24h', true);
+        if ($hasMenu)  $query->where('has_menu', true);
         if ($q !== '') {
             $query->where(function ($w) use ($q) {
                 $w->where('name', 'like', "%{$q}%")
                   ->orWhere('description', 'like', "%{$q}%")
                   ->orWhere('address', 'like', "%{$q}%");
             });
+        }
+        // Boolean extras filter — JSON column on MySQL/PG, fall back to LIKE elsewhere
+        foreach ($extraKeys as $key) {
+            if (! is_string($key) || $key === '') continue;
+            try {
+                $query->whereJsonContains('extra->'.$key, true);
+            } catch (\Throwable) {
+                $query->where('extra', 'like', '%"'.$key.'":true%');
+            }
         }
 
         // Promoted (paid) bumps to the top, then verified, then by rating
@@ -144,16 +161,30 @@ class DirectoryController extends Controller
             return view('directory.partials.category-page', compact('businesses'));
         }
 
+        // Available checkbox-extras for this category — used to render filter chips
+        $checkboxExtras = collect(Business::EXTRA_FIELDS)
+            ->filter(fn ($def) => ($def['type'] ?? '') === 'checkbox'
+                && (in_array($category, $def['applies_to'] ?? [], true)
+                    || collect($subTypes)->pluck('key')->intersect($def['applies_to'] ?? [])->isNotEmpty()))
+            ->all();
+
         return view('directory.category', [
-            'category'      => $category,
-            'meta'          => Business::CATEGORIES[$category],
-            'businesses'    => $businesses,
-            'subTypes'      => $subTypes,
-            'subTypeCounts' => $subTypeCounts,
-            'activeSubType' => $subType,
-            'activeZone'    => $zoneId ? (int) $zoneId : null,
-            'zones'         => Zone::orderBy('sort')->get(),
-            'q'             => $q,
+            'category'       => $category,
+            'meta'           => Business::CATEGORIES[$category],
+            'businesses'     => $businesses,
+            'subTypes'       => $subTypes,
+            'subTypeCounts'  => $subTypeCounts,
+            'activeSubType'  => $subType,
+            'activeZone'     => $zoneId ? (int) $zoneId : null,
+            'zones'          => Zone::orderBy('sort')->get(),
+            'q'              => $q,
+            'checkboxExtras' => $checkboxExtras,
+            'activeFilters'  => [
+                'verified' => $verified,
+                'open24'   => $is24h,
+                'has_menu' => $hasMenu,
+                'extra'    => array_values(array_filter($extraKeys, 'is_string')),
+            ],
         ]);
     }
 
@@ -244,6 +275,8 @@ class DirectoryController extends Controller
             'is_24h'        => (bool) ($data['is_24h'] ?? false),
             'lat'           => $data['lat'] ?? null,
             'lng'           => $data['lng'] ?? null,
+            'hours_schedule' => $data['hours_schedule'] ?? null,
+            'extra'         => $data['extra'] ?? null,
             'is_verified'   => false,
             'is_active'     => true,
             'emoji'         => $sm['emoji'],
@@ -253,8 +286,8 @@ class DirectoryController extends Controller
         \App\Services\AdminNotificationService::onBusinessCreated($business->fresh()->load('owner'));
 
         if ($business->lat && $business->lng) {
-            \Illuminate\Support\Facades\Cache::forget('map-data:v3:all');
-            \Illuminate\Support\Facades\Cache::forget('map-data:v3:'.$business->category);
+            \Illuminate\Support\Facades\Cache::forget('map-data:v4:all');
+            \Illuminate\Support\Facades\Cache::forget('map-data:v4:'.$business->category);
         }
 
         return redirect()->route('directory.show', $business)
@@ -294,13 +327,15 @@ class DirectoryController extends Controller
             'is_24h'      => (bool) ($data['is_24h'] ?? false),
             'lat'         => array_key_exists('lat', $data) ? $data['lat'] : $business->lat,
             'lng'         => array_key_exists('lng', $data) ? $data['lng'] : $business->lng,
+            'hours_schedule' => $data['hours_schedule'] ?? null,
+            'extra'       => $data['extra'] ?? null,
             'emoji'       => $sm['emoji'],
             'photo_url'   => $newPhoto ?: $business->photo_url,
         ]);
 
         // Bust map cache so location changes show up immediately on /map
-        \Illuminate\Support\Facades\Cache::forget('map-data:v3:all');
-        \Illuminate\Support\Facades\Cache::forget('map-data:v3:'.$business->category);
+        \Illuminate\Support\Facades\Cache::forget('map-data:v4:all');
+        \Illuminate\Support\Facades\Cache::forget('map-data:v4:'.$business->category);
 
         return redirect()->route('directory.show', $business)
             ->with('flash', '✓ تم تحديث النشاط.');
@@ -327,25 +362,52 @@ class DirectoryController extends Controller
         $cat = $request->query('category');
 
         // Businesses (with `is_promoted` bubbled up so JS can style them differently)
-        $businesses = \Illuminate\Support\Facades\Cache::remember('map-data:v3:'.($cat ?: 'all'), 300, function () use ($cat) {
+        $businesses = \Illuminate\Support\Facades\Cache::remember('map-data:v4:'.($cat ?: 'all'), 300, function () use ($cat) {
             $q = Business::query()
                 ->where('is_active', true)
                 ->whereNotNull('lat')->whereNotNull('lng')
-                ->select('id', 'name', 'category', 'lat', 'lng', 'is_verified', 'has_menu', 'rating_avg', 'phone', 'promoted_until');
+                ->select('id', 'name', 'category', 'sub_type', 'lat', 'lng', 'is_verified', 'is_24h', 'has_menu', 'rating_avg', 'phone', 'promoted_until', 'hours_schedule', 'extra');
             if ($cat) $q->where('category', $cat);
             return $q->limit(500)->get()->map(fn ($b) => [
                 'id'          => (int) $b->id,
                 'name'        => (string) $b->name,
                 'category'    => (string) $b->category,
+                'sub_type'    => (string) $b->sub_type,
                 'lat'         => (float) $b->lat,
                 'lng'         => (float) $b->lng,
                 'is_verified' => (bool) $b->is_verified,
+                'is_24h'      => (bool) $b->is_24h,
                 'has_menu'    => (bool) $b->has_menu,
                 'is_promoted' => (bool) ($b->promoted_until && $b->promoted_until->isFuture()),
                 'rating_avg'  => (float) $b->rating_avg,
                 'phone'       => $b->phone,
+                'is_open_now' => $b->isOpenNow(),
+                'extra'       => $b->extra ?? new \stdClass(),
             ])->values()->all();
         });
+
+        // Apply filters in PHP on top of the cached set (no need to fragment cache)
+        $verified  = $request->boolean('verified');
+        $only24h   = $request->boolean('open24');
+        $hasMenu   = $request->boolean('has_menu');
+        $openNow   = $request->boolean('open_now');
+        $extraKeys = array_filter((array) $request->query('extra', []), 'is_string');
+
+        if ($verified || $only24h || $hasMenu || $openNow || $extraKeys) {
+            $businesses = array_values(array_filter($businesses, function ($b) use ($verified, $only24h, $hasMenu, $openNow, $extraKeys) {
+                if ($verified && empty($b['is_verified'])) return false;
+                if ($only24h  && empty($b['is_24h']))      return false;
+                if ($hasMenu  && empty($b['has_menu']))    return false;
+                if ($openNow) {
+                    if ($b['is_24h'] !== true && ($b['is_open_now'] ?? null) !== true) return false;
+                }
+                foreach ($extraKeys as $k) {
+                    $extra = is_array($b['extra'] ?? null) ? $b['extra'] : (array) $b['extra'];
+                    if (empty($extra[$k])) return false;
+                }
+                return true;
+            }));
+        }
 
         // Live events (not category-filtered — they're a separate layer)
         $events = \Illuminate\Support\Facades\Cache::remember('map-events:v1', 120, function () {
@@ -415,6 +477,8 @@ class DirectoryController extends Controller
             'whatsapp'        => ['nullable', 'regex:/^01[0125][0-9]{8}$/'],
             'address'         => ['nullable', 'string', 'max:200'],
             'hours'           => ['nullable', 'string', 'max:100'],
+            'hours_schedule'  => ['nullable', 'array'],
+            'hours_schedule.*' => ['nullable', 'string', 'regex:/^\d{1,2}:\d{2}-\d{1,2}:\d{2}$/'],
             'is_24h'          => ['nullable', 'boolean'],
             'lat'             => ['nullable', 'numeric', 'between:-90,90', 'required_with:lng'],
             'lng'             => ['nullable', 'numeric', 'between:-180,180', 'required_with:lat'],
@@ -437,6 +501,52 @@ class DirectoryController extends Controller
                 'custom_sub_type' => 'اكتب نوع نشاطك بالظبط.',
             ]);
         }
+
+        // Sanitize hours_schedule: drop empty days, restrict keys to known weekdays.
+        // If the user used the simple `hours` text, we treat schedule as null.
+        if (! empty($data['hours_schedule']) && is_array($data['hours_schedule'])) {
+            $valid = [];
+            foreach (Business::WEEKDAYS as $key => $_) {
+                $val = $data['hours_schedule'][$key] ?? null;
+                if (is_string($val) && trim($val) !== '') {
+                    $valid[$key] = trim($val);
+                }
+            }
+            $data['hours_schedule'] = $valid ?: null;
+            // When schedule is set, blank the freeform text so it doesn't override
+            if ($data['hours_schedule']) {
+                $data['hours'] = null;
+            }
+        } else {
+            $data['hours_schedule'] = null;
+        }
+
+        // Sanitize the per-sub_type extras: keep only fields that apply to this sub_type
+        // and coerce types so the JSON is clean.
+        $applicableFields = Business::extraFieldsFor($data['sub_type']);
+        $rawExtras = (array) $request->input('extra', []);
+        $cleaned = [];
+        foreach ($applicableFields as $key => $def) {
+            if (! array_key_exists($key, $rawExtras)) continue;
+            $val = $rawExtras[$key];
+            if ($val === '' || $val === null) continue;
+            switch ($def['type']) {
+                case 'checkbox':
+                    $cleaned[$key] = (string) $val === '1';
+                    break;
+                case 'number':
+                    $cleaned[$key] = is_numeric($val) ? (int) $val : null;
+                    break;
+                case 'select':
+                    $allowed = array_keys($def['options'] ?? []);
+                    $cleaned[$key] = in_array((string) $val, array_map('strval', $allowed), true) ? (string) $val : null;
+                    break;
+                default: // text
+                    $cleaned[$key] = mb_substr(trim((string) $val), 0, 200);
+            }
+            if ($cleaned[$key] === null || $cleaned[$key] === '') unset($cleaned[$key]);
+        }
+        $data['extra'] = $cleaned ?: null;
 
         return $data;
     }

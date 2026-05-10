@@ -218,6 +218,15 @@ document.addEventListener('click', (e) => {
     const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
     if (!url || !csrf) return;
 
+    // Title adapts: posts say "البوست", chat says "المستخدم", etc.
+    // Override via data-report-title="..." on the button. URL-based fallback otherwise.
+    let title = btn.dataset.reportTitle;
+    if (!title) {
+        if (url.includes('/chat/'))     title = 'بلّغ عن المستخدم';
+        else if (url.includes('/comments/')) title = 'بلّغ عن الكومنت';
+        else                            title = 'بلّغ عن البوست';
+    }
+
     const reasonsHtml = REPORT_REASONS.map(([key, label, desc]) => `
         <label class="flex items-start gap-3 p-3.5 rounded-2xl bg-cream-100 border border-ink-950/8 cursor-pointer has-[:checked]:bg-coral-100 has-[:checked]:border-coral-500/40 transition mb-2">
             <input type="radio" name="reason" value="${key}" class="peer mt-1 accent-coral-500" ${key === 'spam' ? 'checked' : ''}>
@@ -230,7 +239,7 @@ document.addEventListener('click', (e) => {
     const html = `
         <form method="POST" action="${url}" class="p-5">
             <input type="hidden" name="_token" value="${csrf}">
-            <h3 class="text-lg font-extrabold text-ink-950 mb-1">بلّغ عن البوست</h3>
+            <h3 class="text-lg font-extrabold text-ink-950 mb-1">${title}</h3>
             <p class="text-ink-500 text-sm mb-4">اختار السبب — التقارير اللي بتترفع كذب بتأثر على سمعتك.</p>
 
             <div class="max-h-[60vh] overflow-y-auto -mx-1 px-1">${reasonsHtml}</div>

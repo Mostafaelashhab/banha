@@ -121,8 +121,9 @@
         </div>
     </div>
 
-    {{-- Menu CTA (huge, the goal of this page for restaurants) --}}
+    {{-- Menu / Services CTA (adaptive label per business category) --}}
     @if($business->has_menu)
+        @php $L = \App\Models\Business::menuLabels($business->category); @endphp
         <a href="{{ route('menu.public', $business) }}" class="block mb-3 p-4 rounded-2xl bg-gradient-to-r from-coral-500 to-honey-500 text-white text-center hover:scale-[1.01] transition shadow-lg">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 mx-auto">
                 <rect x="6" y="3" width="12" height="18" rx="2"/>
@@ -130,8 +131,8 @@
                 <line x1="9" y1="12" x2="15" y2="12"/>
                 <line x1="9" y1="16" x2="13" y2="16"/>
             </svg>
-            <div class="text-base font-extrabold mt-2">شوف المنيو والأسعار</div>
-            <div class="text-xs text-white/80 mt-0.5">{{ $business->menuCategories()->count() }} قسم · {{ $business->menuItems()->where('is_available', true)->count() }} صنف</div>
+            <div class="text-base font-extrabold mt-2">{{ $L['cta_show'] }}</div>
+            <div class="text-xs text-white/80 mt-0.5">{{ $business->menuCategories()->count() }} {{ $L['category_label'] }} · {{ $business->menuItems()->where('is_available', true)->count() }} {{ $L['item_label'] }}</div>
         </a>
     @endif
 
@@ -164,8 +165,64 @@
         </div>
     @endif
 
+    {{-- Type-specific extras (hotel stars, cuisine, doctor specialty, etc.) --}}
+    @php
+        $extras    = (array) ($business->extra ?? []);
+        $extraDefs = \App\Models\Business::extraFieldsFor($business->sub_type);
+        $visible   = collect($extraDefs)
+            ->filter(fn ($def, $key) => array_key_exists($key, $extras) && $extras[$key] !== null && $extras[$key] !== '')
+            ->all();
+    @endphp
+    @if(! empty($visible))
+        <div class="card-light p-4 mb-3">
+            <h3 class="text-sm font-extrabold text-ink-950 mb-3 inline-flex items-center gap-2">
+                <span class="w-7 h-7 rounded-lg bg-coral-100 text-coral-600 grid place-items-center shrink-0">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                        <line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/>
+                    </svg>
+                </span>
+                تفاصيل {{ $cm['label'] }}
+            </h3>
+
+            <dl class="grid grid-cols-2 gap-3">
+                @foreach($visible as $key => $def)
+                    @php $v = $extras[$key]; @endphp
+                    <div class="bg-cream-100/70 rounded-xl p-3 {{ $def['type'] === 'checkbox' ? 'col-span-1' : '' }}">
+                        <dt class="text-[10px] font-bold text-ink-500">{{ $def['label'] }}</dt>
+                        <dd class="text-sm font-extrabold text-ink-950 mt-0.5">
+                            @if($def['type'] === 'checkbox')
+                                @if($v)
+                                    <span class="inline-flex items-center gap-1 text-mint-700">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                        متوفر
+                                    </span>
+                                @else
+                                    <span class="text-ink-400">مش متوفر</span>
+                                @endif
+                            @elseif($def['type'] === 'select' && isset($def['options'][$v]))
+                                {{ $def['options'][$v] }}
+                            @elseif($key === 'website')
+                                <a href="{{ str_starts_with($v, 'http') ? $v : 'https://'.$v }}" target="_blank" rel="noopener"
+                                   class="text-coral-600 hover:underline break-all" dir="ltr">
+                                    {{ \Illuminate\Support\Str::limit(preg_replace('#^https?://#', '', $v), 32) }}
+                                </a>
+                            @else
+                                {{ $v }}
+                            @endif
+                        </dd>
+                    </div>
+                @endforeach
+            </dl>
+        </div>
+    @endif
+
     {{-- Info rows --}}
-    @if($business->address || $business->hours || $business->is_24h || $business->phone)
+    @php
+        $openNow      = $business->isOpenNow();             // null when no schedule
+        $statusLabel  = $business->openStatusLabel();        // "مفتوح · 9ص-11م" / "مغلق · يفتح 9ص"
+        $hasHoursInfo = $business->hours_schedule || $business->hours || $business->is_24h;
+    @endphp
+    @if($business->address || $hasHoursInfo || $business->phone)
         <div class="card-light p-4 mb-3 space-y-3">
             @if($business->address)
                 <div class="flex items-start gap-3">
@@ -179,20 +236,58 @@
                 </div>
             @endif
 
-            @if($business->hours || $business->is_24h)
+            @if($hasHoursInfo)
                 <div class="flex items-start gap-3">
-                    <span class="w-9 h-9 rounded-xl {{ $business->is_24h ? 'pill-mint' : 'pill-honey' }} grid place-items-center shrink-0">
+                    <span class="w-9 h-9 rounded-xl {{ $openNow === true || $business->is_24h ? 'pill-mint' : ($openNow === false ? 'pill-blush' : 'pill-honey') }} grid place-items-center shrink-0">
                         <x-icon name="bell" class="w-4 h-4"/>
                     </span>
                     <div class="flex-1 min-w-0">
-                        <div class="text-[11px] text-ink-500">المواعيد</div>
+                        <div class="text-[11px] text-ink-500 inline-flex items-center gap-1.5">
+                            المواعيد
+                            @if($openNow === true)
+                                <span class="inline-flex items-center gap-1 text-[10px] font-extrabold text-mint-700">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-mint-500"></span>
+                                    مفتوح
+                                </span>
+                            @elseif($openNow === false)
+                                <span class="text-[10px] font-extrabold text-blush-500">مغلق</span>
+                            @endif
+                        </div>
                         <div class="text-sm font-bold text-ink-950">
                             @if($business->is_24h)
                                 <span class="text-mint-700">٢٤ ساعة · مفتوح دلوقتي</span>
+                            @elseif($statusLabel)
+                                {{ $statusLabel }}
                             @else
                                 {{ $business->hours }}
                             @endif
                         </div>
+
+                        @if($business->hours_schedule)
+                            <details class="mt-2">
+                                <summary class="text-[11px] font-bold text-coral-600 cursor-pointer list-none inline-flex items-center gap-1">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="w-3 h-3 transition group-open:rotate-180">
+                                        <polyline points="6 9 12 15 18 9"/>
+                                    </svg>
+                                    شوف الجدول الأسبوعي
+                                </summary>
+                                <div class="mt-2 space-y-1 text-[11px]">
+                                    @php $todayKey = ['sun','mon','tue','wed','thu','fri','sat'][(int) now('Africa/Cairo')->format('w')]; @endphp
+                                    @foreach(\App\Models\Business::WEEKDAYS as $key => $label)
+                                        @php $shift = $business->hours_schedule[$key] ?? null; @endphp
+                                        <div class="flex items-center gap-2 {{ $key === $todayKey ? 'font-extrabold text-ink-950' : 'text-ink-500' }}">
+                                            <span class="w-12">{{ $label }}</span>
+                                            <span dir="ltr" class="font-mono">
+                                                {{ $shift ?: 'مغلق' }}
+                                            </span>
+                                            @if($key === $todayKey)
+                                                <span class="text-[9px] text-coral-600">· النهارده</span>
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </details>
+                        @endif
                     </div>
                 </div>
             @endif
@@ -374,6 +469,21 @@
             <x-icon name="user" class="w-4 h-4 text-ink-400"/>
             <span class="text-xs text-ink-500">صاحب النشاط</span>
             <span class="font-bold text-ink-950 text-sm">{{ '@'.$business->owner->username }}</span>
+        </a>
+    @else
+        {{-- Claim CTA: this business has no owner (typically OSM-imported) --}}
+        <a href="{{ auth()->check() ? route('directory.claim.show', $business) : route('login').'?redirect='.urlencode(route('directory.claim.show', $business)) }}"
+           class="card-light p-4 mb-3 flex items-center gap-3 hover:bg-cream-100 transition border-coral-500/20 bg-gradient-to-r from-coral-50 to-honey-100/50">
+            <span class="w-10 h-10 rounded-2xl bg-coral-500 grid place-items-center text-white shrink-0">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z"/>
+                </svg>
+            </span>
+            <div class="flex-1 min-w-0">
+                <div class="text-sm font-extrabold text-ink-950">ده نشاطك؟ امتلكه</div>
+                <p class="text-[11px] text-ink-500 leading-relaxed">عدّل البيانات، ضيف صور، ارفع منيو، ورد على التقييمات.</p>
+            </div>
+            <x-icon name="arrow-left" class="w-4 h-4 text-coral-600 shrink-0"/>
         </a>
     @endif
 

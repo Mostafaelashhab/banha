@@ -12,6 +12,9 @@
         <span class="text-sm text-ink-400">دوّر على نشاط، صنايعي، أو منيو…</span>
     </a>
 
+    {{-- Prayer times widget (Banha) --}}
+    <x-prayer-times/>
+
     {{-- Map CTA — minimal banner, NOT a fake map (the real map is one click away) --}}
     <a href="{{ route('directory.map') }}"
        class="flex items-center gap-3 mb-6 px-4 py-3.5 rounded-2xl bg-cream-200/70 hover:bg-cream-200 transition group">

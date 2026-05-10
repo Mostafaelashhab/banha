@@ -1,11 +1,14 @@
+@php
+    $L = $L ?? \App\Models\Business::menuLabels($item->business->category ?? 'services');
+@endphp
+
 <div class="flex items-center gap-2.5 p-2 rounded-xl bg-cream-100 hover:bg-cream-200/50 transition {{ ! $item->is_available ? 'opacity-55' : '' }}">
     @if($item->photo_url)
         <img src="{{ $item->photo_url }}" alt="" loading="lazy" class="w-12 h-12 rounded-lg object-cover shrink-0">
     @else
         <span class="w-12 h-12 rounded-lg bg-white border border-ink-950/8 grid place-items-center text-ink-300 shrink-0">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
-                <path d="M3 2v7c0 1.1.9 2 2 2h4V2"/><path d="M7 2v20"/>
-                <path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>
+                <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
             </svg>
         </span>
     @endif

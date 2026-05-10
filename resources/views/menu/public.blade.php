@@ -1,6 +1,7 @@
+@php $L = \App\Models\Business::menuLabels($business->category); @endphp
 @extends('layouts.app', [
-    'title'       => 'منيو ' . $business->name . ' · ' . ($business->zone->name ?? 'بنها') . ' · بنهاوي',
-    'description' => 'منيو وأسعار ' . $business->name . ' في ' . ($business->zone->name ?? 'بنها') . '. شوف كل الأصناف والأسعار وكلّم المطعم مباشرة عبر بنهاوي.',
+    'title'       => $L['title'] . ' · ' . $business->name . ' · ' . ($business->zone->name ?? 'بنها') . ' · بنهاوي',
+    'description' => $L['title'] . ' وأسعار ' . $business->name . ' في ' . ($business->zone->name ?? 'بنها') . '. شوف كل ' . $L['item_label'] . ' والأسعار وكلّم النشاط مباشرة عبر بنهاوي.',
     'ogImage'     => $business->photo_url,
     'canonical'   => route('menu.public', $business),
 ])
@@ -81,7 +82,7 @@
     if (! empty($menuSections)) {
         $ld['hasMenu'] = [
             '@type' => 'Menu',
-            'name'  => 'منيو ' . $business->name,
+            'name'  => $L['title'] . ' · ' . $business->name,
             'hasMenuSection' => $menuSections,
         ];
     }
@@ -99,7 +100,7 @@
 
     // Build a pre-filled WhatsApp order message
     $waOrderMsg = $business->whatsapp
-        ? 'عاوز أطلب من منيو ' . $business->name . ' — شفت الأصناف على ' . route('menu.public', $business)
+        ? 'حابب أتواصل بخصوص ' . $L['title'] . ' بتاعت ' . $business->name . ' — شفت ' . $L['item_label'] . ' على ' . route('menu.public', $business)
         : null;
 @endphp
 
@@ -165,7 +166,7 @@
                 @endif
                 @if($itemsCount > 0)
                     <span class="text-white/60">·</span>
-                    <span>{{ $itemsCount }} صنف</span>
+                    <span>{{ $itemsCount }} {{ $L['item_label'] }}</span>
                 @endif
             </div>
         </div>
@@ -189,7 +190,7 @@
                class="inline-flex items-center justify-center gap-2 py-3 rounded-full font-bold text-white text-sm transition hover:scale-[1.02]"
                style="background: linear-gradient(135deg, #25D366, #128C7E)">
                 <x-icon name="whatsapp" class="w-4 h-4"/>
-                اطلب على واتساب
+                {{ $business->category === 'food' ? 'اطلب على واتساب' : 'تواصل على واتساب' }}
             </a>
         @endif
     </div>
@@ -221,8 +222,8 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-16 h-16 mx-auto text-ink-300 mb-3">
                 <path d="M3 11h18l-1 9H4z"/><path d="M7 11V8a5 5 0 0 1 10 0v3"/>
             </svg>
-            <h3 class="font-extrabold text-ink-950 mb-1">المنيو لسه فاضي</h3>
-            <p class="text-ink-500 text-sm">هيتحدّث قريب!</p>
+            <h3 class="font-extrabold text-ink-950 mb-1">{{ $L['title'] }} لسه فاضية</h3>
+            <p class="text-ink-500 text-sm">هتتحدّث قريب!</p>
         </div>
     @else
         @foreach($business->menuCategories as $cat)
@@ -233,7 +234,7 @@
                             <span class="w-1 h-6 bg-coral-500 rounded-full"></span>
                             {{ $cat->name }}
                         </h2>
-                        <span class="text-xs font-bold text-ink-400">{{ $cat->items->count() }} صنف</span>
+                        <span class="text-xs font-bold text-ink-400">{{ $cat->items->count() }} {{ $L['item_label'] }}</span>
                     </div>
                     <div class="card-light p-3 divide-y divide-ink-950/5">
                         @foreach($cat->items as $it)
@@ -249,9 +250,9 @@
                 <div class="flex items-center justify-between mb-3 px-1">
                     <h2 class="text-xl font-black text-ink-950 inline-flex items-center gap-2">
                         <span class="w-1 h-6 bg-coral-500 rounded-full"></span>
-                        أصناف تانية
+                        {{ $L['item_label'] }} تانية
                     </h2>
-                    <span class="text-xs font-bold text-ink-400">{{ $looseItems->count() }} صنف</span>
+                    <span class="text-xs font-bold text-ink-400">{{ $looseItems->count() }} {{ $L['item_label'] }}</span>
                 </div>
                 <div class="card-light p-3 divide-y divide-ink-950/5">
                     @foreach($looseItems as $it)
@@ -260,6 +261,57 @@
                 </div>
             </section>
         @endif
+    @endif
+
+    {{-- Type-specific extras (stars / delivery / wifi / specialty / etc.) --}}
+    @php
+        $extras    = (array) ($business->extra ?? []);
+        $extraDefs = \App\Models\Business::extraFieldsFor($business->sub_type);
+        $visible   = collect($extraDefs)
+            ->filter(fn ($def, $key) => array_key_exists($key, $extras) && $extras[$key] !== null && $extras[$key] !== '')
+            ->all();
+        $cm        = $business->categoryMeta();
+    @endphp
+    @if(! empty($visible))
+        <div class="card-light p-4 mt-5">
+            <h3 class="text-sm font-extrabold text-ink-950 mb-3 inline-flex items-center gap-2">
+                <span class="w-7 h-7 rounded-lg bg-coral-100 text-coral-600 grid place-items-center shrink-0">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                        <line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/>
+                    </svg>
+                </span>
+                تفاصيل {{ $cm['label'] }}
+            </h3>
+            <dl class="grid grid-cols-2 gap-3">
+                @foreach($visible as $key => $def)
+                    @php $v = $extras[$key]; @endphp
+                    <div class="bg-cream-100/70 rounded-xl p-3">
+                        <dt class="text-[10px] font-bold text-ink-500">{{ $def['label'] }}</dt>
+                        <dd class="text-sm font-extrabold text-ink-950 mt-0.5">
+                            @if($def['type'] === 'checkbox')
+                                @if($v)
+                                    <span class="inline-flex items-center gap-1 text-mint-700">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                        متوفر
+                                    </span>
+                                @else
+                                    <span class="text-ink-400">مش متوفر</span>
+                                @endif
+                            @elseif($def['type'] === 'select' && isset($def['options'][$v]))
+                                {{ $def['options'][$v] }}
+                            @elseif($key === 'website')
+                                <a href="{{ str_starts_with($v, 'http') ? $v : 'https://'.$v }}" target="_blank" rel="noopener"
+                                   class="text-coral-600 hover:underline break-all" dir="ltr">
+                                    {{ \Illuminate\Support\Str::limit(preg_replace('#^https?://#', '', $v), 32) }}
+                                </a>
+                            @else
+                                {{ $v }}
+                            @endif
+                        </dd>
+                    </div>
+                @endforeach
+            </dl>
+        </div>
     @endif
 
     {{-- Address + hours card --}}
@@ -294,7 +346,7 @@
     <div class="text-center mt-8 mb-4">
         <a href="{{ route('home') }}" class="inline-flex items-center gap-2 text-ink-400 hover:text-coral-600 transition">
             <span class="w-7 h-7 rounded-lg brand-bg grid place-items-center text-white font-black text-xs">ب</span>
-            <span class="text-xs font-bold">منيو رقمي مدعوم من بنهاوي</span>
+            <span class="text-xs font-bold">صفحة رقمية مدعومة من بنهاوي</span>
         </a>
     </div>
 </div>

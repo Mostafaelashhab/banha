@@ -21,10 +21,9 @@
                     @endif
                 </div>
             </a>
-            <button type="button" class="ms-auto w-9 h-9 rounded-full bg-white border border-ink-950/8 grid place-items-center text-ink-400 hover:text-blush-500 hover:bg-blush-100 transition"
-                    data-comment-report
-                    data-action="{{ route('chat.report', $thread) }}"
-                    data-csrf="{{ csrf_token() }}"
+            <button type="button"
+                    data-report="{{ route('chat.report', $thread) }}"
+                    class="ms-auto w-9 h-9 rounded-full bg-white border border-ink-950/8 grid place-items-center text-ink-400 hover:text-blush-500 hover:bg-blush-100 transition"
                     aria-label="ابلاغ">
                 <x-icon name="flag" class="w-4 h-4"/>
             </button>
