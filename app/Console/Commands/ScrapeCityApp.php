@@ -327,20 +327,26 @@ class ScrapeCityApp extends Command
             }
         }
 
-        // Hours — city-app puts opening text in elements with class "hours-head" or similar.
-        // Grab the first short, hour-shaped string after that class.
+        // Hours — city-app wraps them in a "working_hours-wrapper" block; the human-readable
+        // text lives in a <p> tag inside. Grab the first hours-shaped line in that block.
         $hours = null;
-        if (preg_match('#class="hours-head[^"]*"[^>]*>\s*([^<]+?)\s*<#u', $html, $hm)) {
+        if (preg_match('#class="working_hours-wrapper[^"]*"[\s\S]{0,1500}?<p[^>]*>\s*([^<]+?)\s*</p>#u', $html, $hm)) {
             $candidate = trim(html_entity_decode($hm[1], ENT_QUOTES | ENT_HTML5));
             if (preg_match('#\d{1,2}\s*[صم]#u', $candidate)) {
-                $hours = mb_substr($candidate, 0, 100);
+                $hours = mb_substr($candidate, 0, 200);
             }
         }
 
-        // Facebook page link (skip the share-link variant)
+        // Facebook page link (skip city-app's own page + the share-link variant)
         $facebook = null;
-        if (preg_match('#href="(https://www\.facebook\.com/[a-zA-Z0-9._\-]+)/?"#', $html, $fm)) {
-            if (! str_contains($fm[1], 'sharer.php')) $facebook = $fm[1];
+        if (preg_match_all('#href="(https://www\.facebook\.com/[a-zA-Z0-9._\-]+)/?"#', $html, $fm)) {
+            foreach ($fm[1] as $candidate) {
+                if (str_contains($candidate, 'sharer.php')) continue;
+                if (str_ends_with(rtrim($candidate, '/'), '/banharestaurants')) continue; // city-app's house page
+                if (str_ends_with(rtrim($candidate, '/'), '/cityapp')) continue;
+                $facebook = $candidate;
+                break;
+            }
         }
 
         // Phones — all data-phones values, comma-split, dedupe, drop city-app's own number
