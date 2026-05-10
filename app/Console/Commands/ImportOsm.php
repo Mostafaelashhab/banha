@@ -19,9 +19,11 @@ use Illuminate\Support\Facades\Http;
 class ImportOsm extends Command
 {
     protected $signature = 'banha:import-osm
-        {--radius=10000 : Radius in meters around Banha center}
+        {--radius=10000 : Radius in meters around Banha center (used only when --area is empty)}
         {--lat=30.4582 : Center latitude (default Banha)}
         {--lng=31.1797 : Center longitude (default Banha)}
+        {--area=القليوبية : Arabic name of an OSM admin area (governorate). Empty = use radius mode}
+        {--admin-level=4 : OSM admin_level for the area (4=governorate, 6=district)}
         {--dry : Preview only, no DB writes}
         {--limit= : Stop after N entries (debug)}';
 
@@ -144,15 +146,37 @@ class ImportOsm extends Command
 
     public function handle(): int
     {
-        $radius = (int) $this->option('radius');
-        $lat    = (float) $this->option('lat');
-        $lng    = (float) $this->option('lng');
-        $dry    = (bool) $this->option('dry');
-        $limit  = $this->option('limit') !== null ? (int) $this->option('limit') : null;
+        $radius     = (int) $this->option('radius');
+        $lat        = (float) $this->option('lat');
+        $lng        = (float) $this->option('lng');
+        $area       = trim((string) $this->option('area'));
+        $adminLevel = (int) $this->option('admin-level');
+        $dry        = (bool) $this->option('dry');
+        $limit      = $this->option('limit') !== null ? (int) $this->option('limit') : null;
 
-        $this->info("Querying Overpass API around [$lat, $lng] (radius {$radius}m)...");
-
-        $query = <<<OQL
+        if ($area !== '') {
+            $this->info("Querying Overpass API for area '{$area}' (admin_level={$adminLevel})...");
+            $areaQ = addslashes($area);
+            // Resolve the area by Arabic OR generic name (OSM has both name and name:ar).
+            $query = <<<OQL
+[out:json][timeout:180];
+(
+  area["admin_level"="{$adminLevel}"]["name:ar"="{$areaQ}"];
+  area["admin_level"="{$adminLevel}"]["name"="{$areaQ}"];
+)->.A;
+(
+  node["amenity"](area.A);
+  node["shop"](area.A);
+  node["tourism"](area.A);
+  node["healthcare"](area.A);
+  node["leisure"~"park|fitness_centre|sports_centre"](area.A);
+  node["railway"~"station|halt"](area.A);
+);
+out tags center;
+OQL;
+        } else {
+            $this->info("Querying Overpass API around [$lat, $lng] (radius {$radius}m)...");
+            $query = <<<OQL
 [out:json][timeout:90];
 (
   node["amenity"](around:$radius,$lat,$lng);
@@ -164,9 +188,11 @@ class ImportOsm extends Command
 );
 out tags center;
 OQL;
+        }
 
         try {
-            $res = Http::timeout(120)
+            $res = Http::timeout(240)
+                ->connectTimeout(30)
                 ->withHeaders(['User-Agent' => 'Banhawy/1.0 (osm-import)'])
                 ->asForm()
                 ->post('https://overpass-api.de/api/interpreter', ['data' => $query]);
