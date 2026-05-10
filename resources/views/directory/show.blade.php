@@ -51,18 +51,42 @@
         @endif
     </div>
 
-    {{-- Hero (single block, name lives here only) --}}
+    {{-- Hero: branded Banhawy cover when no user photo --}}
     @php
         $heroPhoto = ($business->photo_url && ! str_contains($business->photo_url, 'd-innova.com')) ? $business->photo_url : null;
-        $heroPhoto = $heroPhoto ?: \App\Support\BusinessCovers::pick($business->category, $business->id);
+        $heroInitial = mb_substr(trim($business->name ?: '?'), 0, 1);
+        $heroColor   = $cm['color'] ?? '#FF7A4D';
     @endphp
-    <div class="relative -mx-4 mb-4 overflow-hidden aspect-[16/10] bg-gradient-to-br from-coral-500 to-honey-500">
-        <img src="{{ $heroPhoto }}" alt="{{ $business->name }}" loading="eager"
-             class="absolute inset-0 w-full h-full object-cover"
-             onerror="this.style.display='none'">
-        <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent"></div>
+    <div class="relative -mx-4 mb-4 overflow-hidden aspect-[16/10]"
+         style="background: linear-gradient(135deg, {{ $heroColor }}, {{ $heroColor }}cc 60%, {{ $heroColor }}88);">
+        {{-- Branded fallback (visible underneath the user image) --}}
+        <svg class="absolute inset-0 w-full h-full opacity-15" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <defs>
+                <pattern id="hero-dots-{{ $business->id }}" x="0" y="0" width="28" height="28" patternUnits="userSpaceOnUse">
+                    <circle cx="3" cy="3" r="1.8" fill="white"/>
+                </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#hero-dots-{{ $business->id }})"/>
+        </svg>
+        <div class="absolute inset-0 grid place-items-center">
+            <span class="text-white font-black text-[120px] leading-none opacity-95 select-none drop-shadow-lg">{{ $heroInitial }}</span>
+        </div>
+        @unless($heroPhoto)
+            <span class="absolute top-3 end-3 inline-flex items-center gap-1 bg-white/15 backdrop-blur-sm rounded-full px-2.5 py-1 text-white text-[10px] font-extrabold z-30">
+                <span class="w-4 h-4 rounded-md bg-white text-[10px] grid place-items-center font-black" style="color: {{ $heroColor }};">ب</span>
+                بنهاوي
+            </span>
+        @endunless
 
-        <div class="absolute top-3 start-3 flex flex-col gap-1.5">
+        {{-- User-uploaded photo, if any --}}
+        @if($heroPhoto)
+            <img src="{{ $heroPhoto }}" alt="{{ $business->name }}" loading="eager"
+                 class="absolute inset-0 w-full h-full object-cover z-10"
+                 onerror="this.style.display='none'">
+        @endif
+        <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent z-20"></div>
+
+        <div class="absolute top-3 start-3 flex flex-col gap-1.5 z-30">
             @if($business->isPromoted())
                 <span class="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-honey-500 text-ink-950 w-fit">
                     <svg viewBox="0 0 24 24" fill="currentColor" class="w-3 h-3"><polygon points="12 2 15 9 22 9.5 17 14.5 18.5 22 12 18 5.5 22 7 14.5 2 9.5 9 9"/></svg>
@@ -76,7 +100,7 @@
             @endif
         </div>
 
-        <div class="absolute bottom-0 inset-x-0 p-4">
+        <div class="absolute bottom-0 inset-x-0 p-4 z-30">
             <h1 class="text-2xl md:text-3xl font-black text-white leading-tight drop-shadow-lg">{{ $business->name }}</h1>
             <div class="flex items-center gap-2 mt-1.5 text-white/90 text-sm">
                 <span>{{ $business->displayType() }}</span>

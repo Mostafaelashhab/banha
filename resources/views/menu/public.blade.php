@@ -93,7 +93,8 @@
 
 @php
     $heroPhoto = ($business->photo_url && ! str_contains($business->photo_url, 'd-innova.com')) ? $business->photo_url : null;
-    $heroPhoto = $heroPhoto ?: \App\Support\BusinessCovers::pick($business->category, $business->id);
+    $heroInitial = mb_substr(trim($business->name ?: '?'), 0, 1);
+    $heroColor   = ($business->categoryMeta()['color'] ?? '#FF7A4D');
     $itemsCount = $business->menuItems()->where('is_available', true)->count();
 
     // Build a pre-filled WhatsApp order message
