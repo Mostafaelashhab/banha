@@ -103,7 +103,8 @@
     $cm = $business->categoryMeta();
     $sm = $business->subTypeMeta();
     $isActualOwner = auth()->check() && $business->owner_user_id && auth()->id() === $business->owner_user_id;
-    $isOwner       = $isActualOwner || (auth()->check() && auth()->user()->is_admin); // edit/manage perms
+    $isAdminUser   = auth()->check() && auth()->user()->is_admin;
+    $isOwner       = $isActualOwner || $isAdminUser; // edit/manage perms
 @endphp
 
 @section('content')
@@ -145,6 +146,94 @@
             </a>
         @endif
     </div>
+
+    {{-- ───── Admin quick controls (verify / promote / active toggle) ─── --}}
+    @if($isAdminUser)
+        @php
+            $promotedActive = $business->promoted_until && $business->promoted_until->isFuture();
+        @endphp
+        <div class="card-light p-4 mb-3 ring-2 ring-coral-500/25" style="background: linear-gradient(135deg, #FFF7E9, #FFF);">
+            <div class="flex items-center gap-2 mb-3">
+                <span class="w-7 h-7 rounded-lg bg-coral-500 text-white grid place-items-center text-xs font-black">★</span>
+                <h3 class="text-sm font-extrabold text-ink-950">لوحة الأدمن السريعة</h3>
+                <a href="{{ route('admin.businesses') }}" class="ms-auto text-[10px] font-bold text-ink-500 hover:text-coral-600">للوحة الكاملة ←</a>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 mb-2">
+                {{-- Verify toggle --}}
+                <form method="POST" action="{{ route('admin.businesses.verify', $business) }}">
+                    @csrf
+                    <button type="submit"
+                            class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-extrabold transition
+                                   {{ $business->is_verified ? 'bg-mint-500 text-white hover:bg-mint-600' : 'bg-white text-ink-950 ring-1 ring-ink-950/10 hover:ring-mint-500/50' }}">
+                        <svg viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
+                            <path d="M12 2 4 6v6c0 5 3.4 9.6 8 11 4.6-1.4 8-6 8-11V6Zm-1 13-3.5-3.5L9 10l2 2 5-5 1.5 1.5Z"/>
+                        </svg>
+                        {{ $business->is_verified ? 'موثّق · شيل التوثيق' : 'وثّق النشاط' }}
+                    </button>
+                </form>
+
+                {{-- Active toggle --}}
+                <form method="POST" action="{{ route('admin.businesses.toggle', $business) }}">
+                    @csrf
+                    <button type="submit"
+                            class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-extrabold transition
+                                   {{ $business->is_active ? 'bg-white text-ink-950 ring-1 ring-ink-950/10 hover:ring-blush-500/50' : 'bg-blush-500 text-white hover:bg-blush-600' }}">
+                        @if($business->is_active)
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" class="w-4 h-4"><circle cx="12" cy="12" r="9"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
+                            اقفل النشاط
+                        @else
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" class="w-4 h-4"><polyline points="20 6 9 17 4 12"/></svg>
+                            افتح النشاط
+                        @endif
+                    </button>
+                </form>
+            </div>
+
+            {{-- Promotion --}}
+            <div class="bg-white rounded-xl p-3 ring-1 ring-honey-500/20">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-extrabold text-ink-950 inline-flex items-center gap-1.5">
+                        <svg viewBox="0 0 24 24" fill="currentColor" class="w-3.5 h-3.5 text-honey-500">
+                            <polygon points="12 2 15 9 22 9.5 17 14.5 18.5 22 12 18 5.5 22 7 14.5 2 9.5 9 9"/>
+                        </svg>
+                        ترويج (Sponsored)
+                    </span>
+                    @if($promotedActive)
+                        <span class="text-[10px] font-bold text-honey-700 bg-honey-100 px-2 py-0.5 rounded-full">
+                            مفعّل لحد {{ $business->promoted_until->translatedFormat('d M') }}
+                        </span>
+                    @else
+                        <span class="text-[10px] font-bold text-ink-400">غير مروَّج</span>
+                    @endif
+                </div>
+
+                <div class="grid grid-cols-4 gap-1.5">
+                    @foreach([7, 14, 30, 90] as $days)
+                        <form method="POST" action="{{ route('admin.businesses.promote', $business) }}">
+                            @csrf
+                            <input type="hidden" name="days" value="{{ $days }}">
+                            <button type="submit"
+                                    class="w-full px-2 py-2 rounded-lg bg-honey-100 text-honey-700 text-[11px] font-extrabold hover:bg-honey-500 hover:text-ink-950 transition">
+                                {{ $days }} يوم
+                            </button>
+                        </form>
+                    @endforeach
+                </div>
+
+                @if($promotedActive)
+                    <form method="POST" action="{{ route('admin.businesses.promote', $business) }}"
+                          data-confirm="إلغاء الترويج؟" data-confirm-action="ألغى" data-confirm-tone="danger" class="mt-1.5">
+                        @csrf
+                        <input type="hidden" name="days" value="0">
+                        <button type="submit" class="w-full px-2 py-2 rounded-lg bg-blush-100 text-blush-600 text-[11px] font-extrabold hover:bg-blush-500 hover:text-white transition">
+                            ألغي الترويج
+                        </button>
+                    </form>
+                @endif
+            </div>
+        </div>
+    @endif
 
     {{-- Hero: branded Banhawy cover when no user photo --}}
     @php

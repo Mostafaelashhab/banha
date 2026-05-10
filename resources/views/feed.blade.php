@@ -42,28 +42,15 @@
 <div class="max-w-3xl mx-auto">
 
     {{-- ───── Greeting line — personal, friendly ─────────────────────── --}}
-    <div class="flex items-start justify-between mb-4 rise rise-1">
-        <div>
-            <h1 class="text-2xl font-black text-ink-950 leading-tight">
-                @auth
-                    أهلاً يا {{ auth()->user()->username }}!
-                @else
-                    أهلاً بيك في بنهاوي!
-                @endauth
-            </h1>
-            <p class="text-ink-500 text-sm mt-1">إيه أخبارك النهارده؟</p>
-        </div>
-        @auth
-            @php $unread = \App\Models\Notification::where('user_id', auth()->id())->whereNull('read_at')->count(); @endphp
-            <a href="{{ route('notifications.index') }}" class="relative w-11 h-11 rounded-full bg-white ring-1 ring-ink-950/8 grid place-items-center text-ink-700 hover:text-coral-600 hover:ring-coral-500/30 transition shrink-0 mt-1">
-                <x-icon name="bell" class="w-5 h-5"/>
-                @if($unread > 0)
-                    <span class="absolute -top-0.5 -end-0.5 min-w-[18px] h-[18px] rounded-full bg-coral-500 text-white text-[10px] font-extrabold grid place-items-center px-1 ring-2 ring-cream-100">
-                        {{ $unread > 9 ? '9+' : $unread }}
-                    </span>
-                @endif
-            </a>
-        @endauth
+    <div class="mb-4 rise rise-1">
+        <h1 class="text-2xl font-black text-ink-950 leading-tight">
+            @auth
+                أهلاً يا {{ auth()->user()->username }}!
+            @else
+                أهلاً بيك في بنهاوي!
+            @endauth
+        </h1>
+        <p class="text-ink-500 text-sm mt-1">إيه أخبارك النهارده؟</p>
     </div>
 
     {{-- ───── Search ─────────────────────────────────────────────────── --}}
