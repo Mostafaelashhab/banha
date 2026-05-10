@@ -13,8 +13,10 @@
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" crossorigin="">
 {{-- Start fetching Leaflet JS immediately while CSS + page parse --}}
 <link rel="preload" as="script" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin>
+<link rel="preload" as="script" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" crossorigin>
 {{-- Start fetching map data in parallel with Leaflet — saves a roundtrip --}}
 <link rel="preload" as="fetch" href="{{ route('directory.map.data') }}" crossorigin="use-credentials">
 <style>
@@ -128,6 +130,26 @@
     /* Hide labels when zoomed out — too many overlap and tank mobile FPS.
        Show only when user zooms in (>=15). Promoted labels stay visible. */
     #banha-map.zoomed-out .biz-pin-label:not(.is-promoted-label) { display: none; }
+
+    /* Cluster icon (only fires on overlapping pins thanks to maxClusterRadius=22) */
+    .biz-cluster {
+        width: 38px; height: 38px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #FF7A4D, #FF9F2D);
+        color: #fff;
+        font-weight: 900;
+        font-size: 13px;
+        display: grid;
+        place-items: center;
+        box-shadow: 0 6px 14px -2px rgba(255, 122, 77, .55);
+        border: 3px solid #fff;
+        cursor: pointer;
+        transition: transform .15s;
+    }
+    .biz-cluster:hover { transform: scale(1.08); }
+    .leaflet-cluster-anim .leaflet-marker-icon, .leaflet-cluster-anim .leaflet-marker-shadow {
+        transition: transform .25s ease, opacity .25s ease;
+    }
     /* Promoted label: bigger, bolder, gold border */
     .biz-pin-label.is-promoted-label {
         font-size: 11px;
@@ -338,6 +360,7 @@
 @push('scripts')
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" crossorigin=""></script>
 <script>
 (async function () {
     const BANHA = [30.4582, 31.1797];
@@ -446,8 +469,25 @@
     }
 
     let currentCat = '';
-    // No clustering — every pin shows individually with its name label
-    const layerGroup = L.layerGroup().addTo(map);
+    // Tight clustering: only group pins that are literally on top of each other.
+    // maxClusterRadius: 22px → roughly "overlapping pin width". Bigger pins won't cluster.
+    // disableClusteringAtZoom: 17 → at street level (zoom 17+) every pin shows alone.
+    const layerGroup = L.markerClusterGroup({
+        maxClusterRadius: 22,
+        disableClusteringAtZoom: 17,
+        spiderfyOnMaxZoom: true,
+        showCoverageOnHover: false,
+        animate: true,
+        iconCreateFunction(cluster) {
+            const count = cluster.getChildCount();
+            return L.divIcon({
+                html: '<div class="biz-cluster"><span>' + count + '</span></div>',
+                className: '',
+                iconSize: [38, 38],
+                iconAnchor: [19, 19],
+            });
+        },
+    }).addTo(map);
     const cache = {};
 
     async function loadCategory(cat) {
@@ -522,18 +562,23 @@
             + '</div>';
     }
 
-    // Add markers in chunks so the main thread doesn't freeze on mobile when
-    // there are hundreds of pins. 60 markers per frame = smooth at 60fps.
+    // Add markers in chunks. markercluster's addLayers() is much faster than
+    // addLayer() in a loop — batch them so the main thread doesn't freeze.
     let renderToken = 0;
     function addMarkersChunked(makers, token) {
-        const CHUNK = 60;
+        const CHUNK = 100;
         let i = 0;
         function step() {
             if (token !== renderToken) return; // a new render() call superseded us
             const end = Math.min(i + CHUNK, makers.length);
+            const batch = [];
             for (; i < end; i++) {
                 const m = makers[i]();
-                if (m) layerGroup.addLayer(m);
+                if (m) batch.push(m);
+            }
+            if (batch.length) {
+                if (typeof layerGroup.addLayers === 'function') layerGroup.addLayers(batch);
+                else batch.forEach(m => layerGroup.addLayer(m));
             }
             if (i < makers.length) requestAnimationFrame(step);
         }

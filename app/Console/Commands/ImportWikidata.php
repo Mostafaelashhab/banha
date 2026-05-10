@@ -77,7 +77,6 @@ class ImportWikidata extends Command
         // Government
         'Q1497375' => ['government', 'gov_other'],   // public authority
         'Q15765487'=> ['government', 'gov_other'],   // governorate office
-        'Q22698'   => ['government', 'gov_other'],   // government building
 
         // Banks / commercial
         'Q22687' => ['banks', 'bank_branch'],        // bank
@@ -104,20 +103,41 @@ SELECT ?item ?itemLabel ?itemAr ?coord ?type ?typeLabel WHERE {
 LIMIT 5000
 SPARQL;
 
-        try {
-            $res = Http::timeout(180)
-                ->withHeaders([
-                    'User-Agent' => 'Banhawy/1.0 (wikidata-import)',
-                    'Accept'     => 'application/sparql-results+json',
-                ])
-                ->get('https://query.wikidata.org/sparql', ['query' => $sparql]);
-        } catch (\Throwable $e) {
-            $this->error('Wikidata request failed: '.$e->getMessage());
-            return self::FAILURE;
+        // Wikidata requires a descriptive User-Agent and is heavily rate-limited.
+        // Retry with exponential backoff on 429/502/503 (their cluster is often busy).
+        $res = null;
+        $attempts = 0;
+        $maxAttempts = 5;
+        while ($attempts < $maxAttempts) {
+            $attempts++;
+            try {
+                $res = Http::timeout(180)
+                    ->connectTimeout(30)
+                    ->withHeaders([
+                        'User-Agent' => 'Banhawy/1.0 (https://banhawy.app; ops@banhawy.app) Laravel-import',
+                        'Accept'     => 'application/sparql-results+json',
+                    ])
+                    ->get('https://query.wikidata.org/sparql', ['query' => $sparql]);
+            } catch (\Throwable $e) {
+                $this->warn("Attempt {$attempts}: ".$e->getMessage());
+                $res = null;
+            }
+
+            if ($res && $res->ok()) break;
+
+            $status = $res?->status() ?? 0;
+            // 429 (rate-limited), 502/503/504 (server overload) → backoff and retry
+            if ($attempts < $maxAttempts && in_array($status, [0, 429, 502, 503, 504], true)) {
+                $delay = min(60, 2 ** $attempts); // 2, 4, 8, 16, 32 seconds
+                $this->warn("HTTP {$status}, retrying in {$delay}s (attempt {$attempts}/{$maxAttempts})...");
+                sleep($delay);
+                continue;
+            }
+            break;
         }
 
-        if (! $res->ok()) {
-            $this->error('Wikidata returned HTTP '.$res->status());
+        if (! $res || ! $res->ok()) {
+            $this->error('Wikidata failed after '.$attempts.' attempts: HTTP '.($res?->status() ?? 'no-response'));
             return self::FAILURE;
         }
 

@@ -8,7 +8,8 @@
 @php
     $cm = $business->categoryMeta();
     $sm = $business->subTypeMeta();
-    $isOwner = auth()->check() && (auth()->id() === $business->owner_user_id || auth()->user()->is_admin);
+    $isActualOwner = auth()->check() && $business->owner_user_id && auth()->id() === $business->owner_user_id;
+    $isOwner       = $isActualOwner || (auth()->check() && auth()->user()->is_admin); // edit/manage perms
 @endphp
 
 @section('content')
@@ -259,9 +260,9 @@
         </div>
     @endif
 
-    {{-- Rating form (logged-in users, non-owner) --}}
+    {{-- Rating form (logged-in users; only the actual owner can't rate themselves) --}}
     @auth
-        @if(! $isOwner)
+        @if(! $isActualOwner)
             @php $myRating = (int) ($myReview->rating ?? 0); @endphp
             <div class="card-light p-4 mb-3">
                 <h3 class="text-sm font-extrabold text-ink-950 inline-flex items-center gap-2 mb-1">
