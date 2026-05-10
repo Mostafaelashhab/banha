@@ -39,7 +39,7 @@ class BanhaScrapeAll extends Command
             catch (\Throwable $e) { $this->warn('Firebase restaurants failed: '.$e->getMessage()); }
 
             $this->info('━━ Firebase RTDB (sponsor + reviews) ━━');
-            try { $this->call('banha:import-firebase-extras'); }
+            try { $this->call('banha:import-firebase-extras', ['--all' => true]); }
             catch (\Throwable $e) { $this->warn('Firebase extras failed: '.$e->getMessage()); }
         }
 
