@@ -102,8 +102,15 @@
     </div>
 
     @auth
-        @if(auth()->id() === $listing->user_id)
+        @if(auth()->id() === $listing->user_id || auth()->user()->is_admin)
             <div class="card-light p-4 space-y-2">
+                <a href="{{ route('marketplace.edit', $listing) }}"
+                   class="card-light p-3 w-full text-coral-600 font-bold text-sm hover:bg-coral-100/50 transition flex items-center justify-center gap-2">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                        <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z"/>
+                    </svg>
+                    عدّل الإعلان
+                </a>
                 @if($listing->status === 'active' && in_array($listing->kind, ['sale'], true))
                     <form method="POST" action="{{ route('marketplace.sold', $listing) }}">
                         @csrf

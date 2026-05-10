@@ -167,6 +167,36 @@
         border: 1px solid #1FA85740;
     }
 
+    /* ── Listing pin (rotated rounded square + tag color per kind) ── */
+    .listing-pin-wrap {
+        width: 38px;
+        height: 38px;
+        position: relative;
+        filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .22));
+    }
+    .listing-pin {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        transform: rotate(45deg);
+        border: 3px solid #fff;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(135deg, #FF7A4D, #FFB85C);
+    }
+    .listing-pin svg {
+        width: 16px; height: 16px; color: #fff;
+        transform: rotate(-45deg);
+    }
+    .listing-pin.is-featured {
+        box-shadow: 0 0 0 3px rgba(255, 184, 92, .45);
+    }
+    .biz-pin-label.is-listing-label {
+        color: #9A3412;
+        background: #fff;
+        border: 1px solid #FFD3B8;
+    }
+
     /* ── Event pin (different shape: square rounded, mint color) ── */
     .event-pin-wrap {
         width: 38px;
@@ -330,6 +360,14 @@
                     <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
                 </svg>
                 أحداث
+            </button>
+            <button type="button" data-cat="__listings__"
+                    class="map-cat-chip shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-white border border-ink-950/8 text-ink-700 transition"
+                    style="--cat-color: #FF7A4D;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5" style="color:#FF7A4D">
+                    <path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>
+                </svg>
+                إعلانات
             </button>
             @foreach($categories as $key => $cat)
                 <button type="button" data-cat="{{ $key }}"
@@ -497,6 +535,32 @@
         });
     }
 
+    // Marketplace listing pin — rotated rounded-square + kind color tint
+    const KIND_COLORS = {
+        sale:  ['#FF7A4D', '#FFB85C'],
+        buy:   ['#1FA857', '#10B981'],
+        lost:  ['#E64646', '#F87171'],
+        found: ['#FFB85C', '#F59E0B'],
+    };
+    function makeListingPin(l) {
+        const tagSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>';
+        const titleSafe = escapeName(l?.title);
+        const [c1, c2] = KIND_COLORS[l.kind] || KIND_COLORS.sale;
+        const cls = ['listing-pin'];
+        if (l.is_featured) cls.push('is-featured');
+        return L.divIcon({
+            html:
+                '<div class="listing-pin-wrap">' +
+                '  <div class="' + cls.join(' ') + '" style="background:linear-gradient(135deg,' + c1 + ',' + c2 + ');">' + tagSvg + '</div>' +
+                '  <span class="biz-pin-label is-listing-label">' + titleSafe + '</span>' +
+                '</div>',
+            className: '',
+            iconSize: [38, 60],
+            iconAnchor: [19, 38],
+            popupAnchor: [0, -34],
+        });
+    }
+
     let currentCat = '';
     // Tight clustering: only group pins that are literally on top of each other.
     // maxClusterRadius: 22px → roughly "overlapping pin width". Bigger pins won't cluster.
@@ -599,6 +663,30 @@
             + '</div>';
     }
 
+    function buildListingPopup(l, kinds) {
+        const meta = (kinds && kinds[l.kind]) || { label: '' };
+        const [c1] = KIND_COLORS[l.kind] || KIND_COLORS.sale;
+        const priceLabel = (l.kind === 'sale' || l.kind === 'buy')
+            ? (l.price ? Number(l.price).toLocaleString('ar-EG') + ' ج' : 'بسعر مفاوض')
+            : '';
+        const photo = l.photo_url
+            ? '<div style="margin:-12px -14px 10px;height:120px;background:#F5F0EA url(' + escapeHtml(l.photo_url) + ') center/cover no-repeat;"></div>'
+            : '';
+        return ''
+            + '<div class="pop-card" style="--cat-color:' + c1 + ';--cat-color-soft:' + c1 + '22;">'
+            +      photo
+            + '  <div class="pop-row">'
+            + '    <span class="pop-cat-pill">' + escapeHtml(meta.label || 'إعلان') + '</span>'
+            + (priceLabel ? '<span class="pop-rate" style="color:' + c1 + '">' + escapeHtml(priceLabel) + '</span>' : '')
+            + '  </div>'
+            + '  <div class="pop-name">' + escapeHtml(l.title) + '</div>'
+            + (l.zone ? '<div style="font-size:11px;color:#5C5C66;margin-top:4px;">📍 ' + escapeHtml(l.zone) + '</div>' : '')
+            + '  <div class="pop-actions">'
+            + '    <a href="/market/' + l.id + '" class="pop-btn primary">شوف الإعلان</a>'
+            + '  </div>'
+            + '</div>';
+    }
+
     // Add markers in chunks. markercluster's addLayers() is much faster than
     // addLayer() in a loop — batch them so the main thread doesn't freeze.
     let renderToken = 0;
@@ -628,12 +716,16 @@
         layerGroup.clearLayers();
         document.getElementById('biz-count').textContent = '…';
 
-        const isEventsView = cat === '__events__';
-        const data = await loadCategory(isEventsView ? '' : cat);
+        const isEventsView   = cat === '__events__';
+        const isListingsView = cat === '__listings__';
+        const isOverlay = isEventsView || isListingsView;
+        const data = await loadCategory(isOverlay ? '' : cat);
         if (myToken !== renderToken) return; // user clicked another category
-        const list  = Array.isArray(data.businesses) ? data.businesses : Object.values(data.businesses || {});
-        const events = Array.isArray(data.events) ? data.events : Object.values(data.events || {});
-        const cats  = data.categories || {};
+        const list     = Array.isArray(data.businesses) ? data.businesses : Object.values(data.businesses || {});
+        const events   = Array.isArray(data.events) ? data.events : Object.values(data.events || {});
+        const listings = Array.isArray(data.listings) ? data.listings : Object.values(data.listings || {});
+        const cats     = data.categories || {};
+        const kinds    = data.kinds || {};
 
         const bounds = [];
         const makers = [];
@@ -646,6 +738,15 @@
                 makers.push(() => L.marker([lat, lng], { icon: makeEventPin(e) }).bindPopup(buildEventPopup(e), { closeButton: true, offset: [0, 4] }));
             });
             document.getElementById('biz-count').textContent = events.length + ' حدث';
+        } else if (isListingsView) {
+            listings.forEach((l) => {
+                const lat = parseFloat(l.lat); const lng = parseFloat(l.lng);
+                if (isNaN(lat) || isNaN(lng)) return;
+                bounds.push([lat, lng]);
+                makers.push(() => L.marker([lat, lng], { icon: makeListingPin(l), zIndexOffset: l.is_featured ? 800 : 200 })
+                    .bindPopup(buildListingPopup(l, kinds), { closeButton: true, offset: [0, 4] }));
+            });
+            document.getElementById('biz-count').textContent = listings.length + ' إعلان';
         } else {
             // Businesses — promoted last so they paint on top
             const ordered = list.slice().sort((a, b) => (a.is_promoted ? 1 : 0) - (b.is_promoted ? 1 : 0));
@@ -664,9 +765,18 @@
                     if (isNaN(lat) || isNaN(lng)) return;
                     makers.push(() => L.marker([lat, lng], { icon: makeEventPin(e), zIndexOffset: 500 }).bindPopup(buildEventPopup(e), { closeButton: true, offset: [0, 4] }));
                 });
+                listings.forEach((l) => {
+                    const lat = parseFloat(l.lat); const lng = parseFloat(l.lng);
+                    if (isNaN(lat) || isNaN(lng)) return;
+                    makers.push(() => L.marker([lat, lng], { icon: makeListingPin(l), zIndexOffset: l.is_featured ? 800 : 200 })
+                        .bindPopup(buildListingPopup(l, kinds), { closeButton: true, offset: [0, 4] }));
+                });
             }
 
-            document.getElementById('biz-count').textContent = list.length + ' نشاط' + (events.length && ! cat ? ' · ' + events.length + ' حدث' : '');
+            const extras = [];
+            if (events.length && ! cat)   extras.push(events.length + ' حدث');
+            if (listings.length && ! cat) extras.push(listings.length + ' إعلان');
+            document.getElementById('biz-count').textContent = list.length + ' نشاط' + (extras.length ? ' · ' + extras.join(' · ') : '');
         }
 
         // Fit bounds first (so paint focuses on the right area), then add markers chunked

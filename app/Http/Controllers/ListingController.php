@@ -105,6 +105,8 @@ class ListingController extends Controller
         $listing = Listing::create([
             'user_id'          => Auth::id(),
             'zone_id'          => $data['zone_id'] ?? Auth::user()->zone_id,
+            'lat'              => $data['lat'] ?? null,
+            'lng'              => $data['lng'] ?? null,
             'kind'             => $data['kind'],
             'category'         => $data['category'],
             'title'            => $data['title'],
@@ -119,8 +121,58 @@ class ListingController extends Controller
             'expires_at'       => now()->addDays(60),
         ]);
 
+        \Illuminate\Support\Facades\Cache::forget('map-listings:v1');
+
         return redirect()->route('marketplace.show', $listing)
             ->with('flash', 'إعلانك اتنشر! 🎉');
+    }
+
+    public function edit(Listing $listing)
+    {
+        if ($listing->user_id !== Auth::id() && ! Auth::user()->is_admin) abort(403);
+
+        return view('marketplace.edit', [
+            'listing'    => $listing,
+            'kinds'      => Listing::KINDS,
+            'categories' => Listing::CATEGORIES,
+            'zones'      => Zone::orderBy('sort')->get(),
+        ]);
+    }
+
+    public function update(Request $request, Listing $listing)
+    {
+        if ($listing->user_id !== Auth::id() && ! Auth::user()->is_admin) abort(403);
+
+        $data = $this->validateListing($request);
+
+        $photo = $listing->photo_url;
+        if ($request->boolean('remove_photo')) {
+            ImageUploader::delete($listing->photo_url);
+            $photo = null;
+        }
+        if ($request->hasFile('photo')) {
+            ImageUploader::delete($photo);
+            $photo = ImageUploader::store($request->file('photo'), 'listings');
+        }
+
+        $listing->update([
+            'zone_id'          => $data['zone_id'] ?? $listing->zone_id,
+            'lat'              => array_key_exists('lat', $data) ? $data['lat'] : $listing->lat,
+            'lng'              => array_key_exists('lng', $data) ? $data['lng'] : $listing->lng,
+            'kind'             => $data['kind'],
+            'category'         => $data['category'],
+            'title'            => $data['title'],
+            'description'      => $data['description'] ?? null,
+            'price'            => in_array($data['kind'], ['sale','buy'], true) ? ($data['price'] ?? null) : null,
+            'negotiable'       => (bool) ($data['negotiable'] ?? true),
+            'photo_url'        => $photo,
+            'contact_phone'    => $data['contact_phone'] ?? null,
+            'contact_whatsapp' => $data['contact_whatsapp'] ?? null,
+        ]);
+
+        \Illuminate\Support\Facades\Cache::forget('map-listings:v1');
+
+        return redirect()->route('marketplace.show', $listing)->with('flash', '✓ تم تحديث الإعلان.');
     }
 
     public function destroy(Listing $listing)
@@ -128,6 +180,7 @@ class ListingController extends Controller
         if ($listing->user_id !== Auth::id() && ! Auth::user()->is_admin) abort(403);
         ImageUploader::delete($listing->photo_url);
         $listing->update(['status' => 'removed']);
+        \Illuminate\Support\Facades\Cache::forget('map-listings:v1');
         return redirect()->route('marketplace.index')->with('flash', 'تم حذف الإعلان.');
     }
 
@@ -135,6 +188,7 @@ class ListingController extends Controller
     {
         if ($listing->user_id !== Auth::id()) abort(403);
         $listing->update(['status' => 'sold']);
+        \Illuminate\Support\Facades\Cache::forget('map-listings:v1');
         return back()->with('flash', '✓ متأشّر "اتباع".');
     }
 
@@ -148,9 +202,14 @@ class ListingController extends Controller
             'price'            => ['nullable', 'integer', 'min:0', 'max:99999999'],
             'negotiable'       => ['nullable', 'boolean'],
             'zone_id'          => ['nullable', 'exists:zones,id'],
+            'lat'              => ['nullable', 'numeric', 'between:-90,90', 'required_with:lng'],
+            'lng'              => ['nullable', 'numeric', 'between:-180,180', 'required_with:lat'],
             'contact_phone'    => ['nullable', 'regex:/^01[0125][0-9]{8}$/'],
             'contact_whatsapp' => ['nullable', 'regex:/^01[0125][0-9]{8}$/'],
             'photo'            => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+        ], [
+            'lat.required_with' => 'حدّد المكان كامل من على الخريطة.',
+            'lng.required_with' => 'حدّد المكان كامل من على الخريطة.',
         ]);
     }
 }

@@ -119,6 +119,8 @@ Route::middleware('auth')->group(function () {
     // Marketplace owner actions
     Route::get('/market/new',              [\App\Http\Controllers\ListingController::class, 'create'])->name('marketplace.create');
     Route::post('/market',                 [\App\Http\Controllers\ListingController::class, 'store'])->name('marketplace.store');
+    Route::get('/market/{listing}/edit',   [\App\Http\Controllers\ListingController::class, 'edit'])->name('marketplace.edit')->whereNumber('listing');
+    Route::patch('/market/{listing}',      [\App\Http\Controllers\ListingController::class, 'update'])->name('marketplace.update')->whereNumber('listing');
     Route::delete('/market/{listing}',     [\App\Http\Controllers\ListingController::class, 'destroy'])->name('marketplace.destroy');
     Route::post('/market/{listing}/sold',  [\App\Http\Controllers\ListingController::class, 'markSold'])->name('marketplace.sold');
 

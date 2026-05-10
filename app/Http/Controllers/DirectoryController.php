@@ -415,6 +415,54 @@ class DirectoryController extends Controller
             }));
         }
 
+        // Marketplace listings (separate layer). Prefer the listing's own lat/lng when set;
+        // otherwise fall back to the zone centroid with light jitter so listings in the same
+        // zone don't perfectly overlap (clusters handle the rest at low zoom anyway).
+        $listings = \Illuminate\Support\Facades\Cache::remember('map-listings:v2', 120, function () {
+            return \App\Models\Listing::query()
+                ->with('zone:id,lat,lng,name')
+                ->where('status', 'active')
+                ->where(function ($q) {
+                    $q->whereNull('expires_at')->orWhere('expires_at', '>=', now());
+                })
+                ->where(function ($q) {
+                    // Either the listing itself has coords, or its zone does.
+                    $q->whereNotNull('lat')
+                      ->orWhereHas('zone', fn ($z) => $z->whereNotNull('lat')->whereNotNull('lng'));
+                })
+                ->select('id', 'user_id', 'zone_id', 'lat', 'lng', 'kind', 'category', 'title', 'price', 'currency', 'photo_url', 'featured_until', 'created_at')
+                ->latest()
+                ->limit(300)
+                ->get()
+                ->map(function ($l) {
+                    if ($l->lat !== null && $l->lng !== null) {
+                        $lat = (float) $l->lat;
+                        $lng = (float) $l->lng;
+                    } else {
+                        // Deterministic jitter per-listing (~±55m) so multiple zone-only
+                        // listings don't stack on the centroid. Stable across reloads.
+                        $seed = ($l->id * 9301 + 49297) % 233280;
+                        $jLat = (($seed % 100) - 50) / 100000;
+                        $jLng = ((($seed >> 7) % 100) - 50) / 100000;
+                        $lat = (float) $l->zone->lat + $jLat;
+                        $lng = (float) $l->zone->lng + $jLng;
+                    }
+                    return [
+                        'id'           => (int) $l->id,
+                        'title'        => (string) $l->title,
+                        'kind'         => (string) $l->kind,
+                        'category'     => (string) $l->category,
+                        'price'        => $l->price,
+                        'photo_url'    => $l->photo_url,
+                        'lat'          => $lat,
+                        'lng'          => $lng,
+                        'zone'         => $l->zone?->name,
+                        'is_featured'  => $l->featured_until && $l->featured_until->isFuture(),
+                    ];
+                })
+                ->values()->all();
+        });
+
         // Live events (not category-filtered — they're a separate layer)
         $events = \Illuminate\Support\Facades\Cache::remember('map-events:v1', 120, function () {
             return \App\Models\Event::query()
@@ -442,7 +490,9 @@ class DirectoryController extends Controller
         return response()->json([
             'businesses' => array_values((array) $businesses),
             'events'     => array_values((array) $events),
+            'listings'   => array_values((array) $listings),
             'categories' => Business::CATEGORIES,
+            'kinds'      => \App\Models\Listing::KINDS,
         ]);
     }
 

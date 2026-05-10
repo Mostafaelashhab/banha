@@ -167,6 +167,11 @@
             <x-icon name="home" class="w-3.5 h-3.5"/> بوستات
             <span class="opacity-60 text-xs">{{ $stats['posts'] }}</span>
         </a>
+        <a href="{{ route('profile.me', ['tab' => 'listings']) }}"
+           class="chip {{ $tab === 'listings' ? 'chip-active' : '' }}">
+            <x-icon name="tag" class="w-3.5 h-3.5"/> إعلانات
+            <span class="opacity-60 text-xs">{{ $stats['listings'] ?? 0 }}</span>
+        </a>
         <a href="{{ route('profile.me', ['tab' => 'badges']) }}"
            class="chip {{ $tab === 'badges' ? 'chip-active' : '' }}">
             🏅 شارات
@@ -186,7 +191,28 @@
 
     {{-- ─── TAB CONTENT ─── --}}
 
-    @if($tab === 'badges')
+    @if($tab === 'listings')
+        @if($listings && $listings->isNotEmpty())
+            <div class="grid grid-cols-2 gap-2.5" data-infinite-scroll>
+                @include('marketplace._page', ['listings' => $listings])
+            </div>
+        @else
+            <div class="card-light p-10 text-center text-ink-500">
+                @if($isMe)
+                    لسه مفيش إعلانات.
+                    <div class="mt-4">
+                        <a href="{{ route('marketplace.create') }}" class="btn-primary">
+                            انشر إعلان
+                            <x-icon name="arrow-left" class="w-4 h-4"/>
+                        </a>
+                    </div>
+                @else
+                    {{ $user->username }} مفيش عنده إعلانات نشطة.
+                @endif
+            </div>
+        @endif
+
+    @elseif($tab === 'badges')
         @if($earnedBadges->isNotEmpty())
             <h3 class="text-sm font-extrabold text-ink-950 mb-3">شارات اتجمعت ({{ $earnedBadges->count() }})</h3>
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
