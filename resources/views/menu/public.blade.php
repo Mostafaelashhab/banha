@@ -106,14 +106,34 @@
 @section('content')
 <div class="max-w-2xl mx-auto pb-20">
 
-    {{-- Hero --}}
-    <div class="relative -mx-4 mb-3 overflow-hidden aspect-[16/9] bg-gradient-to-br from-coral-500 to-honey-500">
-        <img src="{{ $heroPhoto }}" alt="{{ $business->name }}" loading="eager"
-             class="absolute inset-0 w-full h-full object-cover"
-             onerror="this.style.display='none'">
-        <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent"></div>
+    {{-- Hero: branded Banhawy cover when no user photo --}}
+    <div class="relative -mx-4 mb-3 overflow-hidden aspect-[16/9]"
+         style="background: linear-gradient(135deg, {{ $heroColor }}, {{ $heroColor }}cc 60%, {{ $heroColor }}88);">
+        <svg class="absolute inset-0 w-full h-full opacity-15" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <defs>
+                <pattern id="menu-hero-dots-{{ $business->id }}" x="0" y="0" width="28" height="28" patternUnits="userSpaceOnUse">
+                    <circle cx="3" cy="3" r="1.8" fill="white"/>
+                </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#menu-hero-dots-{{ $business->id }})"/>
+        </svg>
+        <div class="absolute inset-0 grid place-items-center">
+            <span class="text-white font-black text-[110px] leading-none opacity-95 select-none drop-shadow-lg">{{ $heroInitial }}</span>
+        </div>
+        @unless($heroPhoto)
+            <span class="absolute top-3 end-3 inline-flex items-center gap-1 bg-white/15 backdrop-blur-sm rounded-full px-2.5 py-1 text-white text-[10px] font-extrabold z-30">
+                <span class="w-4 h-4 rounded-md bg-white text-[10px] grid place-items-center font-black" style="color: {{ $heroColor }};">ب</span>
+                بنهاوي
+            </span>
+        @endunless
+        @if($heroPhoto)
+            <img src="{{ $heroPhoto }}" alt="{{ $business->name }}" loading="eager"
+                 class="absolute inset-0 w-full h-full object-cover z-10"
+                 onerror="this.style.display='none'">
+        @endif
+        <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent z-20"></div>
 
-        <div class="absolute top-3 start-3 flex flex-col gap-1.5">
+        <div class="absolute top-3 start-3 flex flex-col gap-1.5 z-30">
             @if($business->is_verified)
                 <span class="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-mint-500 text-white w-fit">
                     <x-icon name="check" class="w-3 h-3"/> موثّق
