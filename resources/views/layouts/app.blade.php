@@ -183,11 +183,9 @@
                     <x-icon name="map-pin" class="w-6 h-6"/>
                 </a>
             @endauth
-            <a href="{{ route('feed') }}#prayer" aria-label="مواعيد الصلاة" class="nav-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
-                    <path d="M2 22h20"/><path d="M5 22V8h14v14"/><path d="M8 22v-8h8v8"/><circle cx="12" cy="6" r="2"/>
-                </svg>
-                <span class="nav-label">الصلاة</span>
+            <a href="{{ route('directory.map') }}" aria-label="الخريطة" class="nav-item {{ $isMap ? 'is-active' : '' }}">
+                <x-icon name="map-pin" class="w-5 h-5"/>
+                <span class="nav-label">الخريطة</span>
             </a>
             @auth
                 <a href="{{ route('profile.me') }}" aria-label="حسابي" class="nav-item {{ $isMe ? 'is-active' : '' }}">
