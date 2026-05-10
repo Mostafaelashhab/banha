@@ -304,6 +304,201 @@ html[dir="rtl"] body {
 .rise-2 { animation-delay: .15s; }
 .rise-3 { animation-delay: .25s; }
 .rise-4 { animation-delay: .35s; }
+.rise-5 { animation-delay: .45s; }
+.rise-6 { animation-delay: .55s; }
+
+/* ── Home hero polish ──────────────────────────────────── */
+@keyframes blob-drift {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33%      { transform: translate(20px, -15px) scale(1.08); }
+    66%      { transform: translate(-12px, 18px) scale(.95); }
+}
+.hero-blob {
+    animation: blob-drift 14s ease-in-out infinite;
+    will-change: transform;
+}
+.hero-blob.delay { animation-delay: -7s; }
+
+@keyframes pulse-soft {
+    0%, 100% { opacity: .35; transform: scale(1); }
+    50%      { opacity: .55; transform: scale(1.04); }
+}
+.pulse-soft { animation: pulse-soft 4s ease-in-out infinite; }
+
+/* Stats card — premium glass effect */
+.stat-card {
+    background: rgba(255, 255, 255, .18);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, .28);
+    transition: transform .25s cubic-bezier(.2,.9,.3,1), background .25s;
+}
+.stat-card:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, .26);
+}
+
+/* Animated count-up — counts in from 0. JS toggles `.is-counted`. */
+.count-up { display: inline-block; min-width: 1ch; }
+
+/* Gentle horizontal shimmer for the search bar */
+@keyframes search-shine {
+    0%   { transform: translateX(-120%); }
+    60%  { transform: translateX(220%); }
+    100% { transform: translateX(220%); }
+}
+.search-shine {
+    position: absolute;
+    inset-inline-start: 0; top: 0;
+    width: 35%; height: 100%;
+    background: linear-gradient(110deg, transparent 0%, rgba(255,255,255,.55) 50%, transparent 100%);
+    pointer-events: none;
+    animation: search-shine 5s ease-in-out infinite;
+    animation-delay: 1.5s;
+}
+
+/* Featured business carousel — horizontal scroll snap */
+.feat-scroll {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+}
+.feat-scroll::-webkit-scrollbar { display: none; }
+.feat-card {
+    flex: 0 0 78%;
+    max-width: 320px;
+    scroll-snap-align: start;
+    position: relative;
+    border-radius: 22px;
+    overflow: hidden;
+    aspect-ratio: 4/5;
+    background: var(--color-cream-200);
+    transition: transform .25s;
+}
+.feat-card:hover { transform: scale(.98); }
+.feat-card img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+}
+.feat-card-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(11,11,12,.85) 0%, rgba(11,11,12,.45) 35%, transparent 60%);
+}
+.feat-card-body {
+    position: absolute;
+    inset-inline: 14px;
+    bottom: 14px;
+    color: #fff;
+}
+
+/* Category card — adds depth + hover lift */
+.cat-tile {
+    background: #fff;
+    border-radius: 18px;
+    padding: 12px;
+    border: 1px solid rgba(11, 11, 12, .04);
+    transition: transform .2s cubic-bezier(.2,.9,.3,1), box-shadow .2s;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+.cat-tile:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 30px -10px rgba(11, 11, 12, .12);
+}
+.cat-tile-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: grid; place-items: center;
+    margin-bottom: 8px;
+    transition: transform .25s cubic-bezier(.2,.9,.3,1);
+}
+.cat-tile:hover .cat-tile-icon { transform: scale(1.08) rotate(-3deg); }
+
+/* Circle category — Omar-app style: round, soft-tinted, friendly */
+.cat-circle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    color: inherit;
+    transition: transform .15s ease;
+}
+.cat-circle:hover { transform: translateY(-2px); }
+.cat-circle-disc {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    transition: transform .25s cubic-bezier(.2,.9,.3,1), box-shadow .25s;
+    box-shadow: 0 8px 20px -8px var(--cat-shadow, rgba(255, 122, 77, .35));
+}
+.cat-circle:hover .cat-circle-disc {
+    transform: scale(1.06) rotate(-2deg);
+}
+.cat-circle-label {
+    font-size: 11px;
+    font-weight: 800;
+    color: #0B0B0C;
+    line-height: 1.1;
+    text-align: center;
+}
+
+/* Hero promo card — Omar-app style: colored, with a CTA + decorative element */
+.promo-card {
+    position: relative;
+    border-radius: 24px;
+    padding: 20px 22px;
+    color: #fff;
+    overflow: hidden;
+    background: linear-gradient(135deg, #FF7A4D 0%, #FF9F2D 60%, #FFB85C 100%);
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.promo-card-glow {
+    position: absolute;
+    inset: -40px -50px auto auto;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .25);
+    filter: blur(40px);
+    pointer-events: none;
+}
+.promo-card-art {
+    position: absolute;
+    bottom: -10px;
+    inset-inline-end: -10px;
+    width: 140px;
+    height: 140px;
+    opacity: .9;
+    pointer-events: none;
+}
+.promo-card-cta {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #fff;
+    color: var(--color-coral-600);
+    padding: 9px 16px;
+    border-radius: 999px;
+    font-weight: 900;
+    font-size: 12px;
+    box-shadow: 0 10px 20px -6px rgba(11,11,12,.25);
+    transition: transform .15s ease;
+}
+.promo-card-cta:hover { transform: scale(1.05); }
 
 .reveal { opacity: 0; transform: translateY(24px); transition: opacity .8s ease, transform .8s ease; }
 .reveal.in { opacity: 1; transform: none; }
