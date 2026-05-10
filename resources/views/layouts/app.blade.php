@@ -174,12 +174,18 @@
                 <x-icon name="bag" class="w-5 h-5"/>
                 <span class="nav-label">الدليل</span>
             </a>
-            <a href="{{ route('directory.create') }}" aria-label="أضف نشاطك" class="nav-fab {{ $isCreate ? 'is-active' : '' }}">
-                <x-icon name="plus" class="w-6 h-6"/>
-            </a>
-            <a href="{{ route('directory.map') }}" aria-label="الخريطة" class="nav-item {{ $isMap ? 'is-active' : '' }}">
-                <x-icon name="map-pin" class="w-5 h-5"/>
-                <span class="nav-label">الخريطة</span>
+            @auth
+                <a href="{{ route('directory.create') }}" aria-label="أضف نشاطك" class="nav-fab {{ $isCreate ? 'is-active' : '' }}">
+                    <x-icon name="plus" class="w-6 h-6"/>
+                </a>
+            @else
+                <a href="{{ route('directory.map') }}" aria-label="الخريطة" class="nav-fab {{ $isMap ? 'is-active' : '' }}">
+                    <x-icon name="map-pin" class="w-6 h-6"/>
+                </a>
+            @endauth
+            <a href="{{ route('marketplace.index') }}" aria-label="بيع وشراء" class="nav-item {{ $isMarket ? 'is-active' : '' }}">
+                <x-icon name="tag" class="w-5 h-5"/>
+                <span class="nav-label">السوق</span>
             </a>
             @auth
                 <a href="{{ route('profile.me') }}" aria-label="حسابي" class="nav-item {{ $isMe ? 'is-active' : '' }}">
