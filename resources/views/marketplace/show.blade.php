@@ -1,4 +1,67 @@
-@extends('layouts.app', ['title' => $listing->title])
+@php
+    $lk = $listing->kindMeta();
+    $lc = $listing->categoryMeta();
+    $listingZone = $listing->zone->name ?? 'بنها';
+    $listingTitle = $listing->title.' · '.$lk['label'].' في '.$listingZone.' | بنهاوي';
+    $listingDesc  = trim(implode(' · ', array_filter([
+        $listing->title,
+        $lk['label'].' '.$lc['label'],
+        $listingZone,
+        in_array($listing->kind, ['sale','buy'], true) ? $listing->priceLabel() : null,
+        $listing->description ? mb_substr(strip_tags($listing->description), 0, 120) : null,
+    ])));
+@endphp
+
+@extends('layouts.app', [
+    'title'       => $listingTitle,
+    'description' => $listingDesc,
+    'ogImage'     => $listing->photo_url,
+    'ogType'      => 'product',
+    'canonical'   => route('marketplace.show', $listing),
+    'keywords'    => $listing->title.', '.$lk['label'].', '.$lc['label'].', '.$listingZone.', بنها, بيع وشراء',
+])
+
+@push('json-ld')
+@php
+    $product = [
+        '@context'    => 'https://schema.org',
+        '@type'       => 'Product',
+        'name'        => $listing->title,
+        'description' => $listing->description ? mb_substr(strip_tags($listing->description), 0, 500) : $listing->title,
+        'image'       => $listing->photo_url ?: asset('icons/icon-512.png'),
+        'category'    => $lc['label'] ?? null,
+        'brand'       => ['@type' => 'Brand', 'name' => 'بنهاوي'],
+    ];
+    if (in_array($listing->kind, ['sale','buy'], true) && $listing->price) {
+        $product['offers'] = [
+            '@type'         => 'Offer',
+            'priceCurrency' => $listing->currency ?: 'EGP',
+            'price'         => $listing->price,
+            'availability'  => $listing->status === 'active'
+                ? 'https://schema.org/InStock'
+                : 'https://schema.org/OutOfStock',
+            'url'           => route('marketplace.show', $listing),
+            'seller'        => ['@type' => 'Person', 'name' => $listing->user->username ?? 'بنهاوي'],
+        ];
+    }
+    $listingCrumbs = [
+        '@context' => 'https://schema.org',
+        '@type'    => 'BreadcrumbList',
+        'itemListElement' => [
+            ['@type' => 'ListItem', 'position' => 1, 'name' => 'بنهاوي', 'item' => url('/')],
+            ['@type' => 'ListItem', 'position' => 2, 'name' => 'بيع وشراء', 'item' => route('marketplace.index')],
+            ['@type' => 'ListItem', 'position' => 3, 'name' => $lk['label'], 'item' => route('marketplace.index', ['kind' => $listing->kind])],
+            ['@type' => 'ListItem', 'position' => 4, 'name' => $listing->title, 'item' => route('marketplace.show', $listing)],
+        ],
+    ];
+@endphp
+<script type="application/ld+json">
+{!! json_encode($product, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}
+</script>
+<script type="application/ld+json">
+{!! json_encode($listingCrumbs, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}
+</script>
+@endpush
 
 @php
     $km = $listing->kindMeta();

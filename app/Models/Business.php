@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'name', 'category', 'sub_type', 'custom_sub_type', 'zone_id', 'owner_user_id',
-    'description', 'phone', 'whatsapp', 'address', 'lat', 'lng',
+    'description', 'phone', 'whatsapp', 'hotline', 'address', 'lat', 'lng',
     'hours', 'hours_schedule', 'is_24h', 'is_verified', 'promoted_until', 'is_active',
     'rating_avg', 'ratings_count', 'views_count', 'phone_clicks', 'whatsapp_clicks',
     'emoji', 'photo_url', 'has_menu', 'menu_currency', 'external_id', 'extra',

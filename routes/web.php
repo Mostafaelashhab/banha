@@ -72,6 +72,7 @@ Route::get('/stories/{story}',         [\App\Http\Controllers\StoryController::c
 Route::get('/feed',                    [FeedController::class, 'index'])->name('feed');
 Route::get('/discover',                [BrowseController::class, 'discover'])->name('discover');
 Route::get('/zones',                   [BrowseController::class, 'zones'])->name('zones');
+Route::get('/zone/{slug}',             [BrowseController::class, 'zoneShow'])->name('zone.show');
 Route::get('/posts/{post}',            [PostController::class, 'show'])->name('posts.show');
 Route::get('/u/{username}',            [ProfileController::class, 'show'])->name('profile.show');
 

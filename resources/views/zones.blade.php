@@ -11,7 +11,7 @@
             'lat'    => (float) $z->lat,
             'lng'    => (float) $z->lng,
             'count'  => $count,
-            'url'    => route('feed', ['zone' => $z->id]),
+            'url'    => route('zone.show', $z->slug),
             'color'  => \App\Support\AnonSeed::avatarColor($z->name),
         ];
     })->filter(fn ($z) => $z['lat'] && $z['lng'])->values();

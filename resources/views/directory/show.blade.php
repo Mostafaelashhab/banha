@@ -1,9 +1,103 @@
+@php
+    use App\Models\Business as BizModel;
+    $bizCatLabel = ($business->categoryMeta()['label'] ?? '') ?: 'نشاط';
+    $bizZoneName = $business->zone->name ?? 'بنها';
+
+    // Tighter SEO title: "{Name} - {Category} في {Zone}"  (brand only at end)
+    $bizSeoTitle = $business->name.' - '.$bizCatLabel.' في '.$bizZoneName.' | بنهاوي';
+
+    // Rich, factual description. Order: name + category + zone + (open-now or hours) + phone.
+    $hoursPart = $business->is_24h ? 'مفتوح ٢٤ ساعة'
+        : ($business->openStatusLabel() ?: 'بنهاوي يدلّك على مواعيد العمل');
+    $contactPart = $business->phone ? ('هاتف '.$business->phone)
+        : ($business->hotline ? ('خط ساخن '.$business->hotline) : null);
+    $bizSeoDesc = trim(implode(' · ', array_filter([
+        $business->name.' في '.$bizZoneName,
+        $bizCatLabel,
+        $hoursPart,
+        $contactPart,
+    ])));
+    if ($business->address) $bizSeoDesc .= ' · '.$business->address;
+@endphp
+
 @extends('layouts.app', [
-    'title'       => $business->name . ' · ' . ($business->zone->name ?? 'بنها') . ' · بنهاوي',
-    'description' => 'كل اللي تحتاج تعرفه عن ' . $business->name . ' في ' . ($business->zone->name ?? 'بنها') . ': المواعيد، الأسعار، التواصل، التقييمات.',
+    'title'       => $bizSeoTitle,
+    'description' => $bizSeoDesc,
     'ogImage'     => $business->photo_url,
+    'ogType'      => 'business.business',
     'canonical'   => route('directory.show', $business),
+    'keywords'    => $business->name.', '.$bizCatLabel.', '.$bizZoneName.', بنها, دليل بنها, '.($business->sub_type ?? ''),
 ])
+
+@push('json-ld')
+@php
+    // LocalBusiness schema — gets us into Google Map Pack & rich results
+    $ld = [
+        '@context'       => 'https://schema.org',
+        '@type'          => 'LocalBusiness',
+        '@id'            => route('directory.show', $business),
+        'name'           => $business->name,
+        'url'            => route('directory.show', $business),
+        'image'          => $business->photo_url ?: asset('icons/icon-512.png'),
+        'priceRange'     => '$$',
+        'address'        => array_filter([
+            '@type'           => 'PostalAddress',
+            'streetAddress'   => $business->address,
+            'addressLocality' => $bizZoneName,
+            'addressRegion'   => 'القليوبية',
+            'addressCountry'  => 'EG',
+        ]),
+    ];
+    if ($business->lat && $business->lng) {
+        $ld['geo'] = [
+            '@type'     => 'GeoCoordinates',
+            'latitude'  => (float) $business->lat,
+            'longitude' => (float) $business->lng,
+        ];
+    }
+    $phones = array_values(array_filter([$business->phone, $business->hotline]));
+    if ($phones) $ld['telephone'] = $phones[0];
+    if ($business->whatsapp) $ld['contactPoint'] = [
+        '@type'       => 'ContactPoint',
+        'telephone'   => $business->whatsapp,
+        'contactType' => 'customer support',
+    ];
+    if ($business->rating_avg && $business->ratings_count) {
+        $ld['aggregateRating'] = [
+            '@type'       => 'AggregateRating',
+            'ratingValue' => round((float) $business->rating_avg, 1),
+            'reviewCount' => (int) $business->ratings_count,
+            'bestRating'  => 5,
+            'worstRating' => 1,
+        ];
+    }
+    if ($business->is_24h) {
+        $ld['openingHoursSpecification'] = [
+            '@type'     => 'OpeningHoursSpecification',
+            'dayOfWeek' => ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+            'opens'     => '00:00',
+            'closes'    => '23:59',
+        ];
+    }
+    // Breadcrumb
+    $crumbs = [
+        '@context' => 'https://schema.org',
+        '@type'    => 'BreadcrumbList',
+        'itemListElement' => [
+            ['@type' => 'ListItem', 'position' => 1, 'name' => 'بنهاوي', 'item' => url('/')],
+            ['@type' => 'ListItem', 'position' => 2, 'name' => 'الدليل', 'item' => route('directory.index')],
+            ['@type' => 'ListItem', 'position' => 3, 'name' => $bizCatLabel, 'item' => route('directory.category', $business->category)],
+            ['@type' => 'ListItem', 'position' => 4, 'name' => $business->name, 'item' => route('directory.show', $business)],
+        ],
+    ];
+@endphp
+<script type="application/ld+json">
+{!! json_encode($ld, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}
+</script>
+<script type="application/ld+json">
+{!! json_encode($crumbs, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}
+</script>
+@endpush
 
 @php
     $cm = $business->categoryMeta();
@@ -137,14 +231,19 @@
     @endif
 
     {{-- Quick contact CTAs --}}
-    @if($business->phone || $business->whatsapp)
-        <div class="grid grid-cols-{{ ($business->phone && $business->whatsapp) ? '2' : '1' }} gap-2 mb-3">
-            @if($business->phone)
-                <a href="tel:{{ $business->phone }}" data-track-click="phone" data-business="{{ $business->id }}" class="btn-primary justify-center !py-3.5 text-sm">
+    @php
+        $callNumber = $business->phone ?: $business->hotline;
+        $callLabel  = $business->phone ? 'اتصل' : 'الخط الساخن';
+        $cols       = (int) (bool) $callNumber + (int) (bool) $business->whatsapp;
+    @endphp
+    @if($cols > 0)
+        <div class="grid grid-cols-{{ $cols === 2 ? '2' : '1' }} gap-2 mb-3">
+            @if($callNumber)
+                <a href="tel:{{ preg_replace('/[^0-9+]/', '', $callNumber) }}" data-track-click="phone" data-business="{{ $business->id }}" class="btn-primary justify-center !py-3.5 text-sm">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="w-4 h-4">
                         <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
                     </svg>
-                    اتصل
+                    {{ $callLabel }}
                 </a>
             @endif
             @if($business->whatsapp)
@@ -222,7 +321,7 @@
         $statusLabel  = $business->openStatusLabel();        // "مفتوح · 9ص-11م" / "مغلق · يفتح 9ص"
         $hasHoursInfo = $business->hours_schedule || $business->hours || $business->is_24h;
     @endphp
-    @if($business->address || $hasHoursInfo || $business->phone)
+    @if($business->address || $hasHoursInfo || $business->phone || $business->hotline)
         <div class="card-light p-4 mb-3 space-y-3">
             @if($business->address)
                 <div class="flex items-start gap-3">
@@ -304,6 +403,21 @@
                         <div class="text-sm font-bold text-ink-950" dir="ltr">{{ $business->phone }}</div>
                     </div>
                 </div>
+            @endif
+
+            @if($business->hotline)
+                <a href="tel:{{ preg_replace('/[^0-9+]/', '', $business->hotline) }}" data-track-click="phone" data-business="{{ $business->id }}"
+                   class="flex items-start gap-3 hover:bg-cream-100 transition rounded-xl -mx-2 px-2 py-1">
+                    <span class="w-9 h-9 rounded-xl pill-coral grid place-items-center shrink-0">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="w-4 h-4">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                        </svg>
+                    </span>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-[11px] text-ink-500">الخط الساخن</div>
+                        <div class="text-sm font-bold text-ink-950" dir="ltr">{{ $business->hotline }}</div>
+                    </div>
+                </a>
             @endif
         </div>
     @endif

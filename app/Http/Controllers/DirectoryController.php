@@ -274,6 +274,7 @@ class DirectoryController extends Controller
             'description'   => $data['description'] ?? null,
             'phone'         => $data['phone'] ?? null,
             'whatsapp'      => $data['whatsapp'] ?? null,
+            'hotline'       => $data['hotline'] ?? null,
             'address'       => $data['address'] ?? null,
             'hours'         => $data['hours'] ?? null,
             'is_24h'        => (bool) ($data['is_24h'] ?? false),
@@ -290,8 +291,8 @@ class DirectoryController extends Controller
         \App\Services\AdminNotificationService::onBusinessCreated($business->fresh()->load('owner'));
 
         if ($business->lat && $business->lng) {
-            \Illuminate\Support\Facades\Cache::forget('map-data:v4:all');
-            \Illuminate\Support\Facades\Cache::forget('map-data:v4:'.$business->category);
+            \Illuminate\Support\Facades\Cache::forget('map-data:v5:all');
+            \Illuminate\Support\Facades\Cache::forget('map-data:v5:'.$business->category);
         }
 
         return redirect()->route('directory.show', $business)
@@ -328,6 +329,7 @@ class DirectoryController extends Controller
             'description' => $data['description'] ?? null,
             'phone'       => $data['phone'] ?? null,
             'whatsapp'    => $data['whatsapp'] ?? null,
+            'hotline'     => $data['hotline'] ?? null,
             'address'     => $data['address'] ?? null,
             'hours'       => $data['hours'] ?? null,
             'is_24h'      => (bool) ($data['is_24h'] ?? false),
@@ -340,8 +342,8 @@ class DirectoryController extends Controller
         ]);
 
         // Bust map cache so location changes show up immediately on /map
-        \Illuminate\Support\Facades\Cache::forget('map-data:v4:all');
-        \Illuminate\Support\Facades\Cache::forget('map-data:v4:'.$business->category);
+        \Illuminate\Support\Facades\Cache::forget('map-data:v5:all');
+        \Illuminate\Support\Facades\Cache::forget('map-data:v5:'.$business->category);
 
         return redirect()->route('directory.show', $business)
             ->with('flash', '✓ تم تحديث النشاط.');
@@ -368,11 +370,11 @@ class DirectoryController extends Controller
         $cat = $request->query('category');
 
         // Businesses (with `is_promoted` bubbled up so JS can style them differently)
-        $businesses = \Illuminate\Support\Facades\Cache::remember('map-data:v4:'.($cat ?: 'all'), 300, function () use ($cat) {
+        $businesses = \Illuminate\Support\Facades\Cache::remember('map-data:v5:'.($cat ?: 'all'), 300, function () use ($cat) {
             $q = Business::query()
                 ->where('is_active', true)
                 ->whereNotNull('lat')->whereNotNull('lng')
-                ->select('id', 'name', 'category', 'sub_type', 'lat', 'lng', 'is_verified', 'is_24h', 'has_menu', 'rating_avg', 'phone', 'promoted_until', 'hours_schedule', 'extra');
+                ->select('id', 'name', 'category', 'sub_type', 'lat', 'lng', 'is_verified', 'is_24h', 'has_menu', 'rating_avg', 'phone', 'hotline', 'promoted_until', 'hours_schedule', 'extra');
             if ($cat) $q->where('category', $cat);
             return $q->limit(500)->get()->map(fn ($b) => [
                 'id'          => (int) $b->id,
@@ -386,7 +388,7 @@ class DirectoryController extends Controller
                 'has_menu'    => (bool) $b->has_menu,
                 'is_promoted' => (bool) ($b->promoted_until && $b->promoted_until->isFuture()),
                 'rating_avg'  => (float) $b->rating_avg,
-                'phone'       => $b->phone,
+                'phone'       => $b->phone ?: $b->hotline,
                 'is_open_now' => $b->isOpenNow(),
                 'extra'       => $b->extra ?? new \stdClass(),
             ])->values()->all();
@@ -531,6 +533,7 @@ class DirectoryController extends Controller
             'description'     => ['nullable', 'string', 'max:1000'],
             'phone'           => ['nullable', 'regex:/^01[0125][0-9]{8}$/'],
             'whatsapp'        => ['nullable', 'regex:/^01[0125][0-9]{8}$/'],
+            'hotline'         => ['nullable', 'string', 'max:20', 'regex:/^[0-9+\-\s]{3,20}$/'],
             'address'         => ['nullable', 'string', 'max:200'],
             'hours'           => ['nullable', 'string', 'max:100'],
             'hours_schedule'  => ['nullable', 'array'],

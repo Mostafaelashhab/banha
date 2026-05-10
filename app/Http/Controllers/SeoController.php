@@ -33,8 +33,9 @@ class SeoController extends Controller
             $urls[] = ['/directory/c/'.$cat, '0.8', 'daily'];
         }
 
-        // Zones
+        // Zones — both the dedicated SEO landing page and the localized feed
         foreach (Zone::where('is_active', true)->orderBy('sort')->get() as $zone) {
+            $urls[] = ['/zone/'.$zone->slug, '0.85', 'daily'];
             $urls[] = ['/feed?zone='.$zone->id, '0.7', 'hourly'];
         }
 

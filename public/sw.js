@@ -1,7 +1,7 @@
-/* Banhawy service worker — v4
+/* Banhawy service worker — v5
  * Strategy: cache STATIC assets + /offline page. Never cache authenticated HTML.
  */
-const CACHE = 'banhawy-static-v4';
+const CACHE = 'banhawy-static-v5';
 const OFFLINE_URL = '/offline';
 const STATIC_ASSETS = [
     '/icons/icon.svg',

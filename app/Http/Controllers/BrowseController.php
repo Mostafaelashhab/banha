@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Business;
 use App\Models\Post;
 use App\Models\Vote;
 use App\Models\Zone;
@@ -134,5 +135,32 @@ class BrowseController extends Controller
             ->groupBy('zone_id');
 
         return view('zones', compact('zones', 'stats', 'hottest'));
+    }
+
+    /**
+     * Per-zone landing page — high-value SEO target ("مطاعم بنها قسم أول"…).
+     * Aggregates the most relevant directory listings + local activity for the zone.
+     */
+    public function zoneShow(string $slug)
+    {
+        $zone = Zone::where('slug', $slug)->where('is_active', true)->firstOrFail();
+
+        $businesses = Business::where('is_active', true)
+            ->where('zone_id', $zone->id)
+            ->orderByRaw('CASE WHEN promoted_until > NOW() THEN 0 ELSE 1 END')
+            ->orderByDesc('is_verified')
+            ->orderByDesc('rating_avg')
+            ->limit(60)
+            ->get();
+
+        $byCategory = $businesses->groupBy('category');
+
+        $categoryLabels = collect(Business::CATEGORIES)
+            ->map(fn ($c, $key) => ['key' => $key, 'label' => $c['label'], 'icon' => $c['icon'] ?? 'bag'])
+            ->values();
+
+        $totalCount = Business::where('is_active', true)->where('zone_id', $zone->id)->count();
+
+        return view('directory.zone-show', compact('zone', 'byCategory', 'categoryLabels', 'totalCount'));
     }
 }

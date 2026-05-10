@@ -1,4 +1,62 @@
-@extends('layouts.app', ['title' => $meta['label'] . ' · دليل بنها'])
+@php
+    $catSeoTitle = $meta['label'].' في بنها · دليل أرقام ومواعيد | بنهاوي';
+    $catSeoDesc  = 'كل '.$meta['label'].' في بنها والقليوبية: مواعيد العمل، الأرقام، الخط الساخن، العنوان، التقييمات. تحديث يومي.';
+@endphp
+@extends('layouts.app', [
+    'title'       => $catSeoTitle,
+    'description' => $catSeoDesc,
+    'canonical'   => route('directory.category', $category),
+    'keywords'    => $meta['label'].' بنها, دليل بنها, '.$meta['label'].' القليوبية, أرقام ومواعيد بنها',
+])
+
+@push('json-ld')
+@php
+    $catCrumbs = [
+        '@context' => 'https://schema.org',
+        '@type'    => 'BreadcrumbList',
+        'itemListElement' => [
+            ['@type' => 'ListItem', 'position' => 1, 'name' => 'بنهاوي', 'item' => url('/')],
+            ['@type' => 'ListItem', 'position' => 2, 'name' => 'الدليل', 'item' => route('directory.index')],
+            ['@type' => 'ListItem', 'position' => 3, 'name' => $meta['label'], 'item' => route('directory.category', $category)],
+        ],
+    ];
+
+    $faqAnswers = [
+        'food'      => 'هتلاقي مطاعم وكافيهات ومشاوي في كل أحياء بنها. كل مكان بمواعيده، أرقامه، ولو فيه دليفري.',
+        'medical'   => 'صيدليات، عيادات، معامل، ومستشفيات بنها مع مواعيد وخط ساخن لكل واحد.',
+        'shops'     => 'كل المحلات في بنها — موبايلات، ملابس، سوبر ماركت، أثاث — برقم وعنوان.',
+        'craftsmen' => 'سباكين، كهربائيين، نجارين وحدادين في بنها، بتقييمات الزباين.',
+        'services'  => 'جيم، حضانة، مغسلة، صبغة، كل الخدمات في بنها برقم ومواعيد.',
+    ];
+    $catFaq = [
+        '@context' => 'https://schema.org',
+        '@type'    => 'FAQPage',
+        'mainEntity' => [
+            [
+                '@type' => 'Question',
+                'name'  => 'إيه أحسن '.$meta['label'].' في بنها؟',
+                'acceptedAnswer' => ['@type' => 'Answer', 'text' => $faqAnswers[$category] ?? ('بنهاوي بيرتب '.$meta['label'].' في بنها بحسب التقييمات والمصداقية.')],
+            ],
+            [
+                '@type' => 'Question',
+                'name'  => 'فين أرقام '.$meta['label'].' في بنها؟',
+                'acceptedAnswer' => ['@type' => 'Answer', 'text' => 'كل '.$meta['label'].' في الدليل عندها رقم تليفون أو خط ساخن، وممكن تكلّمهم على واتساب من نفس الصفحة.'],
+            ],
+            [
+                '@type' => 'Question',
+                'name'  => 'إزاي أعرف '.$meta['label'].' المفتوحة دلوقتي؟',
+                'acceptedAnswer' => ['@type' => 'Answer', 'text' => 'فيه فلتر "مفتوح دلوقتي" بيوريك المحلات اللي بتشتغل في الوقت ده فقط.'],
+            ],
+        ],
+    ];
+@endphp
+<script type="application/ld+json">
+{!! json_encode($catCrumbs, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}
+</script>
+<script type="application/ld+json">
+{!! json_encode($catFaq, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}
+</script>
+@endpush
 
 @section('content')
 <div class="max-w-3xl mx-auto">
