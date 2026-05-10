@@ -11,187 +11,133 @@
 @section('content')
 <div class="max-w-3xl mx-auto">
 
-    {{-- ─── HERO ─── --}}
-    <div class="card-orange p-5 md:p-6 mb-4 relative overflow-hidden">
-        <div class="absolute -top-16 -end-16 w-56 h-56 rounded-full bg-white/15 blur-3xl"></div>
-        <div class="absolute -bottom-16 -start-16 w-56 h-56 rounded-full bg-honey-400/40 blur-3xl"></div>
-
-        <div class="relative flex items-start gap-4">
-            <div class="relative shrink-0">
-                <x-avatar :user="$user" size="xl" :ring="true" class="shadow-xl"/>
-                @if($isMe)
-                    <form method="POST" action="{{ route('profile.avatar') }}" enctype="multipart/form-data" data-no-progress="1">
-                        @csrf
-                        <label class="avatar-cam-badge" title="غيّر الصورة">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
-                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                                <circle cx="12" cy="13" r="4"/>
-                            </svg>
-                            <input type="file" name="avatar" accept="image/jpeg,image/png,image/webp" class="hidden" onchange="this.form.requestSubmit()">
-                        </label>
-                    </form>
-                @endif
-            </div>
-
-            <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2 flex-wrap">
-                    <h1 class="text-xl md:text-2xl font-black text-white truncate">{{ $user->username }}</h1>
-                    @if($isMe)
-                        <a href="{{ route('profile.me', ['tab' => 'settings']) }}#edit-profile"
-                           data-edit-profile
-                           class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-white/20 text-white border border-white/30 hover:bg-white/30 transition">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3">
-                                <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z"/>
-                            </svg>
-                            عدّل
-                        </a>
-                        @push('scripts')
-                        <script>
-                        document.addEventListener('DOMContentLoaded', () => {
-                            // Smooth scroll + highlight the form on click (works even if already on settings tab)
-                            document.querySelectorAll('[data-edit-profile]').forEach((a) => {
-                                a.addEventListener('click', (e) => {
-                                    const target = document.getElementById('edit-profile');
-                                    if (target && new URL(a.href).pathname === window.location.pathname && new URL(a.href).search === window.location.search) {
-                                        e.preventDefault();
-                                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                                        target.classList.add('ring-4','ring-coral-500/40');
-                                        setTimeout(() => target.classList.remove('ring-4','ring-coral-500/40'), 1500);
-                                        target.querySelector('input[name="username"]')?.focus();
-                                    }
-                                });
-                            });
-                            // Auto-focus + highlight if landed via the #edit-profile hash
-                            if (location.hash === '#edit-profile') {
-                                const t = document.getElementById('edit-profile');
-                                if (t) {
-                                    t.classList.add('ring-4','ring-coral-500/40');
-                                    setTimeout(() => t.classList.remove('ring-4','ring-coral-500/40'), 1500);
-                                    t.querySelector('input[name="username"]')?.focus();
-                                }
-                            }
-                        });
-                        </script>
-                        @endpush
-                    @elseif(auth()->check())
-                        @php $isFollowing = auth()->user()->isFollowing($user->id); @endphp
-                        <form method="POST" action="{{ route('users.follow', $user) }}" class="inline">
-                            @csrf
-                            <button class="inline-flex items-center gap-1 text-[11px] font-bold px-3 py-1 rounded-full {{ $isFollowing ? 'bg-white/20 text-white border border-white/30' : 'bg-white text-coral-600' }} hover:scale-105 transition">
-                                {{ $isFollowing ? '✓ متابع' : '+ تابع' }}
-                            </button>
-                        </form>
-                    @endif
-                    @if($user->verification_tier === 'gold')
-                        <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full text-white" style="background: #1D9BF0">
-                            <x-icon name="check" class="w-3 h-3"/> موثّق
-                        </span>
-                    @elseif($user->verification_tier === 'silver')
-                        <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-white/25 text-white border border-white/30">
-                            🥈 فضي
-                        </span>
-                    @elseif($user->verification_tier === 'bronze')
-                        <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-white/20 text-white/90 border border-white/20">
-                            مفعّل
-                        </span>
-                    @else
-                        <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-blush-100 text-blush-500">
-                            غير مفعّل
-                        </span>
-                    @endif
+    {{-- ─── PROFILE HEADER ─── minimal, centered, no colored hero --}}
+    <div class="text-center mb-5 pt-2">
+        {{-- Avatar — small, centered, with subtle ring --}}
+        <div class="relative inline-block">
+            <div class="p-0.5 rounded-full bg-gradient-to-br from-coral-500 to-honey-400 inline-block">
+                <div class="p-0.5 rounded-full bg-cream-100">
+                    <x-avatar :user="$user" size="lg"/>
                 </div>
-                <div class="text-white/85 text-xs md:text-sm mt-1 flex items-center gap-1.5 flex-wrap">
-                    @if($user->isOnline())
-                        <span class="inline-flex items-center gap-1 text-mint-300 font-bold">
-                            <span class="w-2 h-2 rounded-full bg-mint-400 animate-pulse"></span>
-                            أونلاين الآن
-                        </span>
-                    @elseif($user->last_seen_at)
-                        <span class="inline-flex items-center gap-1 text-white/70">
-                            <span class="w-2 h-2 rounded-full bg-white/40"></span>
-                            آخر ظهور {{ $user->last_seen_at->diffForHumans() }}
-                        </span>
-                    @endif
-                    @if($user->zone)
-                        <span class="text-white/40">·</span>
-                        <x-icon name="map-pin" class="w-3 h-3 inline -mt-0.5"/>
-                        {{ $user->zone->name }}
-                    @endif
-                    <span class="text-white/40">·</span>
-                    <span>انضم من {{ $user->created_at->diffForHumans(['parts' => 1, 'short' => true]) }}</span>
-                </div>
-
-                {{-- Top earned badges row (max 5) --}}
-                @if($earnedBadges->isNotEmpty())
-                    <div class="flex items-center gap-1.5 mt-3">
-                        @foreach($earnedBadges->take(5) as $b)
-                            <span title="{{ $b->name }}"
-                                  class="w-9 h-9 rounded-xl bg-white/15 border border-white/25 grid place-items-center text-base shadow-sm">
-                                {{ $b->emoji }}
-                            </span>
-                        @endforeach
-                        @if($earnedBadges->count() > 5)
-                            <span class="text-white/85 text-xs font-bold ms-1">+{{ $earnedBadges->count() - 5 }}</span>
-                        @endif
-                    </div>
-                @endif
             </div>
+            @if($isMe)
+                <form method="POST" action="{{ route('profile.avatar') }}" enctype="multipart/form-data" data-no-progress="1"
+                      class="absolute -bottom-0.5 -end-0.5">
+                    @csrf
+                    <label class="w-7 h-7 rounded-full bg-ink-950 grid place-items-center text-white shadow-md cursor-pointer hover:bg-coral-500 transition" title="غيّر الصورة">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3">
+                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                            <circle cx="12" cy="13" r="4"/>
+                        </svg>
+                        <input type="file" name="avatar" accept="image/jpeg,image/png,image/webp" class="hidden" onchange="this.form.requestSubmit()">
+                    </label>
+                </form>
+            @endif
+        </div>
+
+        {{-- Name + tier --}}
+        <div class="mt-3 flex items-center justify-center gap-2 flex-wrap">
+            <h1 class="text-xl font-black text-ink-950">{{ $user->username }}</h1>
+            @if($user->verification_tier === 'gold')
+                <span class="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full text-white" style="background: #1D9BF0">
+                    <x-icon name="check" class="w-2.5 h-2.5"/> موثّق
+                </span>
+            @elseif($user->verification_tier === 'silver')
+                <span class="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-ink-950/8 text-ink-700">
+                    🥈 فضي
+                </span>
+            @elseif($user->verification_tier === 'bronze')
+                <span class="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-mint-100 text-mint-700">
+                    ✓ مفعّل
+                </span>
+            @endif
+        </div>
+
+        {{-- Single-line meta --}}
+        <div class="text-ink-500 text-xs mt-1.5 flex items-center justify-center gap-1.5 flex-wrap">
+            @if($user->isOnline())
+                <span class="inline-flex items-center gap-1 text-mint-700 font-bold">
+                    <span class="w-1.5 h-1.5 rounded-full bg-mint-500 animate-pulse"></span>
+                    أونلاين
+                </span>
+                <span class="text-ink-300">·</span>
+            @endif
+            @if($user->zone)
+                <span>📍 {{ $user->zone->name }}</span>
+                <span class="text-ink-300">·</span>
+            @endif
+            <span>من {{ $user->created_at->diffForHumans(['parts' => 1, 'short' => true]) }}</span>
+        </div>
+
+        {{-- Inline stats — no card --}}
+        <div class="mt-3 flex items-center justify-center gap-4 text-xs text-ink-500">
+            <span><b class="text-ink-950">{{ number_format($stats['reputation']) }}</b> نقطة</span>
+            <span class="text-ink-300">·</span>
+            <span><b class="text-ink-950">{{ $stats['posts'] }}</b> بوست</span>
+            <span class="text-ink-300">·</span>
+            <span><b class="text-ink-950">{{ $stats['comments'] }}</b> كومنت</span>
+        </div>
+
+        {{-- Action button --}}
+        <div class="mt-4 flex items-center justify-center gap-2">
+            @if($isMe)
+                <a href="{{ route('profile.me', ['tab' => 'settings']) }}"
+                   class="inline-flex items-center gap-1.5 px-5 py-2 rounded-full bg-white ring-1 ring-ink-950/10 text-ink-950 text-xs font-extrabold hover:bg-cream-100 transition">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5">
+                        <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z"/>
+                    </svg>
+                    عدّل البروفايل
+                </a>
+            @elseif(auth()->check())
+                @php $isFollowing = auth()->user()->isFollowing($user->id); @endphp
+                <form method="POST" action="{{ route('users.follow', $user) }}" class="inline">
+                    @csrf
+                    <button class="inline-flex items-center gap-1.5 px-5 py-2 rounded-full text-xs font-extrabold transition
+                                   {{ $isFollowing
+                                      ? 'bg-white ring-1 ring-ink-950/10 text-ink-950 hover:bg-cream-100'
+                                      : 'bg-coral-500 text-white hover:bg-coral-600' }}">
+                        {{ $isFollowing ? '✓ متابع' : '+ تابع' }}
+                    </button>
+                </form>
+                <a href="{{ route('chat.open', $user) }}"
+                   class="inline-flex items-center gap-1.5 px-5 py-2 rounded-full bg-white ring-1 ring-ink-950/10 text-ink-950 text-xs font-extrabold hover:bg-cream-100 transition">
+                    <x-icon name="comment" class="w-3.5 h-3.5"/> رسالة
+                </a>
+            @endif
         </div>
     </div>
 
-    {{-- ─── STATS ─── --}}
-    <div class="grid grid-cols-4 gap-2 mb-4">
-        @php
-            $statTiles = [
-                ['ريبيوتيشن', $stats['reputation'], 'flame'],
-                ['بوست',      $stats['posts'],      'home'],
-                ['كومنت',     $stats['comments'],   'bell'],
-                ['يوم نشاط',  max($stats['days'], 1), 'check'],
-            ];
-        @endphp
-        @foreach($statTiles as [$lbl, $val, $ic])
-            <div class="card-light px-3 py-3 text-center">
-                <div class="text-coral-500 mx-auto mb-1 w-6 h-6 grid place-items-center">
-                    <x-icon :name="$ic" class="w-4 h-4"/>
-                </div>
-                <div class="text-lg md:text-xl font-black text-ink-950 leading-none">{{ $val }}</div>
-                <div class="text-[10px] text-ink-500 mt-1">{{ $lbl }}</div>
-            </div>
-        @endforeach
-    </div>
-
-    {{-- ─── TABS ─── --}}
+    {{-- ─── TABS ─── flat underline-style (no chips, no scrolling pills) --}}
     @php
         $tabUrl = fn ($t) => $isMe
             ? route('profile.me', ['tab' => $t])
             : route('profile.show', ['username' => $user->username, 'tab' => $t]);
+
+        $tabs = [
+            ['key' => 'posts',    'label' => 'بوستات',  'show' => true],
+            ['key' => 'listings', 'label' => 'إعلانات', 'show' => true],
+            ['key' => 'badges',   'label' => 'شارات',   'show' => true],
+        ];
+        if ($isMe) {
+            $tabs[] = ['key' => 'points',       'label' => 'نقاطي', 'show' => true];
+            $tabs[] = ['key' => 'verification', 'label' => 'توثيق', 'show' => true];
+            $tabs[] = ['key' => 'settings',     'label' => 'إعداد', 'show' => true];
+        }
     @endphp
-    <div class="flex items-center gap-2 mb-4 -mx-4 px-4 overflow-x-auto scrollbar-hide">
-        <a href="{{ $tabUrl('posts') }}"
-           class="chip {{ $tab === 'posts' ? 'chip-active' : '' }}">
-            <x-icon name="home" class="w-3.5 h-3.5"/> بوستات
-            <span class="opacity-60 text-xs">{{ $stats['posts'] }}</span>
-        </a>
-        <a href="{{ $tabUrl('listings') }}"
-           class="chip {{ $tab === 'listings' ? 'chip-active' : '' }}">
-            <x-icon name="tag" class="w-3.5 h-3.5"/> إعلانات
-            <span class="opacity-60 text-xs">{{ $stats['listings'] ?? 0 }}</span>
-        </a>
-        <a href="{{ $tabUrl('badges') }}"
-           class="chip {{ $tab === 'badges' ? 'chip-active' : '' }}">
-            🏅 شارات
-            <span class="opacity-60 text-xs">{{ $earnedBadges->count() }}</span>
-        </a>
-        @if($isMe)
-            <a href="{{ route('profile.me', ['tab' => 'verification']) }}"
-               class="chip {{ $tab === 'verification' ? 'chip-active' : '' }}">
-                <x-icon name="check" class="w-3.5 h-3.5"/> توثيق
-            </a>
-            <a href="{{ route('profile.me', ['tab' => 'settings']) }}"
-               class="chip {{ $tab === 'settings' ? 'chip-active' : '' }}">
-                <x-icon name="more" class="w-3.5 h-3.5"/> إعداد
-            </a>
-        @endif
+    <div class="border-b border-ink-950/8 -mx-4 px-4 mb-5">
+        <div class="flex items-center gap-1 overflow-x-auto scrollbar-hide">
+            @foreach($tabs as $t)
+                @php $active = $tab === $t['key']; @endphp
+                <a href="{{ $tabUrl($t['key']) }}"
+                   class="relative px-3 py-2.5 text-xs font-extrabold whitespace-nowrap transition
+                          {{ $active ? 'text-coral-600' : 'text-ink-500 hover:text-ink-950' }}">
+                    {{ $t['label'] }}
+                    @if($active)
+                        <span class="absolute inset-x-2 -bottom-px h-0.5 bg-coral-500 rounded-t-full"></span>
+                    @endif
+                </a>
+            @endforeach
+        </div>
     </div>
 
     {{-- ─── TAB CONTENT ─── --}}
@@ -255,6 +201,191 @@
 
         @if($earnedBadges->isEmpty() && $lockedBadges->isEmpty())
             <div class="card-light p-10 text-center text-ink-500">مفيش شارات لسه.</div>
+        @endif
+
+    @elseif($isMe && $tab === 'points')
+        @php
+            $withdrawableEgp = intdiv($withdrawableBalance ?? 0, \App\Services\WithdrawalService::POINTS_PER_EGP);
+            $reservedPoints  = ($stats['reputation'] ?? 0) - ($availableBalance ?? 0);
+            $heldPoints      = ($availableBalance ?? 0) - ($withdrawableBalance ?? 0);
+        @endphp
+
+        {{-- ─── POINTS DASHBOARD ─── --}}
+        <div class="card-light p-5 mb-4 relative overflow-hidden"
+             style="background: linear-gradient(135deg, #FF7A4D 0%, #FFB85C 100%);">
+            <div class="absolute -top-12 -end-10 w-40 h-40 rounded-full bg-white/20 blur-3xl pointer-events-none"></div>
+            <div class="relative">
+                <div class="text-white/85 text-[11px] font-bold uppercase tracking-wider">رصيد نقاطك</div>
+                <div class="text-white font-black text-4xl leading-none mt-1">{{ number_format($stats['reputation']) }}</div>
+                <div class="text-white/95 text-xs mt-2">
+                    يساوي <b>{{ number_format(intdiv($stats['reputation'], \App\Services\WithdrawalService::POINTS_PER_EGP)) }} ج</b>
+                    · قابل للسحب الآن: <b>{{ number_format($withdrawableEgp) }} ج</b>
+                </div>
+            </div>
+        </div>
+
+        {{-- ─── WITHDRAW FORM ─── --}}
+        <div class="card-light p-5 mb-4">
+            <h3 class="text-sm font-extrabold text-ink-950 mb-1 inline-flex items-center gap-1.5">
+                <span class="text-coral-500">💸</span> اسحب فلوسك
+            </h3>
+            <p class="text-[11px] text-ink-500 mb-4 leading-relaxed">
+                ٢ نقطة = ١ جنيه · حد أدنى {{ \App\Services\WithdrawalService::MIN_EGP }} ج
+                · الموافقة من فريق بنهاوي خلال ٤٨ ساعة.
+            </p>
+
+            @if($withdrawableEgp < \App\Services\WithdrawalService::MIN_EGP)
+                <div class="bg-cream-100 rounded-2xl p-4 text-center">
+                    <div class="text-xs font-bold text-ink-700">
+                        محتاج {{ \App\Services\WithdrawalService::MIN_EGP }} ج على الأقل ({{ \App\Services\WithdrawalService::MIN_EGP * \App\Services\WithdrawalService::POINTS_PER_EGP }} نقطة) عشان تسحب.
+                    </div>
+                    @if($heldPoints > 0)
+                        <div class="text-[10px] text-ink-500 mt-2 leading-relaxed">
+                            {{ number_format($heldPoints) }} نقطة لسه في فترة الانتظار ({{ \App\Services\WithdrawalService::HOLD_DAYS }} يوم من كسبها قبل ما تنفع للسحب).
+                        </div>
+                    @endif
+                </div>
+            @else
+                <form method="POST" action="{{ route('withdrawals.store') }}" class="space-y-3">
+                    @csrf
+                    <div>
+                        <label class="text-[11px] font-bold text-ink-500 mb-1 block">المبلغ (بالجنيه)</label>
+                        <input type="number" name="amount_egp"
+                               min="{{ \App\Services\WithdrawalService::MIN_EGP }}"
+                               max="{{ min(\App\Services\WithdrawalService::MAX_EGP, $withdrawableEgp) }}"
+                               step="50" required
+                               placeholder="مثلاً {{ \App\Services\WithdrawalService::MIN_EGP }}"
+                               class="w-full bg-cream-100 rounded-xl px-4 py-3 text-ink-950 outline-0 border border-ink-950/8 focus:border-coral-500 text-sm font-bold">
+                        @error('amount') <p class="text-blush-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div>
+                        <label class="text-[11px] font-bold text-ink-500 mb-1 block">طريقة الدفع</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            @foreach(\App\Models\Withdrawal::METHODS as $key => $label)
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="method" value="{{ $key }}" class="peer sr-only" {{ $loop->first ? 'checked' : '' }} required>
+                                    <span class="block px-3 py-2.5 rounded-xl bg-cream-100 border border-ink-950/8 text-center text-xs font-bold peer-checked:bg-coral-500 peer-checked:text-white peer-checked:border-coral-500 transition">
+                                        {{ $label }}
+                                    </span>
+                                </label>
+                            @endforeach
+                        </div>
+                        @error('method') <p class="text-blush-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div>
+                        <label class="text-[11px] font-bold text-ink-500 mb-1 block">رقم الموبايل (هيستلم عليه)</label>
+                        <input type="tel" name="payout_handle" inputmode="numeric" maxlength="11" dir="ltr"
+                               value="{{ auth()->user()->phone }}" required
+                               placeholder="01xxxxxxxxx"
+                               class="w-full bg-cream-100 rounded-xl px-4 py-3 text-ink-950 outline-0 border border-ink-950/8 focus:border-coral-500 text-sm font-bold">
+                        @error('payout_handle') <p class="text-blush-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        <p class="text-[10px] text-ink-400 mt-1">لازم رقم مصري ٠١xxxxxxxxx — يفضّل نفس رقم حسابك.</p>
+                    </div>
+
+                    <button type="submit" class="btn-primary w-full justify-center !py-3 text-sm"
+                            data-confirm="تأكيد طلب السحب؟" data-confirm-action="ابعت">
+                        ابعت طلب السحب
+                    </button>
+                </form>
+            @endif
+
+            @if($heldPoints > 0 && $withdrawableEgp >= \App\Services\WithdrawalService::MIN_EGP)
+                <div class="bg-honey-50 ring-1 ring-honey-500/20 rounded-xl px-3 py-2 mt-3 text-[11px] text-honey-700">
+                    ℹ️ {{ number_format($heldPoints) }} نقطة لسه في انتظار ({{ \App\Services\WithdrawalService::HOLD_DAYS }} يوم) قبل ما تنفع للسحب.
+                </div>
+            @endif
+        </div>
+
+        {{-- ─── My withdrawal history ─── --}}
+        @if($withdrawals && $withdrawals->isNotEmpty())
+            <h3 class="text-sm font-extrabold text-ink-950 mb-2 px-1">طلباتي</h3>
+            <div class="card-light divide-y divide-ink-950/5 overflow-hidden mb-4">
+                @foreach($withdrawals as $w)
+                    @php $meta = $w->statusMeta(); @endphp
+                    <div class="flex items-center justify-between gap-3 px-4 py-3">
+                        <div class="min-w-0 flex-1">
+                            <div class="text-sm font-extrabold text-ink-950">
+                                {{ number_format($w->amount_egp) }} ج · {{ $w->methodLabel() }}
+                            </div>
+                            <div class="text-[10px] text-ink-400 mt-0.5" dir="ltr">{{ $w->payout_handle }}</div>
+                            <div class="text-[10px] text-ink-400 mt-0.5">{{ $w->requested_at->diffForHumans() }}</div>
+                            @if($w->admin_note && $w->status === 'rejected')
+                                <div class="text-[10px] text-blush-500 mt-1">سبب الرفض: {{ $w->admin_note }}</div>
+                            @endif
+                        </div>
+                        <div class="text-end shrink-0">
+                            <span class="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-1 rounded-full
+                                         {{ $meta['tone'] === 'honey'  ? 'bg-honey-100 text-honey-700' : '' }}
+                                         {{ $meta['tone'] === 'mint'   ? 'bg-mint-100 text-mint-700' : '' }}
+                                         {{ $meta['tone'] === 'blush'  ? 'bg-blush-100 text-blush-500' : '' }}
+                                         {{ $meta['tone'] === 'ink'    ? 'bg-ink-950/8 text-ink-500' : '' }}">
+                                {{ $meta['label'] }}
+                            </span>
+                            @if($w->status === 'pending')
+                                <form method="POST" action="{{ route('withdrawals.cancel', $w) }}" class="mt-1.5"
+                                      data-confirm="إلغاء الطلب؟" data-confirm-action="ألغى" data-confirm-tone="danger">
+                                    @csrf
+                                    <button type="submit" class="text-[10px] font-bold text-blush-500 hover:underline">ألغي</button>
+                                </form>
+                            @endif
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+
+        {{-- Earning rules cheat-sheet --}}
+        <div class="card-light p-4 mb-4">
+            <h3 class="text-sm font-extrabold text-ink-950 mb-3 inline-flex items-center gap-1.5">
+                <x-icon name="flame" class="w-4 h-4 text-coral-500"/> إزّاي تكسب نقاط
+            </h3>
+            <div class="space-y-2 text-xs">
+                @php
+                    $rules = [
+                        ['اشترك وفعّل OTP',           '+50',  'مرة واحدة'],
+                        ['افتح التطبيق كل يوم',         '+2',   'يومي'],
+                        ['أول تنبيه ليك',              '+25',  'مرة واحدة'],
+                        ['تنبيهك يتأكّد من ٣ ناس',     '+10',  'لحد ٣/يوم'],
+                        ['تقييم محل بـ ريڤيو',          '+5',   '١/محل'],
+                        ['تأكيد ملكية نشاطك بـ OTP',   '+200', '١/نشاط'],
+                        ['الإدارة توثّق نشاطك',         '+100', '١/نشاط'],
+                        ['دعوة صديق فعّل حسابه',       '+30',  'لحد ٥/يوم'],
+                    ];
+                @endphp
+                @foreach($rules as [$label, $delta, $cap])
+                    <div class="flex items-center justify-between gap-2 py-1.5 border-b border-ink-950/5 last:border-0">
+                        <span class="text-ink-700 flex-1 truncate">{{ $label }}</span>
+                        <span class="font-extrabold text-mint-700">{{ $delta }}</span>
+                        <span class="text-[10px] text-ink-400 w-20 text-end">{{ $cap }}</span>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+
+        {{-- Recent transactions log --}}
+        <h3 class="text-sm font-extrabold text-ink-950 mb-2 px-1">آخر العمليات</h3>
+        @if($pointTxs->isEmpty())
+            <div class="card-light p-8 text-center text-ink-500 text-xs">
+                لسه مفيش عمليات. ابدأ بـ تنبيه أو ريڤيو علشان تشوف نقاطك تتحرّك.
+            </div>
+        @else
+            <div class="card-light divide-y divide-ink-950/5 overflow-hidden">
+                @foreach($pointTxs as $tx)
+                    <div class="flex items-center justify-between gap-3 px-4 py-2.5">
+                        <div class="min-w-0 flex-1">
+                            <div class="text-xs font-bold text-ink-950 truncate">
+                                {{ \App\Models\PointTransaction::reasonLabel($tx->reason) }}
+                            </div>
+                            <div class="text-[10px] text-ink-400 mt-0.5">{{ $tx->created_at->diffForHumans() }}</div>
+                        </div>
+                        <div class="font-extrabold text-sm shrink-0 {{ $tx->delta > 0 ? 'text-mint-700' : 'text-blush-500' }}">
+                            {{ $tx->delta > 0 ? '+' : '' }}{{ $tx->delta }}
+                        </div>
+                    </div>
+                @endforeach
+            </div>
         @endif
 
     @elseif($isMe && $tab === 'verification')

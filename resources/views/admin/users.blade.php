@@ -58,7 +58,11 @@
                             </select>
                         </form>
                     </td>
-                    <td>{{ $u->reputation }}</td>
+                    <td>
+                        <a href="{{ route('admin.users.points', $u) }}" class="font-extrabold text-coral-600 hover:underline" title="افتح سجل النقاط">
+                            {{ number_format($u->reputation) }}
+                        </a>
+                    </td>
                     <td>
                         <form method="POST" action="{{ route('admin.users.admin', $u) }}" class="inline"
                               data-confirm="{{ $u->is_admin ? 'إزالة صلاحية الأدمن؟' : 'تعيين كأدمن؟' }}"

@@ -173,6 +173,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/chat/{thread}/report', [\App\Http\Controllers\ChatController::class, 'report'])->name('chat.report')->whereNumber('thread');
 
     Route::get('/me',                 [ProfileController::class, 'show'])->name('profile.me');
+
+    // Withdrawals (user actions)
+    Route::post('/withdrawals',                        [\App\Http\Controllers\WithdrawalController::class, 'store'])->name('withdrawals.store');
+    Route::post('/withdrawals/{withdrawal}/cancel',    [\App\Http\Controllers\WithdrawalController::class, 'cancel'])->name('withdrawals.cancel');
     Route::post('/me/profile',        [ProfileSettingsController::class, 'updateProfile'])->name('profile.update');
     Route::post('/me/password',       [ProfileSettingsController::class, 'changePassword'])->name('profile.password');
     Route::post('/me/prayer-notify',  [ProfileSettingsController::class, 'togglePrayerNotify'])->name('profile.prayer.notify');
@@ -187,6 +191,15 @@ Route::middleware('auth')->group(function () {
         Route::post('/users/{user}/ban',             [AdminController::class, 'userBan'])->name('users.ban');
         Route::post('/users/{user}/tier',            [AdminController::class, 'userTier'])->name('users.tier');
         Route::post('/users/{user}/admin',           [AdminController::class, 'userAdmin'])->name('users.admin');
+        Route::get('/users/{user}/points',           [AdminController::class, 'userPoints'])->name('users.points');
+        Route::post('/users/{user}/points',          [AdminController::class, 'userPointsAward'])->name('users.points.award');
+        Route::post('/point-tx/{tx}/revoke',         [AdminController::class, 'userPointsRevoke'])->name('users.points.revoke');
+
+        // Withdrawals queue
+        Route::get('/withdrawals',                       [AdminController::class, 'withdrawals'])->name('withdrawals');
+        Route::post('/withdrawals/{withdrawal}/approve', [AdminController::class, 'withdrawalApprove'])->name('withdrawals.approve');
+        Route::post('/withdrawals/{withdrawal}/paid',    [AdminController::class, 'withdrawalMarkPaid'])->name('withdrawals.paid');
+        Route::post('/withdrawals/{withdrawal}/reject',  [AdminController::class, 'withdrawalReject'])->name('withdrawals.reject');
 
         Route::get('/posts',                         [AdminController::class, 'posts'])->name('posts');
         Route::post('/posts/{post}/remove',          [AdminController::class, 'postRemove'])->name('posts.remove');

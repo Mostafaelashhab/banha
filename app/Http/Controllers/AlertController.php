@@ -96,6 +96,8 @@ class AlertController extends Controller
         ]);
 
         BadgeService::onAlertSubmit(Auth::user());
+        // First-alert ever bonus — DB UNIQUE blocks re-awards (target = user self)
+        \App\Services\PointsService::award(Auth::user(), 'first_alert');
         \App\Services\AdminNotificationService::onAlertCreated($alert->fresh()->load('zone'));
 
         // Push to zone subscribers (excluding the author)
@@ -164,7 +166,8 @@ class AlertController extends Controller
 
                 $owner = $alert->user;
                 if ($owner) {
-                    $owner->increment('reputation', 10);
+                    // Audited, deduped points award (replaces raw +10 increment)
+                    \App\Services\PointsService::award($owner, 'alert_confirmed', $alert);
                     $owner->refresh();
                     BadgeService::onAlertVerified($owner);
                     BadgeService::onReputationChange($owner);

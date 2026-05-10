@@ -52,6 +52,10 @@
         <x-icon name="flame" class="w-3.5 h-3.5"/>
         {{ $stats['posts_flagged'] }} بوست مُبلَّغ
     </a>
+    @php $pendingWithdrawals = \App\Models\Withdrawal::where('status','pending')->count(); @endphp
+    <a href="{{ route('admin.withdrawals') }}" class="a-pill bg-mint-100 text-mint-700 border border-mint-500/30 px-4 py-2 hover:bg-mint-500 hover:text-white transition">
+        💸 {{ $pendingWithdrawals }} سحب فلوس
+    </a>
     <a href="{{ route('admin.broadcast') }}" class="a-pill bg-mint-100 text-mint-700 border border-mint-500/30 px-4 py-2 hover:bg-mint-500 hover:text-white transition ms-auto">
         <x-icon name="bell" class="w-3.5 h-3.5"/>
         ابعت إشعار

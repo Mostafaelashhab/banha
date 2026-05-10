@@ -185,6 +185,94 @@ class AdminController extends Controller
         return back()->with('flash', $user->is_banned ? 'تم حظر '.$user->username : 'تم رفع الحظر عن '.$user->username);
     }
 
+    /**
+     * Per-user points audit page. Shows the full transaction log + summary
+     * + manual award/penalty form. The route is admin-only via middleware.
+     */
+    public function userPoints(User $user, Request $request)
+    {
+        $txs = \App\Models\PointTransaction::where('user_id', $user->id)
+            ->orderByDesc('id')
+            ->paginate(50);
+
+        // Top counter for quick fraud detection: spikes per reason
+        $byReason = \DB::table('point_transactions')
+            ->where('user_id', $user->id)
+            ->selectRaw('reason, count(*) as c, sum(delta) as s')
+            ->groupBy('reason')
+            ->orderByDesc('c')
+            ->get();
+
+        return view('admin.user-points', compact('user', 'txs', 'byReason'));
+    }
+
+    /**
+     * Admin: hand-award (or penalize) a user. Goes through PointsService so
+     * the audit log captures the admin's IP + the reason note.
+     */
+    public function userPointsAward(User $user, Request $request)
+    {
+        $data = $request->validate([
+            'delta' => ['required', 'integer', 'between:-5000,5000'],
+            'note'  => ['nullable', 'string', 'max:200'],
+        ]);
+        \App\Services\PointsService::award(
+            $user,
+            'admin_award',
+            null,
+            $data['delta'],
+            ['note' => $data['note'] ?? null, 'by_admin' => auth()->id()]
+        );
+        return back()->with('flash', "تم تطبيق {$data['delta']} نقطة على {$user->username}");
+    }
+
+    /** Admin: revoke a single transaction (writes a negating row). */
+    public function userPointsRevoke(\App\Models\PointTransaction $tx, Request $request)
+    {
+        \App\Services\PointsService::revoke($tx, $request->input('note'));
+        return back()->with('flash', 'تم إلغاء العملية.');
+    }
+
+    /** Admin: withdrawal queue. Filter by status (default pending). */
+    public function withdrawals(Request $request)
+    {
+        $status = $request->query('status', 'pending');
+        $withdrawals = \App\Models\Withdrawal::query()
+            ->with('user:id,username,phone,verification_tier,reputation')
+            ->when($status !== 'all', fn ($q) => $q->where('status', $status))
+            ->orderByDesc('id')
+            ->paginate(30);
+
+        $counts = \DB::table('withdrawals')->selectRaw('status, count(*) as c')
+            ->groupBy('status')->pluck('c', 'status')->all();
+
+        return view('admin.withdrawals', compact('withdrawals', 'status', 'counts'));
+    }
+
+    public function withdrawalApprove(\App\Models\Withdrawal $withdrawal, Request $request)
+    {
+        \App\Services\WithdrawalService::approve($withdrawal, auth()->user(), $request->input('note'));
+        return back()->with('flash', '✓ الطلب اتعمد عليه. ابعت الفلوس ثم اضغط "اتدفع".');
+    }
+
+    public function withdrawalMarkPaid(\App\Models\Withdrawal $withdrawal, Request $request)
+    {
+        $data = $request->validate([
+            'reference' => ['required', 'string', 'max:64'],
+        ]);
+        \App\Services\WithdrawalService::markPaid($withdrawal, $data['reference']);
+        return back()->with('flash', '✓ تم تسجيل الدفع.');
+    }
+
+    public function withdrawalReject(\App\Models\Withdrawal $withdrawal, Request $request)
+    {
+        $data = $request->validate([
+            'reason' => ['required', 'string', 'max:200'],
+        ]);
+        \App\Services\WithdrawalService::reject($withdrawal, auth()->user(), $data['reason']);
+        return back()->with('flash', 'تم رفض الطلب.');
+    }
+
     public function userTier(User $user, Request $request)
     {
         $tier = $request->input('tier');
@@ -288,7 +376,14 @@ class AdminController extends Controller
 
     public function businessVerify(Business $business)
     {
-        $business->update(['is_verified' => ! $business->is_verified]);
+        $wasVerified = (bool) $business->is_verified;
+        $business->update(['is_verified' => ! $wasVerified]);
+
+        // Reward the owner only on the upgrade path (not on every toggle)
+        if (! $wasVerified && $business->owner_user_id) {
+            \App\Services\PointsService::award($business->owner, 'business_verified', $business);
+        }
+
         return back()->with('flash', $business->is_verified ? 'النشاط اتوثّق.' : 'تم رفع التوثيق.');
     }
 

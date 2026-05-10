@@ -20,10 +20,16 @@ class VerificationService
     public static function markBronzeOnSignup(User $user): void
     {
         $user->refresh();
+        $wasUnverified = $user->verification_tier === 'none' || $user->verification_tier === null;
         if (! in_array($user->verification_tier, ['silver', 'gold'], true)) {
             $user->verification_tier = 'bronze';
             $user->verified_at       = now();
             $user->save();
+
+            // First-time activation grants the signup bonus (DB UNIQUE blocks re-awards).
+            if ($wasUnverified) {
+                \App\Services\PointsService::award($user->fresh(), 'signup');
+            }
         }
     }
 

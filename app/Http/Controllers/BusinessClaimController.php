@@ -93,6 +93,9 @@ class BusinessClaimController extends Controller
             'owner_user_id' => Auth::id(),
         ]);
 
+        // Reward claim — DB UNIQUE keeps it once-per-business-per-user
+        \App\Services\PointsService::award(Auth::user(), 'business_claimed', $business);
+
         // Bust map cache so any future map updates respect the new owner
         \Illuminate\Support\Facades\Cache::forget('map-data:v4:all');
         \Illuminate\Support\Facades\Cache::forget('map-data:v4:'.$business->category);

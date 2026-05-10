@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Badge;
 use App\Models\Comment;
 use App\Models\Listing;
+use App\Models\PointTransaction;
 use App\Models\Post;
 use App\Models\User;
 use App\Services\VerificationService;
@@ -57,16 +58,38 @@ class ProfileController extends Controller
 
         $silverProgress = $isMe ? VerificationService::silverProgress($user) : null;
 
+        // Points: recent transactions + withdrawals for the points tab (mine only)
+        $pointTxs = ($isMe && $tab === 'points')
+            ? PointTransaction::where('user_id', $user->id)
+                ->orderByDesc('id')
+                ->limit(30)
+                ->get()
+            : collect();
+
+        $withdrawals = ($isMe && $tab === 'points')
+            ? \App\Models\Withdrawal::where('user_id', $user->id)
+                ->orderByDesc('id')
+                ->limit(10)
+                ->get()
+            : collect();
+
+        $availableBalance    = $isMe ? \App\Services\WithdrawalService::availableBalance($user) : null;
+        $withdrawableBalance = $isMe ? \App\Services\WithdrawalService::withdrawableBalance($user) : null;
+
         return view('profile', [
-            'user'           => $user,
-            'isMe'           => $isMe,
-            'tab'            => $tab,
-            'stats'          => $stats,
-            'posts'          => $posts,
-            'listings'       => $listings,
-            'earnedBadges'   => $earnedBadges,
-            'lockedBadges'   => $lockedBadges,
-            'silverProgress' => $silverProgress,
+            'user'                => $user,
+            'isMe'                => $isMe,
+            'tab'                 => $tab,
+            'stats'               => $stats,
+            'posts'               => $posts,
+            'listings'            => $listings,
+            'pointTxs'            => $pointTxs,
+            'withdrawals'         => $withdrawals,
+            'availableBalance'    => $availableBalance,
+            'withdrawableBalance' => $withdrawableBalance,
+            'earnedBadges'        => $earnedBadges,
+            'lockedBadges'        => $lockedBadges,
+            'silverProgress'      => $silverProgress,
         ]);
     }
 }

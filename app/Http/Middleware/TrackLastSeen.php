@@ -24,6 +24,19 @@ class TrackLastSeen
                 // Direct UPDATE so we don't trigger model events / updated_at change
                 DB::table('users')->where('id', $userId)->update(['last_seen_at' => now()]);
                 Cache::put($key, true, 60); // throttle: 60 sec
+
+                // ── Daily login points award ─────────────────────────────
+                // Once-per-calendar-date guard via a Cache key, then a real DB-level
+                // UNIQUE check inside PointsService blocks any race past the cache.
+                $todayKey = 'daily-login-pts:'.$userId.':'.now()->format('Ymd');
+                if (! Cache::has($todayKey)) {
+                    $user = Auth::user();
+                    if ($user) {
+                        \App\Services\PointsService::award($user, 'daily_login');
+                    }
+                    // Cache until end of day + a buffer
+                    Cache::put($todayKey, true, now()->endOfDay()->addHour());
+                }
             }
         }
         return $next($request);

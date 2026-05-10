@@ -375,7 +375,9 @@ html[dir="rtl"] body {
     position: relative;
     border-radius: 22px;
     overflow: hidden;
-    aspect-ratio: 4/5;
+    /* 4:3 landscape — matches how restaurant/storefront photos are usually shot.
+       Avoids cropping wide source images into a tight portrait window. */
+    aspect-ratio: 4/3;
     background: var(--color-cream-200);
     transition: transform .25s;
 }
@@ -383,6 +385,9 @@ html[dir="rtl"] body {
 .feat-card img {
     width: 100%; height: 100%;
     object-fit: cover;
+    /* Bias toward the top of the source image — logos/storefronts usually sit
+       in the upper third of the frame; pure-center crops cut them off. */
+    object-position: center 30%;
 }
 .feat-card-overlay {
     position: absolute;
