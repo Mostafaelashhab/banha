@@ -146,7 +146,7 @@
             @endif
         </div>
 
-        <div class="absolute bottom-0 inset-x-0 p-4">
+        <div class="absolute bottom-0 inset-x-0 p-4 z-30">
             <h1 class="text-2xl md:text-3xl font-black text-white leading-tight drop-shadow-lg">{{ $business->name }}</h1>
             <div class="flex items-center gap-2 mt-1.5 text-white/90 text-sm flex-wrap">
                 @if($business->zone)
