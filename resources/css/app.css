@@ -406,15 +406,14 @@ html[dir="rtl"] body {
     border-radius: 22px;
     overflow: hidden;
     background: #fff;
-    box-shadow: 0 10px 24px -16px rgba(11, 11, 12, .18);
-    transition: transform .2s, box-shadow .2s;
+    border: 1px solid rgba(11, 11, 12, .06);
+    transition: transform .2s;
     text-decoration: none;
     color: inherit;
     isolation: isolate;
 }
 .biz-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 18px 36px -18px rgba(11, 11, 12, .25);
 }
 .biz-card__photo {
     position: relative;
@@ -524,7 +523,7 @@ html[dir="rtl"] body {
     color: var(--color-mint-500, #1FA857);
 }
 
-/* Promoted scroll — cards in a horizontal track */
+/* Promoted scroll — cards in a horizontal track, snap centered */
 .biz-card-scroll {
     display: flex;
     gap: 14px;
@@ -532,14 +531,15 @@ html[dir="rtl"] body {
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
-    padding: 8px 16px 8px;
+    /* Equal side padding allows first & last cards to snap centered */
+    padding: 8px 9% 8px;
     margin-inline: -16px;
 }
 .biz-card-scroll::-webkit-scrollbar { display: none; }
 .biz-card-scroll > .biz-card {
     flex: 0 0 82%;
     max-width: 340px;
-    scroll-snap-align: start;
+    scroll-snap-align: center;
 }
 
 /* Promoted business — round logo + name beneath (story-circle style) */
@@ -560,7 +560,7 @@ html[dir="rtl"] body {
     height: 88px;
     border-radius: 50%;
     overflow: hidden;
-    background: #fff;
+    background: var(--color-cream-200, #FFF1EA);
     display: block;
     box-shadow: 0 8px 22px -12px rgba(11, 11, 12, .25);
     border: 1px solid rgba(11, 11, 12, .06);
@@ -570,10 +570,9 @@ html[dir="rtl"] body {
     inset: 0;
     width: 100%;
     height: 100%;
-    /* contain — logos shouldn't get cropped at the edges */
-    object-fit: contain;
+    /* cover — fill the circle like a round avatar */
+    object-fit: cover;
     object-position: center;
-    padding: 6px;
     transition: transform .35s cubic-bezier(.2,.9,.3,1);
 }
 .promoted-logo:hover .promoted-logo-disc img { transform: scale(1.06); }
@@ -718,6 +717,48 @@ html[dir="rtl"] body {
     transition: transform .15s ease;
 }
 .promo-card-cta:hover { transform: scale(1.05); }
+
+/* Promo banner slider — 4 themed banners, one full-width per snap */
+.promo-slider {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 4px 0 12px;
+}
+.promo-slider::-webkit-scrollbar { display: none; }
+.promo-slider > .promo-card {
+    flex: 0 0 100%;
+    max-width: none;
+    scroll-snap-align: center;
+    min-height: 170px;
+}
+
+/* Banner variants — all within the warm coral/honey brand family */
+.promo-card--map {
+    /* Primary coral — vibrant brand */
+    background: linear-gradient(135deg, #FF7A4D 0%, #FF9F2D 60%, #FFB85C 100%);
+}
+.promo-card--menu {
+    /* Burnt orange — deeper, richer */
+    background: linear-gradient(135deg, #C2410C 0%, #EA580C 55%, #F97316 100%);
+}
+.promo-card--add {
+    /* Golden honey — warm amber */
+    background: linear-gradient(135deg, #B45309 0%, #D97706 55%, #F59E0B 100%);
+}
+.promo-card--ad {
+    /* Sunset — coral pushed toward red */
+    background: linear-gradient(135deg, #DC2626 0%, #F97316 55%, #FB923C 100%);
+}
+
+/* Per-variant CTA pill ink color (white pill on every variant) */
+.promo-card--map  .promo-card-cta { color: #C2410C; }
+.promo-card--menu .promo-card-cta { color: #7C2D12; }
+.promo-card--add  .promo-card-cta { color: #92400E; }
+.promo-card--ad   .promo-card-cta { color: #991B1B; }
 
 .reveal { opacity: 0; transform: translateY(24px); transition: opacity .8s ease, transform .8s ease; }
 .reveal.in { opacity: 1; transform: none; }

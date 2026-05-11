@@ -34,8 +34,6 @@
         ->whereIn('category', $homeCatKeys)
         ->selectRaw('category, count(*) as c')->groupBy('category')->pluck('c', 'category')->all();
 
-    $totalOnMap = Business::where('is_active', true)
-        ->whereNotNull('lat')->whereNotNull('lng')->count();
 @endphp
 
 @section('content')
@@ -66,70 +64,43 @@
         </a>
     </div>
 
-    {{-- ───── Promo card — hero with CTA + decorative art ────────────── --}}
-    <a href="{{ route('directory.map') }}" class="promo-card mb-7 rise rise-2 group">
-        <span class="promo-card-glow"></span>
-
-        {{-- Decorative city-map illustration (SVG, scales with the card) --}}
-        <svg class="promo-card-art" viewBox="0 0 160 160" fill="none" aria-hidden="true">
-            <defs>
-                <linearGradient id="promo-pin-grad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0" stop-color="#fff" stop-opacity=".95"/>
-                    <stop offset="1" stop-color="#fff" stop-opacity=".6"/>
-                </linearGradient>
-            </defs>
-            {{-- soft sun/halo --}}
-            <circle cx="120" cy="42" r="32" fill="rgba(255,255,255,.18)"/>
-            <circle cx="120" cy="42" r="20" fill="rgba(255,255,255,.28)"/>
-            {{-- skyline silhouettes --}}
-            <g fill="rgba(255,255,255,.85)" stroke="rgba(11,11,12,.05)">
-                <rect x="22"  y="78"  width="22" height="64" rx="3"/>
-                <rect x="48"  y="62"  width="26" height="80" rx="3"/>
-                <rect x="78"  y="86"  width="18" height="56" rx="3"/>
-                <rect x="100" y="70"  width="22" height="72" rx="3"/>
-                <rect x="126" y="92"  width="22" height="50" rx="3"/>
-            </g>
-            {{-- windows --}}
-            <g fill="#FF7A4D" opacity=".75">
-                <rect x="28"  y="86"  width="3" height="3"/>
-                <rect x="35"  y="86"  width="3" height="3"/>
-                <rect x="28"  y="96"  width="3" height="3"/>
-                <rect x="35"  y="96"  width="3" height="3"/>
-                <rect x="55"  y="72"  width="3" height="3"/>
-                <rect x="62"  y="72"  width="3" height="3"/>
-                <rect x="55"  y="82"  width="3" height="3"/>
-                <rect x="62"  y="82"  width="3" height="3"/>
-                <rect x="55"  y="92"  width="3" height="3"/>
-                <rect x="62"  y="92"  width="3" height="3"/>
-                <rect x="106" y="80"  width="3" height="3"/>
-                <rect x="113" y="80"  width="3" height="3"/>
-                <rect x="106" y="92"  width="3" height="3"/>
-                <rect x="113" y="92"  width="3" height="3"/>
-            </g>
-            {{-- floating map pin --}}
-            <g transform="translate(70 38)">
-                <path d="M0 22c-12-9-18-17-18-26a18 18 0 0 1 36 0c0 9-6 17-18 26Z" fill="url(#promo-pin-grad)" stroke="rgba(11,11,12,.08)"/>
-                <circle r="6" cx="0" cy="-5" fill="#FF7A4D"/>
-            </g>
-        </svg>
-
-        <div class="relative max-w-[60%]">
-            <div class="text-[10px] font-extrabold tracking-wider uppercase opacity-80 mb-1.5">جديد · خريطة بنها</div>
-            <div class="font-black text-lg leading-tight">
-                لاقي أحسن أماكن بنها قربك
-            </div>
-            <p class="text-white/90 text-[12px] mt-1 leading-snug font-bold">
-                مطاعم، صيدليات، خدمات — كلهم على خريطة واحدة.
-            </p>
+    {{-- ───── Promo banners — 4-card slider (map, QR menu, add biz, post ad) ──── --}}
+    <div class="mb-7 rise rise-2">
+        <div class="promo-slider" data-auto-rotate="4500">
+            @include('partials.promo-banner', [
+                'href'    => route('directory.map'),
+                'variant' => 'map',
+                'tag'     => 'جديد · خريطة بنها',
+                'title'   => 'لاقي أحسن أماكن بنها قربك',
+                'desc'    => 'مطاعم، صيدليات، خدمات — كلهم على خريطة واحدة.',
+                'cta'     => 'افتح الخريطة',
+            ])
+            @include('partials.promo-banner', [
+                'href'    => Auth::check() ? route('directory.mine') : route('signup'),
+                'variant' => 'menu',
+                'tag'     => 'جديد · منيو رقمي',
+                'title'   => 'منيو نشاطك على QR',
+                'desc'    => 'حدّث الأسعار في ثانية، الضيف يقرا المنيو من موبايله.',
+                'cta'     => 'جرّب QR Menu',
+            ])
+            @include('partials.promo-banner', [
+                'href'    => Auth::check() ? route('directory.create') : route('signup'),
+                'variant' => 'add',
+                'tag'     => 'مجاناً · أضف نشاطك',
+                'title'   => 'نشاطك في بنهاوي',
+                'desc'    => 'ضيف مكانك يطلع للناس اللي بتدوّر في بنها.',
+                'cta'     => 'ضيف نشاطك',
+            ])
+            @include('partials.promo-banner', [
+                'href'    => Auth::check() ? route('marketplace.create') : route('signup'),
+                'variant' => 'ad',
+                'tag'     => 'سوق · إعلانات',
+                'title'   => 'بيع، اشتري، إعلن',
+                'desc'    => 'انشر إعلانك في سوق بنها ووصلّه لآلاف الزوار.',
+                'cta'     => 'انشر إعلان',
+            ])
         </div>
-
-        <span class="promo-card-cta">
-            افتح الخريطة
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="w-3.5 h-3.5">
-                <polyline points="15 18 9 12 15 6"/>
-            </svg>
-        </span>
-    </a>
+    </div>
 
     {{-- ───── Categories — circle icons row ──────────────────────────── --}}
     <section class="mb-7 rise rise-3">
@@ -232,48 +203,96 @@
         </section>
     @endif
 
-    {{-- ───── Map preview card ─────────────────────────────────────────── --}}
-    <section class="mb-7 rise rise-5">
-        <a href="{{ route('directory.map') }}"
-           class="relative block overflow-hidden rounded-3xl ring-1 ring-ink-950/8 hover:ring-mint-500/40 hover:shadow-xl transition group"
-           style="background: linear-gradient(135deg, #1FA857 0%, #10B981 100%);">
-
-            {{-- Map tile background, blurred & dimmed so the card stays calm --}}
-            <div class="absolute inset-0 opacity-30 group-hover:opacity-40 transition"
-                 style="background-image: url('https://tile.openstreetmap.org/13/4731/3294.png');
-                        background-size: cover;
-                        background-position: center;
-                        filter: saturate(.5) hue-rotate(110deg);"></div>
-            <div class="absolute inset-0 bg-gradient-to-tr from-mint-700/80 via-mint-600/55 to-transparent"></div>
-
-            {{-- Decorative pins drifting --}}
-            <div class="hero-blob absolute top-6 end-12 w-3 h-3 rounded-full bg-white/90 shadow-lg"></div>
-            <div class="hero-blob delay absolute bottom-8 start-16 w-2.5 h-2.5 rounded-full bg-white/90 shadow-lg"></div>
-            <div class="hero-blob absolute top-1/2 end-1/3 w-2 h-2 rounded-full bg-white/80 shadow"></div>
-
-            <div class="relative p-5 min-h-[140px] flex items-center gap-4">
-                <span class="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 grid place-items-center text-white shrink-0 shadow-lg">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
-                        <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
-                        <line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/>
-                    </svg>
-                </span>
-                <div class="flex-1 min-w-0">
-                    <div class="inline-flex items-center gap-1 bg-white/20 backdrop-blur-sm text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full mb-2">
-                        <span class="w-1.5 h-1.5 rounded-full bg-white pulse-soft"></span>
-                        خريطة حية
-                    </div>
-                    <div class="text-white font-black text-lg leading-tight">شوف بنها على الخريطة</div>
-                    <div class="text-white/90 text-xs mt-1 font-bold">
-                        {{ number_format($totalOnMap) }} نشاط بمكانه على الخريطة
-                    </div>
-                </div>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="w-6 h-6 text-white shrink-0 group-hover:-translate-x-1 transition">
-                    <polyline points="15 18 9 12 15 6"/>
-                </svg>
-            </div>
-        </a>
-    </section>
-
 </div>
+
+@push('scripts')
+<script>
+    (() => {
+        const slider = document.querySelector('.promo-slider[data-auto-rotate]');
+        if (!slider) return;
+
+        const cards = Array.from(slider.children).filter(el => el.classList.contains('promo-card'));
+        if (cards.length < 2) return;
+
+        const interval    = parseInt(slider.dataset.autoRotate, 10) || 4500;
+        const slideMs     = 700;
+        const resumeAfter = 8000;
+        let   idx       = 0;
+        let   timer     = null;
+        let   pauseT    = null;
+        let   animating = false;
+
+        // ease-in-out cubic
+        const ease = t => t < .5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2;
+
+        const targetLeftFor = (card) =>
+            card.offsetLeft - (slider.clientWidth - card.offsetWidth) / 2;
+
+        // Smooth scroll with snap temporarily disabled so animation isn't interrupted
+        const slideTo = (i) => {
+            idx = (i + cards.length) % cards.length;
+            const target = cards[idx];
+            const from   = slider.scrollLeft;
+            const to     = targetLeftFor(target);
+            if (Math.abs(to - from) < 1) return;
+
+            animating = true;
+            const prevSnap = slider.style.scrollSnapType;
+            slider.style.scrollSnapType = 'none';
+
+            const startTime = performance.now();
+            const step = (now) => {
+                const t = Math.min((now - startTime) / slideMs, 1);
+                slider.scrollLeft = from + (to - from) * ease(t);
+                if (t < 1) {
+                    requestAnimationFrame(step);
+                } else {
+                    slider.style.scrollSnapType = prevSnap;
+                    animating = false;
+                }
+            };
+            requestAnimationFrame(step);
+        };
+
+        const start = () => {
+            stop();
+            timer = setInterval(() => { if (!animating) slideTo(idx + 1); }, interval);
+        };
+        const stop = () => { if (timer) { clearInterval(timer); timer = null; } };
+
+        const pauseAndResume = () => {
+            stop();
+            clearTimeout(pauseT);
+            pauseT = setTimeout(start, resumeAfter);
+        };
+
+        slider.addEventListener('pointerdown', pauseAndResume);
+        slider.addEventListener('touchstart',  pauseAndResume, { passive: true });
+        slider.addEventListener('wheel',       pauseAndResume, { passive: true });
+
+        // Sync idx when user scrolls manually
+        let scrollT;
+        slider.addEventListener('scroll', () => {
+            if (animating) return;
+            clearTimeout(scrollT);
+            scrollT = setTimeout(() => {
+                const center = slider.scrollLeft + slider.clientWidth / 2;
+                let best = 0, bestDist = Infinity;
+                cards.forEach((c, i) => {
+                    const cCenter = c.offsetLeft + c.offsetWidth / 2;
+                    const d = Math.abs(center - cCenter);
+                    if (d < bestDist) { bestDist = d; best = i; }
+                });
+                idx = best;
+            }, 120);
+        }, { passive: true });
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) stop(); else start();
+        });
+
+        start();
+    })();
+</script>
+@endpush
 @endsection
