@@ -224,57 +224,11 @@
                 <a href="{{ route('directory.index') }}" class="text-xs font-bold text-coral-600">شوف الكل ←</a>
             </div>
 
-            {{-- First 3 as a horizontal carousel (visual hook), the rest as compact rows --}}
-            @if($featured->count() > 0)
-                <div class="feat-scroll -mx-4 px-4 mb-3">
-                    @foreach($featured->take(6) as $b)
-                        @php $cm = $b->categoryMeta(); $rating = (float) ($b->rating_avg ?? 0); @endphp
-                        <a href="{{ route('directory.show', $b) }}" class="feat-card shrink-0 group">
-                            <img src="{{ $b->photo_url }}" alt="{{ $b->name }}" loading="lazy"
-                                 onerror="this.style.display='none'"
-                                 class="group-hover:scale-105 transition duration-500">
-                            <div class="feat-card-overlay"></div>
-
-                            @if($b->is_verified)
-                                <div class="absolute top-3 start-3">
-                                    <span class="inline-flex items-center gap-1 bg-mint-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-sm">
-                                        <x-icon name="check" class="w-2.5 h-2.5"/> موثّق
-                                    </span>
-                                </div>
-                            @endif
-
-                            @if($rating >= 4)
-                                <div class="absolute top-3 end-3 inline-flex items-center gap-0.5 bg-white/95 backdrop-blur-sm text-ink-950 text-[11px] font-extrabold px-2 py-1 rounded-full shadow-sm">
-                                    <svg viewBox="0 0 24 24" fill="#FF7A4D" class="w-3 h-3"><polygon points="12 2 15 9 22 9.5 17 14.5 18.5 22 12 18 5.5 22 7 14.5 2 9.5 9 9"/></svg>
-                                    {{ number_format($rating, 1) }}
-                                </div>
-                            @endif
-
-                            <div class="feat-card-body">
-                                <div class="inline-flex items-center gap-1 bg-white/15 backdrop-blur-sm border border-white/25 rounded-full px-2 py-0.5 text-[10px] font-extrabold mb-1.5">
-                                    <x-icon :name="$cm['icon'] ?? 'bag'" class="w-2.5 h-2.5"/>
-                                    {{ $cm['label'] ?? '' }}
-                                </div>
-                                <div class="font-black text-base leading-tight line-clamp-2 drop-shadow">{{ $b->name }}</div>
-                                @if($b->zone)
-                                    <div class="text-white/85 text-[11px] mt-1 inline-flex items-center gap-1">
-                                        <x-icon name="map-pin" class="w-3 h-3"/>
-                                        {{ $b->zone->name }}
-                                    </div>
-                                @endif
-                            </div>
-                        </a>
-                    @endforeach
-                </div>
-
-                @if($featured->count() > 6)
-                    <div class="space-y-2.5">
-                        @foreach($featured->slice(6, 6) as $b)
-                            @include('directory.partials.business-row', ['business' => $b])
-                        @endforeach
-                    </div>
-                @endif
-            @endif
+            <div class="biz-card-scroll">
+                @foreach($featured as $b)
+                    @include('directory.partials.biz-card', ['business' => $b])
+                @endforeach
+            </div>
         </section>
     @endif
 

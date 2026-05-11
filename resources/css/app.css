@@ -191,24 +191,22 @@ html[dir="rtl"] body {
         0 0 0 2px rgba(31, 168, 87, .22);
 }
 
-/* Verified checkmark badge (Twitter-like) */
+/* Verified scalloped badge — single SVG with check inside */
 .v-badge {
     display: inline-grid;
     place-items: center;
     width: 16px; height: 16px;
-    border-radius: 999px;
-    color: #fff;
     flex-shrink: 0;
+    filter: drop-shadow(0 1px 2px rgba(11, 11, 12, .15));
 }
-.v-badge-silver {
-    background: linear-gradient(135deg, #9CA3AF, #D1D5DB);
-    box-shadow: 0 1px 3px rgba(156, 163, 175, .4);
+.v-badge svg {
+    width: 100%;
+    height: 100%;
+    display: block;
 }
-.v-badge-gold {
-    background: linear-gradient(135deg, #1D9BF0, #4DBFFF);
-    box-shadow: 0 2px 6px rgba(29, 155, 240, .45);
-}
-.v-badge svg { width: 10px; height: 10px; }
+.v-badge-default { color: #1FA857; }       /* mint — default tier */
+.v-badge-silver  { color: #9CA3AF; }       /* gray — silver tier */
+.v-badge-gold    { color: #1D9BF0; }       /* blue — top tier (X-style) */
 
 /* (no animation — keep it subtle) */
 
@@ -401,6 +399,149 @@ html[dir="rtl"] body {
     color: #fff;
 }
 
+/* Business card — photo on top, info below, stats row (Figma-style) */
+.biz-card {
+    position: relative;
+    display: block;
+    border-radius: 22px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 10px 24px -16px rgba(11, 11, 12, .18);
+    transition: transform .2s, box-shadow .2s;
+    text-decoration: none;
+    color: inherit;
+    isolation: isolate;
+}
+.biz-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 18px 36px -18px rgba(11, 11, 12, .25);
+}
+.biz-card__photo {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    background: var(--color-cream-200, #FFF1EA);
+    overflow: hidden;
+}
+.biz-card__photo img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    transition: transform .35s cubic-bezier(.2,.9,.3,1);
+}
+.biz-card:hover .biz-card__photo img { transform: scale(1.05); }
+.biz-card__photo-fallback {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    font-weight: 900;
+    font-size: 64px;
+}
+.biz-card__verified {
+    position: absolute;
+    top: 12px;
+    inset-inline-end: 12px;
+    z-index: 2;
+    width: 26px;
+    height: 26px;
+    display: inline-grid;
+    place-items: center;
+    color: #1FA857;
+    filter: drop-shadow(0 2px 4px rgba(11, 11, 12, .35));
+}
+.biz-card__verified svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+/* White inner backdrop so the scalloped badge reads cleanly over any photo */
+.biz-card__verified::before {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    border-radius: 50%;
+    background: #fff;
+    z-index: -1;
+}
+.biz-card__info {
+    padding: 14px 16px 16px;
+}
+.biz-card__title {
+    font-weight: 900;
+    font-size: 17px;
+    color: #0B0B0C;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.biz-card__subtitle {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--color-coral-500, #FF7A4D);
+    margin-top: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.biz-card__stats {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+.biz-card__stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    font-weight: 800;
+    color: #0B0B0C;
+}
+.biz-card__stat-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    background: var(--color-cream-200, #FFF1EA);
+    color: var(--color-coral-500, #FF7A4D);
+    flex-shrink: 0;
+}
+.biz-card__stat-icon svg { width: 14px; height: 14px; }
+.biz-card__stat--rating .biz-card__stat-icon {
+    background: rgba(255, 184, 0, .15);
+    color: #FFB800;
+}
+.biz-card__stat--zone .biz-card__stat-icon {
+    background: rgba(31, 168, 87, .12);
+    color: var(--color-mint-500, #1FA857);
+}
+
+/* Promoted scroll — cards in a horizontal track */
+.biz-card-scroll {
+    display: flex;
+    gap: 14px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 8px 16px 8px;
+    margin-inline: -16px;
+}
+.biz-card-scroll::-webkit-scrollbar { display: none; }
+.biz-card-scroll > .biz-card {
+    flex: 0 0 82%;
+    max-width: 340px;
+    scroll-snap-align: start;
+}
+
 /* Promoted business — round logo + name beneath (story-circle style) */
 .promoted-logo {
     display: flex;
@@ -419,16 +560,20 @@ html[dir="rtl"] body {
     height: 88px;
     border-radius: 50%;
     overflow: hidden;
-    background: var(--color-cream-200, #FFF1EA);
+    background: #fff;
     display: block;
     box-shadow: 0 8px 22px -12px rgba(11, 11, 12, .25);
     border: 1px solid rgba(11, 11, 12, .06);
 }
 .promoted-logo-disc img {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    /* contain — logos shouldn't get cropped at the edges */
+    object-fit: contain;
     object-position: center;
+    padding: 6px;
     transition: transform .35s cubic-bezier(.2,.9,.3,1);
 }
 .promoted-logo:hover .promoted-logo-disc img { transform: scale(1.06); }
@@ -510,10 +655,11 @@ html[dir="rtl"] body {
     border-radius: 50%;
     display: grid;
     place-items: center;
-    background: #FFF1EA;
+    background: #fff;
     color: #FF7A4D;
+    border: 1px solid rgba(11, 11, 12, .06);
     transition: transform .25s cubic-bezier(.2,.9,.3,1), box-shadow .25s;
-    box-shadow: 0 6px 16px -10px rgba(255, 122, 77, .35);
+    box-shadow: 0 6px 16px -10px rgba(11, 11, 12, .12);
 }
 .cat-circle:hover .cat-circle-disc {
     transform: scale(1.06) rotate(-2deg);
