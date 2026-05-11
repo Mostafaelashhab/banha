@@ -128,8 +128,9 @@ Route::middleware('auth')->group(function () {
     // Bookmarks + Notifications inbox
     Route::post('/bookmark',           [\App\Http\Controllers\BookmarkController::class, 'toggle'])->name('bookmark.toggle');
     Route::get('/saved',               [\App\Http\Controllers\BookmarkController::class, 'index'])->name('bookmark.index');
-    Route::get('/notifications',       [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
-    Route::get('/notifications/count', [\App\Http\Controllers\NotificationController::class, 'unreadCount'])->name('notifications.count');
+    Route::get('/notifications',                   [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/count',             [\App\Http\Controllers\NotificationController::class, 'unreadCount'])->name('notifications.count');
+    Route::delete('/notifications/{notification}', [\App\Http\Controllers\NotificationController::class, 'destroy'])->name('notifications.destroy');
 
     // Polls
     Route::post('/polls/{poll}/vote', [\App\Http\Controllers\PollController::class, 'vote'])->name('polls.vote');

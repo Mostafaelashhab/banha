@@ -432,14 +432,39 @@ html[dir="rtl"] body {
     transition: transform .35s cubic-bezier(.2,.9,.3,1);
 }
 .biz-card:hover .biz-card__photo img { transform: scale(1.05); }
-.biz-card__photo-fallback {
+/* Category default — gradient + big icon, behind the photo so it shows when photo
+   is missing or fails to load (image is rendered on top with onerror=hide). */
+.biz-card__photo-default {
     position: absolute;
     inset: 0;
     display: grid;
     place-items: center;
-    color: #fff;
-    font-weight: 900;
-    font-size: 64px;
+    overflow: hidden;
+}
+.biz-card__photo-default::before,
+.biz-card__photo-default::after {
+    /* Soft white blobs for some visual interest beyond a flat gradient */
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .18);
+    filter: blur(20px);
+    pointer-events: none;
+}
+.biz-card__photo-default::before {
+    width: 60%; aspect-ratio: 1;
+    top: -20%; inset-inline-end: -15%;
+}
+.biz-card__photo-default::after {
+    width: 50%; aspect-ratio: 1;
+    bottom: -25%; inset-inline-start: -10%;
+}
+.biz-card__photo-default-icon {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    color: rgba(255, 255, 255, .95);
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, .15));
 }
 .biz-card__verified {
     position: absolute;
@@ -470,9 +495,46 @@ html[dir="rtl"] body {
 .biz-card__info {
     padding: 14px 16px 16px;
 }
+.biz-card__head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.biz-card__avatar {
+    position: relative;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: #fff;
+    border: 2px solid #fff;
+    box-shadow: 0 4px 10px -4px rgba(11, 11, 12, .15);
+}
+.biz-card__avatar img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+.biz-card__avatar-fallback {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    font-weight: 900;
+    font-size: 18px;
+}
+.biz-card__head-text {
+    flex: 1;
+    min-width: 0;
+}
 .biz-card__title {
     font-weight: 900;
-    font-size: 17px;
+    font-size: 16px;
     color: #0B0B0C;
     line-height: 1.2;
     overflow: hidden;
@@ -483,7 +545,7 @@ html[dir="rtl"] body {
     font-size: 12px;
     font-weight: 700;
     color: var(--color-coral-500, #FF7A4D);
-    margin-top: 4px;
+    margin-top: 2px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -717,6 +779,38 @@ html[dir="rtl"] body {
     transition: transform .15s ease;
 }
 .promo-card-cta:hover { transform: scale(1.05); }
+
+/* Swipe-to-delete row (notifications) */
+.notif-swipe {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    touch-action: pan-y; /* let vertical scrolling pass through; horizontal handled in JS */
+}
+.notif-swipe-bg {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 22px;
+    color: #fff;
+    font-weight: 800;
+    font-size: 13px;
+    gap: 8px;
+    background: linear-gradient(90deg, #DC2626 0%, #EF4444 100%);
+}
+.notif-swipe-bg::before {
+    /* Mirror the trash+label so a label shows whichever side the user swipes from */
+    content: 'حذف';
+}
+.notif-swipe-content {
+    position: relative;
+    z-index: 1;
+    background: #fff;
+    transition: transform .25s cubic-bezier(.2, .9, .3, 1);
+    will-change: transform;
+}
 
 /* Promo banner slider — 4 themed banners, one full-width per snap */
 .promo-slider {

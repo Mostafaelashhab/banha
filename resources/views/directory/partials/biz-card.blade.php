@@ -2,33 +2,51 @@
     /** @var \App\Models\Business $business */
     $cm       = $business->categoryMeta();
     $color    = $cm['color'] ?? '#FF7A4D';
+    $icon     = $cm['icon'] ?? 'bag';
     $rating   = (float) ($business->rating_avg ?? 0);
     $ratings  = (int) ($business->ratings_count ?? 0);
     $subtitle = $business->displayType() ?: ($cm['label'] ?? '');
+
+    // Cover image — try photo_url, then first uploaded photo, then null (use category default)
+    $cover = $business->photo_url
+        ?: optional($business->relationLoaded('photos') ? $business->photos->first() : null)->url;
 @endphp
 <a href="{{ route('directory.show', $business) }}" class="biz-card group">
     <div class="biz-card__photo">
-        <span class="biz-card__photo-fallback"
-              style="background: linear-gradient(135deg, {{ $color }}, {{ $color }}cc);">
-            {{ mb_substr($business->name, 0, 1) }}
-        </span>
-        @if($business->photo_url)
-            <img src="{{ $business->photo_url }}" alt="{{ $business->name }}" loading="lazy"
+        {{-- Category default — a gradient + big icon, used when no photo exists or one fails to load --}}
+        <div class="biz-card__photo-default"
+             style="background: linear-gradient(135deg, {{ $color }}, {{ $color }}aa);">
+            <x-icon :name="$icon" class="biz-card__photo-default-icon"/>
+        </div>
+        @if($cover)
+            <img src="{{ $cover }}" alt="{{ $business->name }}" loading="lazy"
                  onerror="this.style.display='none'">
         @endif
 
         @if($business->is_verified)
-            <span class="biz-card__verified" title="موثّق" aria-label="موثّق">
-                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                    <path d="M22.25 12c0-1.43-.88-2.67-2.19-3.34.46-1.39.2-2.9-.81-3.91s-2.52-1.27-3.91-.81c-.66-1.31-1.91-2.19-3.34-2.19s-2.67.88-3.33 2.19c-1.4-.46-2.91-.2-3.92.81s-1.26 2.52-.8 3.91c-1.31.67-2.19 1.91-2.19 3.34s.88 2.67 2.19 3.34c-.46 1.39-.21 2.9.8 3.91s2.52 1.26 3.91.81c.67 1.31 1.91 2.19 3.34 2.19s2.68-.88 3.34-2.19c1.39.45 2.9.2 3.91-.81s1.27-2.52.81-3.91c1.31-.67 2.19-1.91 2.19-3.34zm-11.71 4.2L6.8 12.46l1.41-1.42 2.26 2.26 4.8-5.23 1.47 1.36-6.2 6.77z"/>
-                </svg>
+            <span class="biz-card__verified">
+                <x-icon name="check" class="w-2.5 h-2.5"/> موثّق
             </span>
         @endif
     </div>
 
     <div class="biz-card__info">
-        <div class="biz-card__title">{{ $business->name }}</div>
-        <div class="biz-card__subtitle">{{ $subtitle }}</div>
+        <div class="biz-card__head">
+            <span class="biz-card__avatar">
+                <span class="biz-card__avatar-fallback"
+                      style="background: linear-gradient(135deg, {{ $color }}, {{ $color }}cc);">
+                    {{ mb_substr($business->name, 0, 1) }}
+                </span>
+                @if($cover)
+                    <img src="{{ $cover }}" alt="" loading="lazy"
+                         onerror="this.style.display='none'">
+                @endif
+            </span>
+            <div class="biz-card__head-text">
+                <div class="biz-card__title">{{ $business->name }}</div>
+                <div class="biz-card__subtitle">{{ $subtitle }}</div>
+            </div>
+        </div>
 
         <div class="biz-card__stats">
             <span class="biz-card__stat biz-card__stat--rating">

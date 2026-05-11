@@ -7,20 +7,18 @@
     $promoted = Business::query()
         ->where('is_active', true)
         ->where('promoted_until', '>', now())
-        ->with('zone:id,name')
+        ->with(['zone:id,name', 'photos:id,business_id,url'])
         ->orderByDesc('promoted_until')
         ->limit(6)
         ->get();
 
-    // Top rated — verified or 4+ stars, with a real photo
+    // Top rated — verified or 4+ stars (photo not required; we fall back per category)
     $featured = Business::query()
         ->where('is_active', true)
-        ->whereNotNull('photo_url')
-        ->where('photo_url', '!=', '')
         ->where(function ($q) {
             $q->where('is_verified', true)->orWhere('rating_avg', '>=', 4);
         })
-        ->with('zone:id,name')
+        ->with(['zone:id,name', 'photos:id,business_id,url'])
         ->orderByDesc('is_verified')
         ->orderByDesc('rating_avg')
         ->orderByDesc('views_count')
