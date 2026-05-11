@@ -7,9 +7,12 @@
     $ratings  = (int) ($business->ratings_count ?? 0);
     $subtitle = $business->displayType() ?: ($cm['label'] ?? '');
 
-    // Cover — pick from the gallery (photos relation). If none → category default.
+    // Cover — gallery photo first, then the main photo_url as a fallback.
+    // If neither, the category gradient default shows.
     // The small avatar below uses photo_url separately (the business logo).
-    $cover = optional($business->relationLoaded('photos') ? $business->photos->first() : null)->url;
+    $cover = optional($business->relationLoaded('photos') ? $business->photos->first() : null)->url
+           ?? $business->photo_url
+           ?? null;
 @endphp
 <a href="{{ route('directory.show', $business) }}" class="biz-card group">
     <div class="biz-card__photo">

@@ -240,31 +240,45 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-coral-500">
                             <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
                         </svg>
-                        صورة الكارت
+                        كارد الـ home (شكله للناس)
                     </span>
-                    @if($business->photo_url)
-                        <span class="text-[10px] font-bold text-mint-700 bg-mint-100 px-2 py-0.5 rounded-full">معيّنة</span>
+                    @php
+                        $coverImage = $business->photos->first()->url ?? $business->photo_url ?? null;
+                    @endphp
+                    @if($coverImage)
+                        <span class="text-[10px] font-bold text-mint-700 bg-mint-100 px-2 py-0.5 rounded-full">صورة معيّنة</span>
                     @else
                         <span class="text-[10px] font-bold text-ink-400">فولباك (شوكة الكاتيجوري)</span>
                     @endif
                 </div>
 
-                {{-- Preview --}}
-                <div class="flex items-center gap-3 mb-3">
-                    <div class="w-20 h-16 rounded-lg overflow-hidden ring-1 ring-ink-950/8 shrink-0 bg-cream-100">
-                        @if($business->photo_url)
-                            <img src="{{ $business->photo_url }}" alt="" class="w-full h-full object-cover">
-                        @else
-                            <div class="w-full h-full grid place-items-center text-white text-xl"
-                                 style="background: linear-gradient(135deg, {{ $cm['color'] ?? '#FF7A4D' }}, {{ $cm['color'] ?? '#FF7A4D' }}cc);">
-                                {{ mb_substr($business->name, 0, 1) }}
-                            </div>
-                        @endif
+                {{-- Live preview — actual card mock at home-page aspect ratio --}}
+                <div class="text-[10px] font-bold text-ink-500 mb-1.5">معاينة:</div>
+                <div class="relative rounded-2xl overflow-hidden aspect-[4/3] mb-3 ring-1 ring-ink-950/10 shadow-sm bg-cream-100">
+                    {{-- gradient fallback (always rendered behind) --}}
+                    <div class="absolute inset-0 grid place-items-center"
+                         style="background: linear-gradient(135deg, {{ $cm['color'] ?? '#FF7A4D' }}, {{ $cm['color'] ?? '#FF7A4D' }}aa);">
+                        <x-icon :name="$cm['icon'] ?? 'bag'" class="w-16 h-16 text-white/80"/>
                     </div>
-                    <div class="text-[11px] text-ink-500 leading-snug flex-1">
-                        دي الصورة اللي بتظهر في كاروسيل الـ home وفي الـ row cards.
+                    {{-- actual image on top, if any --}}
+                    @if($coverImage)
+                        <img src="{{ $coverImage }}" alt="" class="absolute inset-0 w-full h-full object-cover"
+                             style="object-position: center 30%;">
+                    @endif
+                    {{-- realistic overlay matching the real card --}}
+                    <div class="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/70 to-transparent">
+                        <div class="text-white font-extrabold text-sm truncate drop-shadow">
+                            {{ $business->name }}
+                            @if($business->is_verified)
+                                <span class="inline-block text-mint-300 text-xs">✓</span>
+                            @endif
+                        </div>
+                        <div class="text-white/85 text-[10px] truncate">{{ $cm['label'] ?? '' }}</div>
                     </div>
                 </div>
+                <p class="text-[11px] text-ink-500 mb-3 leading-snug">
+                    ⬆ ده الكارد اللي بيظهر في كاروسيل الـ home (مميّزة الأسبوع + الأكتر تقييم).
+                </p>
 
                 {{-- Upload new photo --}}
                 <form method="POST" action="{{ route('admin.businesses.photo', $business) }}" enctype="multipart/form-data" class="space-y-2">
