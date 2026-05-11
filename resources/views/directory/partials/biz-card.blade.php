@@ -7,9 +7,9 @@
     $ratings  = (int) ($business->ratings_count ?? 0);
     $subtitle = $business->displayType() ?: ($cm['label'] ?? '');
 
-    // Cover image — try photo_url, then first uploaded photo, then null (use category default)
-    $cover = $business->photo_url
-        ?: optional($business->relationLoaded('photos') ? $business->photos->first() : null)->url;
+    // Cover — pick from the gallery (photos relation). If none → category default.
+    // The small avatar below uses photo_url separately (the business logo).
+    $cover = optional($business->relationLoaded('photos') ? $business->photos->first() : null)->url;
 @endphp
 <a href="{{ route('directory.show', $business) }}" class="biz-card group">
     <div class="biz-card__photo">
@@ -25,7 +25,10 @@
 
         @if($business->is_verified)
             <span class="biz-card__verified">
-                <x-icon name="check" class="w-2.5 h-2.5"/> موثّق
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                موثّق
             </span>
         @endif
     </div>
@@ -37,8 +40,8 @@
                       style="background: linear-gradient(135deg, {{ $color }}, {{ $color }}cc);">
                     {{ mb_substr($business->name, 0, 1) }}
                 </span>
-                @if($cover)
-                    <img src="{{ $cover }}" alt="" loading="lazy"
+                @if($business->photo_url)
+                    <img src="{{ $business->photo_url }}" alt="" loading="lazy"
                          onerror="this.style.display='none'">
                 @endif
             </span>

@@ -471,26 +471,22 @@ html[dir="rtl"] body {
     top: 12px;
     inset-inline-end: 12px;
     z-index: 2;
-    width: 26px;
-    height: 26px;
-    display: inline-grid;
-    place-items: center;
-    color: #1FA857;
-    filter: drop-shadow(0 2px 4px rgba(11, 11, 12, .35));
+    background: #fff;
+    color: var(--color-mint-600, #15803D);
+    font-size: 11px;
+    font-weight: 800;
+    padding: 5px 10px 5px 8px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 4px 12px -2px rgba(11, 11, 12, .2);
 }
 .biz-card__verified svg {
-    width: 100%;
-    height: 100%;
-    display: block;
-}
-/* White inner backdrop so the scalloped badge reads cleanly over any photo */
-.biz-card__verified::before {
-    content: '';
-    position: absolute;
-    inset: 4px;
-    border-radius: 50%;
-    background: #fff;
-    z-index: -1;
+    width: 14px;
+    height: 14px;
+    color: var(--color-mint-500, #1FA857);
+    flex-shrink: 0;
 }
 .biz-card__info {
     padding: 14px 16px 16px;
@@ -562,8 +558,8 @@ html[dir="rtl"] body {
     align-items: center;
     gap: 5px;
     font-size: 12px;
-    font-weight: 800;
-    color: #0B0B0C;
+    font-weight: 500;
+    color: var(--color-ink-600, #4B5563);
 }
 .biz-card__stat-icon {
     width: 24px;
