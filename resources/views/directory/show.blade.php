@@ -232,6 +232,82 @@
                     </form>
                 @endif
             </div>
+
+            {{-- ─── Card photo manager ─── --}}
+            <div class="bg-white rounded-xl p-3 ring-1 ring-coral-500/15 mt-2">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-extrabold text-ink-950 inline-flex items-center gap-1.5">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-coral-500">
+                            <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+                        </svg>
+                        صورة الكارت
+                    </span>
+                    @if($business->photo_url)
+                        <span class="text-[10px] font-bold text-mint-700 bg-mint-100 px-2 py-0.5 rounded-full">معيّنة</span>
+                    @else
+                        <span class="text-[10px] font-bold text-ink-400">فولباك (شوكة الكاتيجوري)</span>
+                    @endif
+                </div>
+
+                {{-- Preview --}}
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-20 h-16 rounded-lg overflow-hidden ring-1 ring-ink-950/8 shrink-0 bg-cream-100">
+                        @if($business->photo_url)
+                            <img src="{{ $business->photo_url }}" alt="" class="w-full h-full object-cover">
+                        @else
+                            <div class="w-full h-full grid place-items-center text-white text-xl"
+                                 style="background: linear-gradient(135deg, {{ $cm['color'] ?? '#FF7A4D' }}, {{ $cm['color'] ?? '#FF7A4D' }}cc);">
+                                {{ mb_substr($business->name, 0, 1) }}
+                            </div>
+                        @endif
+                    </div>
+                    <div class="text-[11px] text-ink-500 leading-snug flex-1">
+                        دي الصورة اللي بتظهر في كاروسيل الـ home وفي الـ row cards.
+                    </div>
+                </div>
+
+                {{-- Upload new photo --}}
+                <form method="POST" action="{{ route('admin.businesses.photo', $business) }}" enctype="multipart/form-data" class="space-y-2">
+                    @csrf
+                    <label class="flex items-center gap-2 bg-cream-100 rounded-lg p-2 cursor-pointer border border-ink-950/8 hover:border-coral-500/40 transition">
+                        <span class="w-8 h-8 rounded-lg bg-coral-500 text-white grid place-items-center text-xs font-black shrink-0">+</span>
+                        <span class="text-xs font-bold text-ink-950 flex-1" data-photo-name>ارفع صورة جديدة (JPG/PNG/WEBP · حتى 3 ميجا)</span>
+                        <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" class="hidden" required
+                               onchange="this.parentElement.querySelector('[data-photo-name]').textContent = this.files[0]?.name || 'ارفع صورة'; this.form.requestSubmit()">
+                    </label>
+                </form>
+
+                {{-- Pick from gallery (if any) --}}
+                @if($business->photos->isNotEmpty())
+                    <div class="mt-3">
+                        <div class="text-[10px] font-bold text-ink-500 mb-1.5">أو اختار من الجاليري:</div>
+                        <div class="grid grid-cols-5 gap-1.5">
+                            @foreach($business->photos->take(10) as $p)
+                                <form method="POST" action="{{ route('admin.businesses.photo', $business) }}">
+                                    @csrf
+                                    <input type="hidden" name="gallery_url" value="{{ $p->url }}">
+                                    <button type="submit" class="block w-full aspect-square rounded-lg overflow-hidden ring-1 transition
+                                                                 {{ $business->photo_url === $p->url ? 'ring-coral-500 ring-2' : 'ring-ink-950/8 hover:ring-coral-500/50' }}">
+                                        <img src="{{ $p->url }}" alt="" class="w-full h-full object-cover">
+                                    </button>
+                                </form>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
+                {{-- Clear → revert to category fallback --}}
+                @if($business->photo_url)
+                    <form method="POST" action="{{ route('admin.businesses.photo', $business) }}"
+                          data-confirm="ارجع الصورة لـ الفولباك؟" data-confirm-action="ارجع" class="mt-2">
+                        @csrf
+                        <input type="hidden" name="clear" value="1">
+                        <button type="submit" class="w-full px-3 py-2 rounded-lg bg-blush-100 text-blush-600 text-[11px] font-extrabold hover:bg-blush-500 hover:text-white transition">
+                            🗑️ ارجع الفولباك
+                        </button>
+                    </form>
+                @endif
+            </div>
         </div>
     @endif
 

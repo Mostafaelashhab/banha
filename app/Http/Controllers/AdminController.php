@@ -374,6 +374,46 @@ class AdminController extends Controller
         return view('admin.businesses', compact('businesses', 'filter'));
     }
 
+    /**
+     * Quick admin action: replace the business's main card photo.
+     * Accepts a new file upload OR a URL of an existing gallery photo
+     * (so the admin can promote a gallery shot to the cover with one click).
+     */
+    public function businessSetPhoto(Business $business, Request $request)
+    {
+        $data = $request->validate([
+            'photo'      => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:3072'],
+            'gallery_url' => ['nullable', 'string', 'max:255'],
+            'clear'      => ['nullable', 'boolean'],
+        ]);
+
+        // Path 1: clear → fall back to category gradient
+        if (! empty($data['clear'])) {
+            \App\Services\ImageUploader::delete($business->photo_url);
+            $business->update(['photo_url' => null]);
+            $this->bustMapCache();
+            return back()->with('flash', 'تم شيل صورة الكارت — هتظهر الفولباك.');
+        }
+
+        // Path 2: pick from gallery — just point photo_url at the chosen photo
+        if (! empty($data['gallery_url'])) {
+            $business->update(['photo_url' => $data['gallery_url']]);
+            $this->bustMapCache();
+            return back()->with('flash', 'تم اختيار صورة من الجاليري.');
+        }
+
+        // Path 3: upload a new file
+        if ($request->hasFile('photo')) {
+            $old = $business->photo_url;
+            $newUrl = \App\Services\ImageUploader::store($request->file('photo'), 'businesses', $old);
+            $business->update(['photo_url' => $newUrl]);
+            $this->bustMapCache();
+            return back()->with('flash', 'تم رفع صورة الكارت.');
+        }
+
+        return back()->with('flash', 'ابعت ملف أو اختار من الجاليري.');
+    }
+
     public function businessVerify(Business $business)
     {
         $wasVerified = (bool) $business->is_verified;

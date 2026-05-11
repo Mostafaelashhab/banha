@@ -211,6 +211,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/reports/{report}/resolve',     [AdminController::class, 'reportResolve'])->name('reports.resolve');
 
         Route::get('/businesses',                    [AdminController::class, 'businesses'])->name('businesses');
+        Route::post('/businesses/{business}/photo',   [AdminController::class, 'businessSetPhoto'])->name('businesses.photo');
         Route::post('/businesses/{business}/verify',  [AdminController::class, 'businessVerify'])->name('businesses.verify');
         Route::post('/businesses/{business}/toggle',  [AdminController::class, 'businessToggleActive'])->name('businesses.toggle');
         Route::post('/businesses/{business}/promote', [AdminController::class, 'businessPromote'])->name('businesses.promote');
