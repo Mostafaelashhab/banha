@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\PointTransaction;
 use App\Models\User;
+use App\Services\ReferralService;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 
@@ -119,7 +120,7 @@ class PointsService
 
         // Atomic insert + balance update; UNIQUE blocks dupes at the DB layer
         try {
-            return DB::transaction(function () use ($user, $reason, $finalDelta, $targetType, $targetId, $meta) {
+            $tx = DB::transaction(function () use ($user, $reason, $finalDelta, $targetType, $targetId, $meta) {
                 // Lock the user row so reputation can't go negative under race
                 $locked = User::where('id', $user->id)->lockForUpdate()->first();
                 if (! $locked) return null;
@@ -149,6 +150,15 @@ class PointsService
             if ($e->getCode() === '23000') return null;
             throw $e;
         }
+
+        // After a positive earn, check if this awardee crossed the referral
+        // settlement threshold (50+ organic pts) → pay out their inviter.
+        // Skip when the reason itself is `invite_settled` to avoid recursion.
+        if ($tx && $finalDelta > 0 && $reason !== 'invite_settled') {
+            ReferralService::maybeSettle($user->fresh());
+        }
+
+        return $tx;
     }
 
     /** Admin reversal — writes a negating row, never deletes history. */

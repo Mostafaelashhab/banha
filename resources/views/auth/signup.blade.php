@@ -31,6 +31,12 @@
 
     <form method="POST" action="{{ route('signup.attempt') }}" class="card-light p-5 space-y-4">
         @csrf
+        @if(! empty($refCode))
+            <input type="hidden" name="ref" value="{{ $refCode }}">
+            <div class="bg-mint-100 text-mint-700 text-[11px] font-bold rounded-xl px-3 py-2 -mt-1">
+                ✓ انت داخل بدعوة من صديق · هتاخدوا نقاط الاتنين
+            </div>
+        @endif
 
         <div>
             <label class="text-xs font-bold text-ink-500 mb-1.5 block">رقم الموبايل</label>

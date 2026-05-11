@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['phone', 'username', 'password', 'zone_id', 'avatar_seed', 'avatar_url', 'persona', 'reputation', 'level', 'is_banned', 'is_verified', 'verification_tier', 'verified_at', 'is_admin', 'last_seen_at', 'prayer_notify'])]
+#[Fillable(['phone', 'username', 'password', 'zone_id', 'avatar_seed', 'avatar_url', 'persona', 'reputation', 'level', 'is_banned', 'is_verified', 'verification_tier', 'verified_at', 'is_admin', 'last_seen_at', 'prayer_notify', 'referred_by', 'referral_settled'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -65,6 +65,31 @@ class User extends Authenticatable
     public function listings(): HasMany
     {
         return $this->hasMany(Listing::class);
+    }
+
+    /** The user who invited me (nullable). */
+    public function referrer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'referred_by');
+    }
+
+    /** Users I've invited (any tier). */
+    public function referrals(): HasMany
+    {
+        return $this->hasMany(User::class, 'referred_by');
+    }
+
+    /** Short, stable referral code derived from the user id. URL-safe. */
+    public function referralCode(): string
+    {
+        // base36 keeps it short + lowercase
+        return strtolower(base_convert((string) $this->id, 10, 36));
+    }
+
+    /** Public invite URL. */
+    public function inviteUrl(): string
+    {
+        return url('/signup?ref='.$this->referralCode());
     }
 
     public function comments(): HasMany

@@ -63,10 +63,19 @@ class AuthController extends Controller
         return redirect()->intended(route('feed'));
     }
 
-    public function showSignup()
+    public function showSignup(Request $request)
     {
+        // Sticky-capture the referral code so it survives the user browsing
+        // around before clicking signup. Session > cookie for 30 days.
+        $ref = $request->query('ref');
+        if ($ref) {
+            $request->session()->put('ref_code', $ref);
+            cookie()->queue(cookie('ref', $ref, 60 * 24 * 30));  // 30 days
+        }
+
         return view('auth.signup', [
-            'zones' => Zone::orderBy('sort')->get(),
+            'zones'    => Zone::orderBy('sort')->get(),
+            'refCode'  => $ref ?? $request->session()->get('ref_code') ?? $request->cookie('ref'),
         ]);
     }
 
@@ -97,6 +106,14 @@ class AuthController extends Controller
             'avatar_seed' => AnonSeed::generate(),
             'reputation'  => 50,
         ]);
+
+        // Referral capture — link the invitee to whoever sent the ?ref= code.
+        // The link is recorded but the inviter is NOT credited yet — payout
+        // happens later when this user earns 50+ organic points (ReferralService).
+        \App\Services\ReferralService::capture(
+            $user,
+            $request->session()->pull('ref_code') ?? $request->input('ref') ?? $request->cookie('ref')
+        );
 
         BadgeService::onSignup($user);
         \App\Services\AdminNotificationService::onUserSignup($user->fresh()->load('zone'));
