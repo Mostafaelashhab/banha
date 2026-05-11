@@ -140,11 +140,8 @@
         <div class="overflow-x-auto scrollbar-hide -mx-4 px-4">
             <div class="flex items-start gap-3 min-w-max">
                 @foreach($homeCats as $cat)
-                    @php $count = $catCounts[$cat['key']] ?? 0; $color = $cat['color'] ?? '#FF7A4D'; @endphp
-                    <a href="{{ route('directory.category', $cat['key']) }}" class="cat-circle"
-                       style="--cat-shadow: {{ $color }}40;">
-                        <span class="cat-circle-disc"
-                              style="background: linear-gradient(135deg, {{ $color }}18, {{ $color }}30); color: {{ $color }};">
+                    <a href="{{ route('directory.category', $cat['key']) }}" class="cat-circle">
+                        <span class="cat-circle-disc">
                             <x-icon :name="$cat['icon'] ?? 'bag'" class="w-7 h-7"/>
                         </span>
                         <span class="cat-circle-label">{{ $cat['label'] }}</span>
@@ -169,55 +166,31 @@
         </div>
 
         @if($promoted->isNotEmpty())
-            <div class="feat-scroll -mx-4 px-4">
-                @foreach($promoted as $b)
-                    @php $cm = $b->categoryMeta(); $rating = (float) ($b->rating_avg ?? 0); @endphp
-                    <a href="{{ route('directory.show', $b) }}" class="feat-card shrink-0 group">
-                        @if($b->photo_url)
-                            <img src="{{ $b->photo_url }}" alt="{{ $b->name }}" loading="lazy"
-                                 onerror="this.style.display='none'"
-                                 class="group-hover:scale-105 transition duration-500">
-                        @else
-                            <div class="absolute inset-0 grid place-items-center text-white text-4xl font-black"
-                                 style="background: linear-gradient(135deg, {{ $cm['color'] ?? '#FF7A4D' }}, {{ $cm['color'] ?? '#FF7A4D' }}cc);">
-                                {{ mb_substr($b->name, 0, 1) }}
-                            </div>
-                        @endif
-                        <div class="feat-card-overlay"></div>
-
-                        <div class="absolute top-3 start-3 flex flex-col gap-1.5">
-                            <span class="inline-flex items-center gap-1 bg-honey-500 text-ink-950 text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-sm">
-                                ★ مميّز
+            <div class="overflow-x-auto scrollbar-hide -mx-4 px-4">
+                <div class="flex items-start gap-4 min-w-max pb-1">
+                    @foreach($promoted as $b)
+                        @php $cm = $b->categoryMeta(); @endphp
+                        <a href="{{ route('directory.show', $b) }}" class="promoted-logo group">
+                            <span class="promoted-logo-disc">
+                                @if($b->photo_url)
+                                    <img src="{{ $b->photo_url }}" alt="{{ $b->name }}" loading="lazy"
+                                         onerror="this.style.display='none'">
+                                @else
+                                    <span class="promoted-logo-fallback"
+                                          style="background: linear-gradient(135deg, {{ $cm['color'] ?? '#FF7A4D' }}, {{ $cm['color'] ?? '#FF7A4D' }}cc);">
+                                        {{ mb_substr($b->name, 0, 1) }}
+                                    </span>
+                                @endif
+                                @if($b->is_verified)
+                                    <span class="promoted-logo-verified" title="موثّق">
+                                        <x-icon name="check" class="w-2.5 h-2.5"/>
+                                    </span>
+                                @endif
                             </span>
-                            @if($b->is_verified)
-                                <span class="inline-flex items-center gap-1 bg-mint-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-sm">
-                                    <x-icon name="check" class="w-2.5 h-2.5"/> موثّق
-                                </span>
-                            @endif
-                        </div>
-
-                        @if($rating >= 4)
-                            <div class="absolute top-3 end-3 inline-flex items-center gap-0.5 bg-white/95 backdrop-blur-sm text-ink-950 text-[11px] font-extrabold px-2 py-1 rounded-full shadow-sm">
-                                <svg viewBox="0 0 24 24" fill="#FF7A4D" class="w-3 h-3"><polygon points="12 2 15 9 22 9.5 17 14.5 18.5 22 12 18 5.5 22 7 14.5 2 9.5 9 9"/></svg>
-                                {{ number_format($rating, 1) }}
-                            </div>
-                        @endif
-
-                        <div class="feat-card-body">
-                            <div class="inline-flex items-center gap-1 bg-white/15 backdrop-blur-sm border border-white/25 rounded-full px-2 py-0.5 text-[10px] font-extrabold mb-1.5">
-                                <x-icon :name="$cm['icon'] ?? 'bag'" class="w-2.5 h-2.5"/>
-                                {{ $cm['label'] ?? '' }}
-                            </div>
-                            <div class="font-black text-base leading-tight line-clamp-2 drop-shadow">{{ $b->name }}</div>
-                            @if($b->zone)
-                                <div class="text-white/85 text-[11px] mt-1 inline-flex items-center gap-1">
-                                    <x-icon name="map-pin" class="w-3 h-3"/>
-                                    {{ $b->zone->name }}
-                                </div>
-                            @endif
-                        </div>
-                    </a>
-                @endforeach
+                            <span class="promoted-logo-label">{{ $b->name }}</span>
+                        </a>
+                    @endforeach
+                </div>
             </div>
         @else
             {{-- Advertiser slot (empty state = pitch) --}}

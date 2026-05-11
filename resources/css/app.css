@@ -401,6 +401,76 @@ html[dir="rtl"] body {
     color: #fff;
 }
 
+/* Promoted business — round logo + name beneath (story-circle style) */
+.promoted-logo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 76px;
+    text-decoration: none;
+    color: inherit;
+    transition: transform .15s ease;
+}
+.promoted-logo:hover { transform: translateY(-2px); }
+.promoted-logo-disc {
+    position: relative;
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--color-cream-200, #FFF1EA);
+    box-shadow: 0 6px 16px -10px rgba(11, 11, 12, .25);
+    display: block;
+    /* Soft coral ring to mark these as the promoted set */
+    box-shadow:
+        0 0 0 2px #fff,
+        0 0 0 4px rgba(255, 122, 77, .55),
+        0 6px 16px -10px rgba(11, 11, 12, .25);
+}
+.promoted-logo-disc img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    transition: transform .35s cubic-bezier(.2,.9,.3,1);
+}
+.promoted-logo:hover .promoted-logo-disc img { transform: scale(1.06); }
+.promoted-logo-fallback {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    font-weight: 900;
+    font-size: 28px;
+}
+.promoted-logo-verified {
+    position: absolute;
+    inset-inline-end: 2px;
+    bottom: 2px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--color-mint-500, #1FA857);
+    color: #fff;
+    display: grid;
+    place-items: center;
+    box-shadow: 0 0 0 2px #fff;
+}
+.promoted-logo-label {
+    font-size: 11px;
+    font-weight: 800;
+    color: #0B0B0C;
+    line-height: 1.15;
+    text-align: center;
+    max-width: 76px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
 /* Category card — adds depth + hover lift */
 .cat-tile {
     background: #fff;
@@ -444,8 +514,10 @@ html[dir="rtl"] body {
     border-radius: 50%;
     display: grid;
     place-items: center;
+    background: #FFF1EA;
+    color: #FF7A4D;
     transition: transform .25s cubic-bezier(.2,.9,.3,1), box-shadow .25s;
-    box-shadow: 0 8px 20px -8px var(--cat-shadow, rgba(255, 122, 77, .35));
+    box-shadow: 0 6px 16px -10px rgba(255, 122, 77, .35);
 }
 .cat-circle:hover .cat-circle-disc {
     transform: scale(1.06) rotate(-2deg);
