@@ -63,7 +63,7 @@
     </div>
 
     {{-- ───── Promo banners — 4-card slider (map, QR menu, add biz, post ad) ──── --}}
-    <div class="mb-7 rise rise-2">
+    <div class="mb-10 rise rise-2">
         <div class="promo-slider" data-auto-rotate="4500">
             @include('partials.promo-banner', [
                 'href'    => route('directory.map'),
@@ -101,7 +101,7 @@
     </div>
 
     {{-- ───── Categories — circle icons row ──────────────────────────── --}}
-    <section class="mb-7 rise rise-3">
+    <section class="mb-10 rise rise-3">
         <div class="flex items-center justify-between mb-3 px-1">
             <h2 class="text-base font-extrabold text-ink-950">الفئات</h2>
             <a href="{{ route('directory.index') }}" class="text-xs font-bold text-coral-600">شوف الكل ←</a>
@@ -121,7 +121,7 @@
     </section>
 
     {{-- ───── Sponsored ────────────────────────────────────────────────── --}}
-    <section class="mb-7 rise rise-2">
+    <section class="mb-10 rise rise-2">
         <div class="flex items-center justify-between mb-3 px-1">
             <h2 class="text-base font-extrabold text-ink-950 inline-flex items-center gap-1.5">
                 <svg viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-honey-500">
@@ -129,9 +129,7 @@
                 </svg>
                 مميّزة الأسبوع
             </h2>
-            @if($promoted->isNotEmpty())
-                <span class="text-[10px] font-bold text-honey-700 bg-honey-100 px-2 py-1 rounded-full">إعلانات</span>
-            @endif
+        
         </div>
 
         @if($promoted->isNotEmpty())
@@ -185,7 +183,7 @@
 
     {{-- ───── 2) Top rated ─────────────────────────────────────────────── --}}
     @if($featured->isNotEmpty())
-        <section class="mb-4 rise rise-3">
+        <section class="rise rise-3">
             <div class="flex items-center justify-between mb-3 px-1">
                 <h2 class="text-base font-extrabold text-ink-950 inline-flex items-center gap-1.5">
                     <span class="text-coral-500">★</span> الأكتر تقييم في بنها

@@ -23,14 +23,6 @@
                  onerror="this.style.display='none'">
         @endif
 
-        @if($business->is_verified)
-            <span class="biz-card__verified">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <polyline points="20 6 9 17 4 12"/>
-                </svg>
-                موثّق
-            </span>
-        @endif
     </div>
 
     <div class="biz-card__info">
@@ -46,7 +38,12 @@
                 @endif
             </span>
             <div class="biz-card__head-text">
-                <div class="biz-card__title">{{ $business->name }}</div>
+                <div class="biz-card__title">
+                    <span class="biz-card__name">{{ $business->name }}</span>
+                    @if($business->is_verified)
+                        <x-verified-badge tier="gold" class="biz-card__title-badge"/>
+                    @endif
+                </div>
                 <div class="biz-card__subtitle">{{ $subtitle }}</div>
             </div>
         </div>
