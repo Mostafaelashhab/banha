@@ -25,6 +25,23 @@
         ->limit(12)
         ->get();
 
+    // Open now — broader pool filtered by isOpenNow() in PHP since the schedule
+    // lives in a JSON column. We pull a generous candidate set then take 12.
+    $openNow = Business::query()
+        ->where('is_active', true)
+        ->where(function ($q) {
+            $q->where('is_24h', true)->orWhereNotNull('hours_schedule');
+        })
+        ->with(['zone:id,name', 'photos:id,business_id,url'])
+        ->orderByDesc('is_verified')
+        ->orderByDesc('rating_avg')
+        ->orderByDesc('views_count')
+        ->limit(60)
+        ->get()
+        ->filter(fn ($b) => $b->isOpenNow() === true)
+        ->take(12)
+        ->values();
+
     // Main 6 categories for the home grid
     $homeCatKeys = ['food', 'medical', 'shops', 'services', 'transport', 'education'];
     $homeCats    = collect($homeCatKeys)->map(fn ($k) => ['key' => $k] + (Business::CATEGORIES[$k] ?? []));
@@ -124,9 +141,7 @@
     <section class="mb-10 rise rise-2">
         <div class="flex items-center justify-between mb-3 px-1">
             <h2 class="text-base font-extrabold text-ink-950 inline-flex items-center gap-1.5">
-                <svg viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-honey-500">
-                    <polygon points="12 2 15 9 22 9.5 17 14.5 18.5 22 12 18 5.5 22 7 14.5 2 9.5 9 9"/>
-                </svg>
+               
                 مميّزة الأسبوع
             </h2>
         
@@ -183,16 +198,38 @@
 
     {{-- ───── 2) Top rated ─────────────────────────────────────────────── --}}
     @if($featured->isNotEmpty())
-        <section class="rise rise-3">
+        <section class="rise rise-3 mb-10">
             <div class="flex items-center justify-between mb-3 px-1">
                 <h2 class="text-base font-extrabold text-ink-950 inline-flex items-center gap-1.5">
-                    <span class="text-coral-500">★</span> الأكتر تقييم في بنها
+                 الأكتر تقييم في بنها
                 </h2>
                 <a href="{{ route('directory.index') }}" class="text-xs font-bold text-coral-600">شوف الكل ←</a>
             </div>
 
             <div class="biz-card-scroll">
                 @foreach($featured as $b)
+                    @include('directory.partials.biz-card', ['business' => $b])
+                @endforeach
+            </div>
+        </section>
+    @endif
+
+    {{-- ───── 3) Open now ──────────────────────────────────────────────── --}}
+    @if($openNow->isNotEmpty())
+        <section class="rise rise-4">
+            <div class="flex items-center justify-between mb-3 px-1">
+                <h2 class="text-base font-extrabold text-ink-950 inline-flex items-center gap-1.5">
+                    <span class="inline-flex items-center gap-1 text-[10px] font-extrabold px-1.5 py-0.5 rounded-full bg-mint-100 text-mint-700">
+                        <span class="w-1.5 h-1.5 rounded-full bg-mint-500 pulse-soft"></span>
+                        LIVE
+                    </span>
+                    مفتوح دلوقتي
+                </h2>
+                <a href="{{ route('directory.index', ['open_now' => 1]) }}" class="text-xs font-bold text-coral-600">شوف الكل ←</a>
+            </div>
+
+            <div class="biz-card-scroll">
+                @foreach($openNow as $b)
                     @include('directory.partials.biz-card', ['business' => $b])
                 @endforeach
             </div>
