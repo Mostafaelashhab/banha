@@ -137,7 +137,7 @@
             <h2 class="text-base font-extrabold text-ink-950">الفئات</h2>
             <a href="{{ route('directory.index') }}" class="text-xs font-bold text-coral-600">شوف الكل ←</a>
         </div>
-        <div class="overflow-x-auto scrollbar-hide -mx-4 px-4">
+        <div class="overflow-x-auto scrollbar-hide -mx-4 px-4 py-2">
             <div class="flex items-start gap-3 min-w-max">
                 @foreach($homeCats as $cat)
                     <a href="{{ route('directory.category', $cat['key']) }}" class="cat-circle">
@@ -166,8 +166,8 @@
         </div>
 
         @if($promoted->isNotEmpty())
-            <div class="overflow-x-auto scrollbar-hide -mx-4 px-4">
-                <div class="flex items-start gap-4 min-w-max pb-1">
+            <div class="overflow-x-auto scrollbar-hide -mx-4 px-4 py-2">
+                <div class="flex items-start gap-4 min-w-max">
                     @foreach($promoted as $b)
                         @php $cm = $b->categoryMeta(); @endphp
                         <a href="{{ route('directory.show', $b) }}" class="promoted-logo group">
@@ -179,11 +179,6 @@
                                     <span class="promoted-logo-fallback"
                                           style="background: linear-gradient(135deg, {{ $cm['color'] ?? '#FF7A4D' }}, {{ $cm['color'] ?? '#FF7A4D' }}cc);">
                                         {{ mb_substr($b->name, 0, 1) }}
-                                    </span>
-                                @endif
-                                @if($b->is_verified)
-                                    <span class="promoted-logo-verified" title="موثّق">
-                                        <x-icon name="check" class="w-2.5 h-2.5"/>
                                     </span>
                                 @endif
                             </span>
