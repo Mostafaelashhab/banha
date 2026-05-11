@@ -159,11 +159,12 @@
     @php
         $route    = request()->route()->getName() ?? '';
         $isHome   = $route === 'feed' || $route === 'home';
-        $isDir    = str_starts_with($route, 'directory') && $route !== 'directory.map';
         $isMap    = $route === 'directory.map';
         $isCreate = $route === 'directory.create' || $route === 'posts.create';
+        $isDir    = str_starts_with($route, 'directory') && ! $isMap && ! $isCreate;
         $isMarket = str_starts_with($route, 'marketplace');
         $isMe     = str_starts_with($route, 'profile');
+        $isWallet = $route === 'wallet';
         $isAuthPage = in_array($route, ['login', 'login.attempt', 'signup', 'signup.attempt', 'forgot', 'forgot.send', 'forgot.verify', 'forgot.reset', 'verify.show', 'verify.send', 'verify.attempt'], true);
     @endphp
     @unless($isAuthPage)
@@ -191,9 +192,12 @@
                 <span class="nav-label">السوق</span>
             </a>
             @auth
-                <a href="{{ route('profile.me') }}" aria-label="حسابي" class="nav-item {{ $isMe ? 'is-active' : '' }}">
-                    <x-icon name="user" class="w-5 h-5"/>
-                    <span class="nav-label">حسابي</span>
+                <a href="{{ route('wallet') }}" aria-label="محفظتي" class="nav-item nav-item--wallet {{ $isWallet ? 'is-active' : '' }}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                        <path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-1"/>
+                        <path d="M21 12h-4a2 2 0 0 0 0 4h4v-4z"/>
+                    </svg>
+                    <span class="nav-label">محفظتي</span>
                 </a>
             @else
                 <a href="{{ route('login') }}" aria-label="دخول" class="nav-item">

@@ -174,6 +174,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/chat/{thread}/report', [\App\Http\Controllers\ChatController::class, 'report'])->name('chat.report')->whereNumber('thread');
 
     Route::get('/me',                 [ProfileController::class, 'show'])->name('profile.me');
+    Route::get('/wallet',             [\App\Http\Controllers\WalletController::class, 'index'])->name('wallet');
 
     // Withdrawals (user actions)
     Route::post('/withdrawals',                        [\App\Http\Controllers\WithdrawalController::class, 'store'])->name('withdrawals.store');

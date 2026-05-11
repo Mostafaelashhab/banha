@@ -35,7 +35,7 @@ class WithdrawalController extends Controller
             $data['payout_handle']
         );
 
-        return redirect()->route('profile.me', ['tab' => 'points'])
+        return redirect()->route('wallet')
             ->with('flash', '✓ طلبك اتسجّل وهيراجعه فريق بنهاوي خلال ٤٨ ساعة.');
     }
 
