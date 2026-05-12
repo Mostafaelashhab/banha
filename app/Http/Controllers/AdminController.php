@@ -7,10 +7,12 @@ use App\Models\Business;
 use App\Models\Comment;
 use App\Models\Post;
 use App\Models\Price;
+use App\Models\PromoBanner;
 use App\Models\PushSubscription;
 use App\Models\Report;
 use App\Models\User;
 use App\Models\Zone;
+use App\Services\ImageUploader;
 use App\Services\PushService;
 use App\Services\VerificationService;
 use Illuminate\Http\Request;
@@ -603,5 +605,79 @@ class AdminController extends Controller
             if (VerificationService::recheckSilver($u)) $count++;
         }
         return back()->with('flash', "تم ترقية {$count} مستخدم لـ Silver.");
+    }
+
+    /* ─────────────────────────────────────────────────────────────
+     | Promo banners (homepage slider)
+     ───────────────────────────────────────────────────────────── */
+
+    public function promoBanners()
+    {
+        return view('admin.promo-banners', [
+            'banners' => PromoBanner::orderBy('sort_order')->orderByDesc('id')->get(),
+        ]);
+    }
+
+    public function promoBannerStore(Request $request)
+    {
+        $data = $this->validatePromoBanner($request);
+
+        if ($request->hasFile('image')) {
+            $data['image_url'] = ImageUploader::store($request->file('image'), 'promo-banners');
+        }
+        unset($data['image']);
+
+        PromoBanner::create($data);
+
+        return back()->with('flash', 'تم إضافة البانر.');
+    }
+
+    public function promoBannerUpdate(PromoBanner $banner, Request $request)
+    {
+        $data = $this->validatePromoBanner($request);
+
+        if ($request->boolean('clear_image')) {
+            ImageUploader::delete($banner->image_url);
+            $data['image_url'] = null;
+        } elseif ($request->hasFile('image')) {
+            $data['image_url'] = ImageUploader::store($request->file('image'), 'promo-banners', $banner->image_url);
+        }
+        unset($data['image'], $data['clear_image']);
+
+        $banner->update($data);
+
+        return back()->with('flash', 'تم تحديث البانر.');
+    }
+
+    public function promoBannerToggle(PromoBanner $banner)
+    {
+        $banner->update(['is_active' => ! $banner->is_active]);
+        return back()->with('flash', $banner->is_active ? 'البانر شغّال.' : 'البانر متوقّف.');
+    }
+
+    public function promoBannerDestroy(PromoBanner $banner)
+    {
+        ImageUploader::delete($banner->image_url);
+        $banner->delete();
+        return back()->with('flash', 'اتمسح البانر.');
+    }
+
+    private function validatePromoBanner(Request $request): array
+    {
+        return $request->validate([
+            'title'       => ['required', 'string', 'max:120'],
+            'tag'         => ['nullable', 'string', 'max:60'],
+            'description' => ['nullable', 'string', 'max:500'],
+            'cta_text'    => ['nullable', 'string', 'max:40'],
+            'href'        => ['nullable', 'string', 'max:255'],
+            'bg_from'     => ['nullable', 'string', 'max:16'],
+            'bg_to'       => ['nullable', 'string', 'max:16'],
+            'sort_order'  => ['nullable', 'integer', 'min:0', 'max:9999'],
+            'is_active'   => ['nullable', 'boolean'],
+            'starts_at'   => ['nullable', 'date'],
+            'ends_at'     => ['nullable', 'date', 'after_or_equal:starts_at'],
+            'image'       => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:3072'],
+            'clear_image' => ['nullable', 'boolean'],
+        ]);
     }
 }

@@ -224,6 +224,13 @@ Route::middleware('auth')->group(function () {
         Route::post('/outages',                      [AdminController::class, 'outageStore'])->name('outages.store');
         Route::post('/outages/{alert}/resolve',      [AdminController::class, 'outageResolve'])->name('outages.resolve');
 
+        // Promo banners (homepage slider)
+        Route::get('/promo-banners',                       [AdminController::class, 'promoBanners'])->name('promo.banners');
+        Route::post('/promo-banners',                      [AdminController::class, 'promoBannerStore'])->name('promo.banners.store');
+        Route::post('/promo-banners/{banner}',             [AdminController::class, 'promoBannerUpdate'])->name('promo.banners.update');
+        Route::post('/promo-banners/{banner}/toggle',      [AdminController::class, 'promoBannerToggle'])->name('promo.banners.toggle');
+        Route::delete('/promo-banners/{banner}',           [AdminController::class, 'promoBannerDestroy'])->name('promo.banners.destroy');
+
         Route::post('/recheck-tiers',                [AdminController::class, 'recheckTiers'])->name('recheck.tiers');
     });
 

@@ -86,6 +86,9 @@
                 <a href="{{ route('admin.outages') }}"  class="a-link {{ $route === 'admin.outages' ? 'is-active' : '' }}">
                     <x-icon name="bolt" class="w-4 h-4"/> انقطاعات
                 </a>
+                <a href="{{ route('admin.promo.banners') }}"  class="a-link {{ $route === 'admin.promo.banners' ? 'is-active' : '' }}">
+                    <x-icon name="flame" class="w-4 h-4"/> بانرات الإعلانات
+                </a>
             </nav>
 
             <a href="{{ route('feed') }}" class="a-link mt-4">
@@ -114,8 +117,9 @@
                         'admin.posts'      => 'بوستات',
                         'admin.reports'    => 'بلاغات',
                         'admin.businesses' => 'نشاطات',
-                        'admin.broadcast'  => 'إشعار',
-                        'admin.outages'    => 'انقطاعات',
+                        'admin.broadcast'     => 'إشعار',
+                        'admin.outages'       => 'انقطاعات',
+                        'admin.promo.banners' => 'بانرات',
                     ] as $r => $label)
                         <a href="{{ route($r) }}"
                            class="px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition

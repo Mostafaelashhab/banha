@@ -1,14 +1,34 @@
 @props([
     'href',
-    'variant' => 'map',  // map | menu | add | ad
+    'variant' => 'map',  // map | menu | add | ad | custom
     'tag',
     'title',
     'desc',
     'cta',
+    'image'   => null,
+    'bgFrom'  => null,
+    'bgTo'    => null,
 ])
-<a href="{{ $href }}" class="promo-card promo-card--{{ $variant }} group">
-    <span class="promo-card-glow"></span>
 
+@php
+    $isCustom = $variant === 'custom' || $image || $bgFrom;
+    $style = '';
+    if ($isCustom) {
+        if ($image) {
+            $style = "background-image: linear-gradient(135deg, rgba(11,11,12,.55), rgba(11,11,12,.25)), url('".e($image)."'); background-size: cover; background-position: center;";
+        } elseif ($bgFrom) {
+            $to = $bgTo ?: $bgFrom;
+            $style = "background: linear-gradient(135deg, ".e($bgFrom).", ".e($to).");";
+        }
+    }
+@endphp
+
+<a href="{{ $href }}" class="promo-card promo-card--{{ $variant }} group" @if($style) style="{{ $style }}" @endif>
+    @unless($isCustom)
+        <span class="promo-card-glow"></span>
+    @endunless
+
+    @if(! $isCustom)
     {{-- Decorative illustration per variant --}}
     <svg class="promo-card-art" viewBox="0 0 160 160" fill="none" aria-hidden="true">
         @switch($variant)
@@ -83,17 +103,24 @@
                 @break
         @endswitch
     </svg>
+    @endif
 
     <div class="relative max-w-[60%]">
-        <div class="text-[10px] font-extrabold tracking-wider uppercase opacity-80 mb-1.5">{{ $tag }}</div>
+        @if($tag)
+            <div class="text-[10px] font-extrabold tracking-wider uppercase opacity-80 mb-1.5">{{ $tag }}</div>
+        @endif
         <div class="font-black text-lg leading-tight">{{ $title }}</div>
-        <p class="text-white/90 text-[12px] mt-1 leading-snug font-bold">{{ $desc }}</p>
+        @if($desc)
+            <p class="text-white/90 text-[12px] mt-1 leading-snug font-bold">{{ $desc }}</p>
+        @endif
     </div>
 
-    <span class="promo-card-cta">
-        {{ $cta }}
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="w-3.5 h-3.5">
-            <polyline points="15 18 9 12 15 6"/>
-        </svg>
-    </span>
+    @if($cta)
+        <span class="promo-card-cta">
+            {{ $cta }}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="w-3.5 h-3.5">
+                <polyline points="15 18 9 12 15 6"/>
+            </svg>
+        </span>
+    @endif
 </a>

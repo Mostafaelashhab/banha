@@ -3,6 +3,13 @@
 @php
     use App\Models\Business;
 
+       use App\Models\PromoBanner;
+
+    // Admin-managed promo banners for the homepage slider
+    $promoBanners = PromoBanner::live()
+        ->orderBy('sort_order')
+        ->orderByDesc('id')
+        ->get();
     // Sponsored (paid) — appears first
     $promoted = Business::query()
         ->where('is_active', true)
@@ -24,6 +31,7 @@
         ->orderByDesc('views_count')
         ->limit(12)
         ->get();
+
 
     // Open now — broader pool filtered by isOpenNow() in PHP since the schedule
     // lives in a JSON column. We pull a generous candidate set then take 12.
@@ -80,42 +88,25 @@
     </div>
 
     {{-- ───── Promo banners — 4-card slider (map, QR menu, add biz, post ad) ──── --}}
-    <div class="mb-10 rise rise-2">
-        <div class="promo-slider" data-auto-rotate="4500">
-            @include('partials.promo-banner', [
-                'href'    => route('directory.map'),
-                'variant' => 'map',
-                'tag'     => 'جديد · خريطة بنها',
-                'title'   => 'لاقي أحسن أماكن بنها قربك',
-                'desc'    => 'مطاعم، صيدليات، خدمات — كلهم على خريطة واحدة.',
-                'cta'     => 'افتح الخريطة',
-            ])
-            @include('partials.promo-banner', [
-                'href'    => Auth::check() ? route('directory.mine') : route('signup'),
-                'variant' => 'menu',
-                'tag'     => 'جديد · منيو رقمي',
-                'title'   => 'منيو نشاطك على QR',
-                'desc'    => 'حدّث الأسعار في ثانية، الضيف يقرا المنيو من موبايله.',
-                'cta'     => 'جرّب QR Menu',
-            ])
-            @include('partials.promo-banner', [
-                'href'    => Auth::check() ? route('directory.create') : route('signup'),
-                'variant' => 'add',
-                'tag'     => 'مجاناً · أضف نشاطك',
-                'title'   => 'نشاطك في بنهاوي',
-                'desc'    => 'ضيف مكانك يطلع للناس اللي بتدوّر في بنها.',
-                'cta'     => 'ضيف نشاطك',
-            ])
-            @include('partials.promo-banner', [
-                'href'    => Auth::check() ? route('marketplace.create') : route('signup'),
-                'variant' => 'ad',
-                'tag'     => 'سوق · إعلانات',
-                'title'   => 'بيع، اشتري، إعلن',
-                'desc'    => 'انشر إعلانك في سوق بنها ووصلّه لآلاف الزوار.',
-                'cta'     => 'انشر إعلان',
-            ])
+      @if($promoBanners->isNotEmpty())
+        <div class="mb-10 rise rise-2">
+            <div class="promo-slider" data-auto-rotate="4500">
+                @foreach($promoBanners as $banner)
+                    @include('partials.promo-banner', [
+                        'href'    => $banner->href ?: '#',
+                        'variant' => 'custom',
+                        'tag'     => $banner->tag,
+                        'title'   => $banner->title,
+                        'desc'    => $banner->description,
+                        'cta'     => $banner->cta_text,
+                        'image'   => $banner->image_url,
+                        'bgFrom'  => $banner->bg_from,
+                        'bgTo'    => $banner->bg_to,
+                    ])
+                @endforeach
+            </div>
         </div>
-    </div>
+    @endif
 
     {{-- ───── Categories — circle icons row ──────────────────────────── --}}
     <section class="mb-10 rise rise-3">
@@ -213,6 +204,44 @@
             </div>
         </section>
     @endif
+    {{-- ───── Promo banners — 4-card slider (map, QR menu, add biz, post ad) ──── --}}
+    <div class="mb-10 rise rise-2">
+        <div class="promo-slider" data-auto-rotate="4500">
+            @include('partials.promo-banner', [
+                'href'    => route('directory.map'),
+                'variant' => 'map',
+                'tag'     => 'جديد · خريطة بنها',
+                'title'   => 'لاقي أحسن أماكن بنها قربك',
+                'desc'    => 'مطاعم، صيدليات، خدمات — كلهم على خريطة واحدة.',
+                'cta'     => 'افتح الخريطة',
+            ])
+            @include('partials.promo-banner', [
+                'href'    => Auth::check() ? route('directory.mine') : route('signup'),
+                'variant' => 'menu',
+                'tag'     => 'جديد · منيو رقمي',
+                'title'   => 'منيو نشاطك على QR',
+                'desc'    => 'حدّث الأسعار في ثانية، الضيف يقرا المنيو من موبايله.',
+                'cta'     => 'جرّب QR Menu',
+            ])
+            @include('partials.promo-banner', [
+                'href'    => Auth::check() ? route('directory.create') : route('signup'),
+                'variant' => 'add',
+                'tag'     => 'مجاناً · أضف نشاطك',
+                'title'   => 'نشاطك في بنهاوي',
+                'desc'    => 'ضيف مكانك يطلع للناس اللي بتدوّر في بنها.',
+                'cta'     => 'ضيف نشاطك',
+            ])
+            @include('partials.promo-banner', [
+                'href'    => Auth::check() ? route('marketplace.create') : route('signup'),
+                'variant' => 'ad',
+                'tag'     => 'سوق · إعلانات',
+                'title'   => 'بيع، اشتري، إعلن',
+                'desc'    => 'انشر إعلانك في سوق بنها ووصلّه لآلاف الزوار.',
+                'cta'     => 'انشر إعلان',
+            ])
+        </div>
+    </div>
+
 
     {{-- ───── 3) Open now ──────────────────────────────────────────────── --}}
     @if($openNow->isNotEmpty())
@@ -326,6 +355,7 @@
 
         start();
     })();
+       document.querySelectorAll('.promo-slider[data-auto-rotate]').forEach(initPromoSlider);
 </script>
 @endpush
 @endsection
