@@ -152,7 +152,7 @@
         @php
             $promotedActive = $business->promoted_until && $business->promoted_until->isFuture();
         @endphp
-        <div class="card-light p-4 mb-3 ring-2 ring-coral-500/25" style="background: linear-gradient(135deg, #FFF7E9, #FFF);">
+        <div class="card-light p-4 mb-3 ring-2 ring-coral-500/25" style="background: linear-gradient(135deg, #EEF2FF, #FFF);">
             <div class="flex items-center gap-2 mb-3">
                 <span class="w-7 h-7 rounded-lg bg-coral-500 text-white grid place-items-center text-xs font-black">★</span>
                 <h3 class="text-sm font-extrabold text-ink-950">لوحة الأدمن السريعة</h3>
@@ -257,7 +257,7 @@
                 <div class="relative rounded-2xl overflow-hidden aspect-[4/3] mb-3 ring-1 ring-ink-950/10 shadow-sm bg-cream-100">
                     {{-- gradient fallback (always rendered behind) --}}
                     <div class="absolute inset-0 grid place-items-center"
-                         style="background: linear-gradient(135deg, {{ $cm['color'] ?? '#FF7A4D' }}, {{ $cm['color'] ?? '#FF7A4D' }}aa);">
+                         style="background: linear-gradient(135deg, {{ $cm['color'] ?? '#2D5BFF' }}, {{ $cm['color'] ?? '#2D5BFF' }}aa);">
                         <x-icon :name="$cm['icon'] ?? 'bag'" class="w-16 h-16 text-white/80"/>
                     </div>
                     {{-- actual image on top, if any --}}
@@ -329,7 +329,7 @@
     @php
         $heroPhoto = $business->photo_url ?: null;
         $heroInitial = mb_substr(trim($business->name ?: '?'), 0, 1);
-        $heroColor   = $cm['color'] ?? '#FF7A4D';
+        $heroColor   = $cm['color'] ?? '#2D5BFF';
     @endphp
     <div class="relative -mx-4 mb-4 overflow-hidden aspect-[16/10]"
          style="background: linear-gradient(135deg, {{ $heroColor }}, {{ $heroColor }}cc 60%, {{ $heroColor }}88);">
@@ -397,7 +397,7 @@
     {{-- Menu / Services CTA (adaptive label per business category) --}}
     @if($business->has_menu)
         @php $L = \App\Models\Business::menuLabels($business->category); @endphp
-        <a href="{{ route('menu.public', $business) }}" class="block mb-3 p-4 rounded-2xl bg-gradient-to-r from-coral-500 to-honey-500 text-white text-center hover:scale-[1.01] transition shadow-lg">
+        <a href="{{ route('menu.public', $business) }}" class="block mb-3 p-4 rounded-2xl bg-coral-500 text-white text-center hover:scale-[1.01] transition shadow-lg">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 mx-auto">
                 <rect x="6" y="3" width="12" height="18" rx="2"/>
                 <line x1="9" y1="8" x2="15" y2="8"/>
@@ -766,7 +766,7 @@
     @else
         {{-- Claim CTA: this business has no owner (typically OSM-imported) --}}
         <a href="{{ auth()->check() ? route('directory.claim.show', $business) : route('login').'?redirect='.urlencode(route('directory.claim.show', $business)) }}"
-           class="card-light p-4 mb-3 flex items-center gap-3 hover:bg-cream-100 transition border-coral-500/20 bg-gradient-to-r from-coral-50 to-honey-100/50">
+           class="card-light p-4 mb-3 flex items-center gap-3 hover:bg-cream-100 transition border-coral-500/20 bg-coral-50">
             <span class="w-10 h-10 rounded-2xl bg-coral-500 grid place-items-center text-white shrink-0">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
                     <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z"/>

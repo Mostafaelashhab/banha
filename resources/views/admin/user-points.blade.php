@@ -16,7 +16,7 @@
 
     {{-- ─── Balance card ─── --}}
     <div class="card-light p-5 mb-4 relative overflow-hidden"
-         style="background: linear-gradient(135deg, #FF7A4D 0%, #FFB85C 100%);">
+         style="background: #2D5BFF;">
         <div class="absolute -top-12 -end-10 w-40 h-40 rounded-full bg-white/20 blur-3xl pointer-events-none"></div>
         <div class="relative">
             <div class="text-white/85 text-[11px] font-bold uppercase tracking-wider">الرصيد الحالي</div>

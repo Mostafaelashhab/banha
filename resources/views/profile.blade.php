@@ -15,7 +15,7 @@
     <div class="text-center mb-5 pt-2">
         {{-- Avatar — small, centered, with subtle ring --}}
         <div class="relative inline-block">
-            <div class="p-0.5 rounded-full bg-gradient-to-br from-coral-500 to-honey-400 inline-block">
+            <div class="p-0.5 rounded-full bg-coral-500 inline-block">
                 <div class="p-0.5 rounded-full bg-cream-100">
                     <x-avatar :user="$user" size="lg"/>
                 </div>
@@ -212,7 +212,7 @@
 
         {{-- ─── POINTS DASHBOARD ─── --}}
         <div class="card-light p-5 mb-4 relative overflow-hidden"
-             style="background: linear-gradient(135deg, #FF7A4D 0%, #FFB85C 100%);">
+             style="background: #2D5BFF;">
             <div class="absolute -top-12 -end-10 w-40 h-40 rounded-full bg-white/20 blur-3xl pointer-events-none"></div>
             <div class="relative">
                 <div class="text-white/85 text-[11px] font-bold uppercase tracking-wider">رصيد نقاطك</div>

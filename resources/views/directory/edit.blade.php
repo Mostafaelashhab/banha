@@ -75,7 +75,7 @@
     .step-num {
         width: 26px; height: 26px;
         border-radius: 50%;
-        background: var(--cat-color, #FF7A4D);
+        background: var(--cat-color, #2D5BFF);
         color: #fff;
         display: grid; place-items: center;
         font-weight: 900;
@@ -126,7 +126,7 @@
         {{-- ──── STEP 1: Category picker (hidden by default; shown when "غيّر النوع" clicked) ──── --}}
         <section data-step="category" class="card-light p-5">
             <div class="flex items-center gap-3 mb-4">
-                <span class="step-num" style="--cat-color: #FF7A4D">١</span>
+                <span class="step-num" style="--cat-color: #2D5BFF">١</span>
                 <div>
                     <h2 class="text-sm font-extrabold text-ink-950">غيّر نوع نشاطك</h2>
                     <p class="text-[11px] text-ink-500">دوس على الفئة الجديدة.</p>

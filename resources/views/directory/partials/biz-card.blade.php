@@ -1,7 +1,7 @@
 @php
     /** @var \App\Models\Business $business */
     $cm       = $business->categoryMeta();
-    $color    = $cm['color'] ?? '#FF7A4D';
+    $color    = $cm['color'] ?? '#2D5BFF';
     $icon     = $cm['icon'] ?? 'bag';
     $rating   = (float) ($business->rating_avg ?? 0);
     $ratings  = (int) ($business->ratings_count ?? 0);

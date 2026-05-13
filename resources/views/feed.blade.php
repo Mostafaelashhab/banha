@@ -3,29 +3,58 @@
 @section('content')
 <div class="max-w-3xl mx-auto">
 
-    {{-- ───── Greeting line — personal, friendly ─────────────────────── --}}
-    <div class="mb-4 rise rise-1">
-        <h1 class="text-2xl font-black text-ink-950 leading-tight">
+    {{-- ───── Top row: Greeting + notification bell ─────── --}}
+    <div class="flex items-center justify-between gap-3 mb-4 rise rise-1">
+        <h1 class="text-xl font-black text-ink-950 leading-tight truncate">
             @auth
-                أهلاً يا {{ auth()->user()->username }}!
+                أهلاً {{ auth()->user()->username }}
             @else
-                أهلاً بيك في بنهاوي!
+                بنهاوي
             @endauth
         </h1>
-        <p class="text-ink-500 text-sm mt-1">إيه أخبارك النهارده؟</p>
-    </div>
 
-    {{-- ───── Search ─────────────────────────────────────────────────── --}}
-    <div class="mb-5 rise rise-1">
-        <a href="{{ route('search') }}"
-           class="relative flex items-center gap-2.5 bg-white rounded-2xl px-4 py-3.5 ring-1 ring-ink-950/8 hover:ring-coral-500/40 hover:shadow-lg transition group overflow-hidden">
-            <span class="search-shine"></span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="w-5 h-5 text-ink-400 shrink-0 relative">
+        @auth
+            @php $unread = \App\Models\Notification::where('user_id', auth()->id())->whereNull('read_at')->count(); @endphp
+            <a href="{{ route('notifications.index') }}"
+               class="relative w-10 h-10 rounded-full bg-coral-50 grid place-items-center text-coral-600 hover:bg-coral-100 transition shrink-0"
+               aria-label="إشعارات">
+                <x-icon name="bell" class="w-5 h-5"/>
+                @if($unread > 0)
+                    <span class="absolute -top-0.5 -end-0.5 min-w-[18px] h-[18px] rounded-full bg-coral-500 text-white text-[10px] font-extrabold grid place-items-center px-1 ring-2 ring-cream-100">
+                        {{ $unread > 9 ? '9+' : $unread }}
+                    </span>
+                @endif
+            </a>
+        @endauth
+    </div>
+    {{-- Live search — debounced suggest dropdown --}}
+    <div class="relative mb-6 rise rise-1" id="home-search" data-suggest-url="{{ route('search.suggest') }}">
+        <form action="{{ route('search') }}" method="GET" class="flex items-center gap-2 bg-cream-200 rounded-full ps-5 pe-1.5 py-1.5 ring-1 ring-ink-950/5 focus-within:ring-coral-500/40 transition">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="w-4 h-4 text-ink-400 shrink-0">
                 <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
-            <span class="text-sm text-ink-500 flex-1 truncate relative">دوّر على نشاط، صنايعي، أو دكتور…</span>
-            <span class="relative text-[11px] font-extrabold bg-coral-500 text-white px-3 py-1.5 rounded-xl group-hover:bg-coral-600 transition shadow-sm shadow-coral-500/30">ابحث</span>
-        </a>
+            <input type="search" name="q" autocomplete="off"
+                   placeholder="ابحث في بنهاوي…"
+                   class="flex-1 bg-transparent text-sm text-ink-950 placeholder-ink-400 outline-none border-0"
+                   data-suggest-input>
+            <button type="button" class="hidden text-ink-400 hover:text-ink-950 transition text-lg leading-none" data-suggest-clear aria-label="مسح">×</button>
+            <button type="submit" class="w-9 h-9 rounded-full bg-coral-500 text-white grid place-items-center shrink-0 hover:bg-coral-600 transition" aria-label="ابحث">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="w-4 h-4">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+            </button>
+        </form>
+
+        {{-- Dropdown results --}}
+        <div class="absolute inset-x-0 top-full mt-2 bg-white rounded-2xl ring-1 ring-ink-950/8 shadow-xl overflow-hidden z-30 hidden"
+             data-suggest-panel>
+            <div class="max-h-[60vh] overflow-y-auto" data-suggest-list></div>
+            <a href="{{ route('search') }}"
+               class="hidden items-center justify-center gap-2 px-4 py-3 text-xs font-extrabold text-coral-600 bg-cream-100 hover:bg-coral-50 transition border-t border-ink-950/5"
+               data-suggest-all>
+                شوف كل النتايج ←
+            </a>
+        </div>
     </div>
 
     {{-- ───── Promo banners — 4-card slider (map, QR menu, add biz, post ad) ──── --}}
@@ -54,9 +83,17 @@
 
     {{-- ───── Categories — circle icons row ──────────────────────────── --}}
     <section class="mb-10 rise rise-3">
-        <div class="flex items-center justify-between mb-3 px-1">
-            <h2 class="text-base font-extrabold text-ink-950">الفئات</h2>
-            <a href="{{ route('directory.index') }}" class="text-xs font-bold text-coral-600">شوف الكل ←</a>
+        <div class="flex items-center justify-between mb-4 px-1">
+            <h2 class="text-xl font-black text-ink-950">الفئات</h2>
+            <a href="{{ route('directory.index') }}"
+               class="inline-flex items-center gap-2 text-sm font-extrabold text-ink-950 hover:text-coral-600 transition">
+                شوف الكل
+                <span class="w-9 h-9 rounded-full bg-coral-50 text-coral-600 grid place-items-center hover:bg-coral-100 transition">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="w-4 h-4">
+                        <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                </span>
+            </a>
         </div>
         <div class="overflow-x-auto scrollbar-hide -mx-4 px-4 py-2">
             <div class="flex items-start gap-3 min-w-max">
@@ -74,12 +111,17 @@
 
     {{-- ───── Sponsored ────────────────────────────────────────────────── --}}
     <section class="mb-10 rise rise-2">
-        <div class="flex items-center justify-between mb-3 px-1">
-            <h2 class="text-base font-extrabold text-ink-950 inline-flex items-center gap-1.5">
-               
-                مميّزة الأسبوع
-            </h2>
-        
+        <div class="flex items-center justify-between mb-4 px-1">
+            <h2 class="text-xl font-black text-ink-950">مميّزة الأسبوع</h2>
+            <a href="{{ route('directory.index') }}"
+               class="inline-flex items-center gap-2 text-sm font-extrabold text-ink-950 hover:text-coral-600 transition">
+                شوف الكل
+                <span class="w-9 h-9 rounded-full bg-coral-50 text-coral-600 grid place-items-center hover:bg-coral-100 transition">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="w-4 h-4">
+                        <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                </span>
+            </a>
         </div>
 
         @if($promoted->isNotEmpty())
@@ -94,7 +136,7 @@
                                          onerror="this.style.display='none'">
                                 @else
                                     <span class="promoted-logo-fallback"
-                                          style="background: linear-gradient(135deg, {{ $cm['color'] ?? '#FF7A4D' }}, {{ $cm['color'] ?? '#FF7A4D' }}cc);">
+                                          style="background: linear-gradient(135deg, {{ $cm['color'] ?? '#2D5BFF' }}, {{ $cm['color'] ?? '#2D5BFF' }}cc);">
                                         {{ mb_substr($b->name, 0, 1) }}
                                     </span>
                                 @endif
@@ -108,11 +150,11 @@
             {{-- Advertiser slot (empty state = pitch) --}}
             <a href="{{ Auth::check() ? route('directory.create') : route('signup') }}"
                class="block relative overflow-hidden rounded-2xl p-5 ring-1 ring-honey-500/30 hover:ring-honey-500/60 transition group"
-               style="background: linear-gradient(135deg, #FFF7E9, #FFE4C2);">
+               style="background: #EEF2FF;">
                 <div class="absolute -top-10 -end-10 w-40 h-40 rounded-full bg-honey-400/30 blur-2xl pulse-soft pointer-events-none"></div>
                 <div class="relative flex items-center gap-3">
                     <span class="w-12 h-12 rounded-2xl grid place-items-center text-white shadow-lg shadow-honey-500/40"
-                          style="background: linear-gradient(135deg, #FFB85C, #FF9F2D);">
+                          style="background: #2D5BFF;">
                         <svg viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
                             <polygon points="12 2 15 9 22 9.5 17 14.5 18.5 22 12 18 5.5 22 7 14.5 2 9.5 9 9"/>
                         </svg>
@@ -134,11 +176,17 @@
     {{-- ───── 2) Top rated ─────────────────────────────────────────────── --}}
     @if($featured->isNotEmpty())
         <section class="rise rise-3 mb-10">
-            <div class="flex items-center justify-between mb-3 px-1">
-                <h2 class="text-base font-extrabold text-ink-950 inline-flex items-center gap-1.5">
-                 الأكتر تقييم في بنها
-                </h2>
-                <a href="{{ route('directory.index') }}" class="text-xs font-bold text-coral-600">شوف الكل ←</a>
+            <div class="flex items-center justify-between mb-4 px-1">
+                <h2 class="text-xl font-black text-ink-950">الأكتر تقييم في بنها</h2>
+                <a href="{{ route('directory.index') }}"
+                   class="inline-flex items-center gap-2 text-sm font-extrabold text-ink-950 hover:text-coral-600 transition">
+                    شوف الكل
+                    <span class="w-9 h-9 rounded-full bg-coral-50 text-coral-600 grid place-items-center hover:bg-coral-100 transition">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="w-4 h-4">
+                            <polyline points="15 18 9 12 15 6"/>
+                        </svg>
+                    </span>
+                </a>
             </div>
 
             <div class="biz-card-scroll">
@@ -193,15 +241,23 @@
     {{-- ───── 3) Open now ──────────────────────────────────────────────── --}}
     @if($openNow->isNotEmpty())
         <section class="rise rise-4">
-            <div class="flex items-center justify-between mb-3 px-1">
-                <h2 class="text-base font-extrabold text-ink-950 inline-flex items-center gap-1.5">
-                    <span class="inline-flex items-center gap-1 text-[10px] font-extrabold px-1.5 py-0.5 rounded-full bg-mint-100 text-mint-700">
+            <div class="flex items-center justify-between mb-4 px-1">
+                <h2 class="text-xl font-black text-ink-950 inline-flex items-center gap-2">
+                    مفتوح دلوقتي
+                    <span class="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-mint-100 text-mint-700">
                         <span class="w-1.5 h-1.5 rounded-full bg-mint-500 pulse-soft"></span>
                         LIVE
                     </span>
-                    مفتوح دلوقتي
                 </h2>
-                <a href="{{ route('directory.index', ['open_now' => 1]) }}" class="text-xs font-bold text-coral-600">شوف الكل ←</a>
+                <a href="{{ route('directory.index', ['open_now' => 1]) }}"
+                   class="inline-flex items-center gap-2 text-sm font-extrabold text-ink-950 hover:text-coral-600 transition">
+                    شوف الكل
+                    <span class="w-9 h-9 rounded-full bg-coral-50 text-coral-600 grid place-items-center hover:bg-coral-100 transition">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="w-4 h-4">
+                            <polyline points="15 18 9 12 15 6"/>
+                        </svg>
+                    </span>
+                </a>
             </div>
 
             <div class="biz-card-scroll">

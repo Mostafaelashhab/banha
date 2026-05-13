@@ -64,7 +64,7 @@
 
 {{-- ─── Sparkline stat tiles ──────────────────────── --}}
 @php
-    $renderSparkline = function (array $series, string $color = '#FF7A4D') {
+    $renderSparkline = function (array $series, string $color = '#2D5BFF') {
         $max = max(array_column($series, 'c')) ?: 1;
         $w = 100; $h = 32;
         $step = $w / max(count($series) - 1, 1);
@@ -82,8 +82,8 @@
     };
 
     $tiles = [
-        ['label'=>'مستخدمين',        'value'=>$stats['users'],         'today'=>$stats['users_today'],   'pct'=>$stats['users_pct'],   'series'=>$charts['users'],  'color'=>'#FF7A4D', 'icon'=>'user'],
-        ['label'=>'بوستات',          'value'=>$stats['posts'],         'today'=>$stats['posts_today'],   'pct'=>$stats['posts_pct'],   'series'=>$charts['posts'],  'color'=>'#FFB85C', 'icon'=>'flame'],
+        ['label'=>'مستخدمين',        'value'=>$stats['users'],         'today'=>$stats['users_today'],   'pct'=>$stats['users_pct'],   'series'=>$charts['users'],  'color'=>'#2D5BFF', 'icon'=>'user'],
+        ['label'=>'بوستات',          'value'=>$stats['posts'],         'today'=>$stats['posts_today'],   'pct'=>$stats['posts_pct'],   'series'=>$charts['posts'],  'color'=>'#FFD440', 'icon'=>'flame'],
         ['label'=>'تنبيهات شغّالة', 'value'=>$stats['alerts_active'], 'today'=>$stats['alerts_today'],  'pct'=>$stats['alerts_pct'],  'series'=>$charts['alerts'], 'color'=>'#1FA857', 'icon'=>'bolt'],
         ['label'=>'أسعار مرفوعة',    'value'=>$stats['prices'],        'today'=>$stats['prices_today'],  'pct'=>$stats['prices_pct'],  'series'=>$charts['prices'], 'color'=>'#7C3AED', 'icon'=>'tag'],
     ];
@@ -158,8 +158,8 @@
                 @endphp
                 <div class="flex-1 flex flex-col items-center gap-1.5">
                     <div class="w-full flex items-end gap-1 flex-1">
-                        <div class="flex-1 rounded-t-md transition" style="height: {{ $hu }}%; background: linear-gradient(to top, #FF7A4D, #FFB85C)"></div>
-                        <div class="flex-1 rounded-t-md transition" style="height: {{ $hp }}%; background: linear-gradient(to top, #FFB85C, #FFC97A); opacity: .8"></div>
+                        <div class="flex-1 rounded-t-md transition" style="height: {{ $hu }}%; background: linear-gradient(to top, #2D5BFF, #FFD440)"></div>
+                        <div class="flex-1 rounded-t-md transition" style="height: {{ $hp }}%; background: linear-gradient(to top, #FFD440, #FFC97A); opacity: .8"></div>
                     </div>
                     <div class="flex gap-1.5 text-[10px] font-bold">
                         <span class="text-coral-600">{{ $u['c'] }}</span>

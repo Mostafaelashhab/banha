@@ -13,13 +13,10 @@
 @php
     $isCustom = $variant === 'custom' || $image || $bgFrom;
     $style = '';
-    if ($isCustom) {
-        if ($image) {
-            $style = "background-image: linear-gradient(135deg, rgba(11,11,12,.55), rgba(11,11,12,.25)), url('".e($image)."'); background-size: cover; background-position: center;";
-        } elseif ($bgFrom) {
-            $to = $bgTo ?: $bgFrom;
-            $style = "background: linear-gradient(135deg, ".e($bgFrom).", ".e($to).");";
-        }
+    // For custom banners, use the bg color as solid (no gradient, no image overlay).
+    // The image (if any) sits on the side as a separate element — the Shoppe pattern.
+    if ($isCustom && $bgFrom) {
+        $style = "background: ".e($bgFrom).";";
     }
 @endphp
 
@@ -342,25 +339,59 @@
 </svg>
     @endif
 
-    <div class="relative max-w-[60%]">
-        @if($tag)
-            <span class="promo-card-tag">
-                <span class="promo-card-tag-dot"></span>
-                {{ $tag }}
+    @if($isCustom)
+        {{-- Decorative wavy shape, lighter tint of the bg color, sits behind text --}}
+        <svg class="promo-card-wave" viewBox="0 0 320 200" preserveAspectRatio="none" fill="rgba(255,255,255,.12)" aria-hidden="true">
+            <path d="M0 50 C 80 10, 160 90, 320 30 L 320 0 L 0 0 Z"/>
+            <path d="M0 170 C 100 130, 220 200, 320 150 L 320 200 L 0 200 Z" opacity=".6"/>
+        </svg>
+
+        {{-- Cover image on the right side (when provided) --}}
+        @if($image)
+            <div class="promo-card-image">
+                <img src="{{ $image }}" alt="{{ $title }}" loading="lazy"/>
+            </div>
+        @endif
+
+        <div class="promo-card-body {{ $image ? 'with-image' : '' }}">
+            @if($tag)
+                <span class="promo-card-tag">{{ $tag }}</span>
+            @endif
+            <div class="promo-card-title">{{ $title }}</div>
+            @if($desc)
+                <p class="promo-card-desc">{{ $desc }}</p>
+            @endif
+            @if($cta)
+                <span class="promo-card-cta">
+                    {{ $cta }}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="w-3.5 h-3.5">
+                        <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                </span>
+            @endif
+        </div>
+    @else
+        {{-- Default static variants (map/menu/add/ad) keep the old layout --}}
+        <div class="relative max-w-[60%]">
+            @if($tag)
+                <span class="promo-card-tag">
+                    <span class="promo-card-tag-dot"></span>
+                    {{ $tag }}
+                </span>
+            @endif
+            <div class="font-black text-lg leading-tight mt-2">{{ $title }}</div>
+            @if($desc)
+                <p class="text-white/90 text-[12px] mt-1 leading-snug font-bold">{{ $desc }}</p>
+            @endif
+        </div>
+
+        @if($cta)
+            <span class="promo-card-cta">
+                {{ $cta }}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="w-3.5 h-3.5">
+                    <polyline points="15 18 9 12 15 6"/>
+                </svg>
             </span>
         @endif
-        <div class="font-black text-lg leading-tight mt-2">{{ $title }}</div>
-        @if($desc)
-            <p class="text-white/90 text-[12px] mt-1 leading-snug font-bold">{{ $desc }}</p>
-        @endif
-    </div>
-
-    @if($cta)
-        <span class="promo-card-cta">
-            {{ $cta }}
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="w-3.5 h-3.5">
-                <polyline points="15 18 9 12 15 6"/>
-            </svg>
-        </span>
     @endif
 </a>

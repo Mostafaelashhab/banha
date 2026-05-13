@@ -19,9 +19,9 @@
     .menu-cat-nav { scroll-snap-type: x mandatory; }
     .menu-cat-nav > a { scroll-snap-align: start; }
     .menu-cat-nav > a.is-active {
-        background: var(--color-coral-500, #FF7A4D);
+        background: var(--color-coral-500, #2D5BFF);
         color: #fff;
-        border-color: var(--color-coral-500, #FF7A4D);
+        border-color: var(--color-coral-500, #2D5BFF);
     }
     html { scroll-padding-top: 80px; }
 </style>
@@ -95,7 +95,7 @@
 @php
     $heroPhoto = ($business->photo_url && ! str_contains($business->photo_url, 'd-innova.com')) ? $business->photo_url : null;
     $heroInitial = mb_substr(trim($business->name ?: '?'), 0, 1);
-    $heroColor   = ($business->categoryMeta()['color'] ?? '#FF7A4D');
+    $heroColor   = ($business->categoryMeta()['color'] ?? '#2D5BFF');
     $itemsCount = $business->menuItems()->where('is_available', true)->count();
 
     // Build a pre-filled WhatsApp order message

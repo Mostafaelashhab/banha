@@ -71,9 +71,9 @@
 
     {{-- Kind segmented control --}}
     <div class="grid grid-cols-4 gap-2 mb-3">
-        @php $colorByTone = ['coral' => '#FF7A4D', 'mint' => '#1FA857', 'blush' => '#E64646', 'honey' => '#FFB85C']; @endphp
+        @php $colorByTone = ['coral' => '#2D5BFF', 'mint' => '#1FA857', 'blush' => '#E64646', 'honey' => '#FFD440']; @endphp
         @foreach($kinds as $k => $meta)
-            @php $col = $colorByTone[$meta['tone']] ?? '#FF7A4D'; @endphp
+            @php $col = $colorByTone[$meta['tone']] ?? '#2D5BFF'; @endphp
             <a href="{{ route('marketplace.index', ['kind' => $k]) }}"
                class="kind-chip {{ $activeKind === $k ? 'is-active' : '' }}"
                style="--kind-color: {{ $col }};">
@@ -118,7 +118,7 @@
 
     {{-- Results --}}
     @if($listings->isEmpty())
-        @php $km = $kinds[$activeKind]; $col = $colorByTone[$km['tone']] ?? '#FF7A4D'; @endphp
+        @php $km = $kinds[$activeKind]; $col = $colorByTone[$km['tone']] ?? '#2D5BFF'; @endphp
         <div class="card-light p-10 text-center">
             <div class="w-14 h-14 rounded-2xl mx-auto mb-3 grid place-items-center"
                  style="background: {{ $col }}1a; color: {{ $col }};">

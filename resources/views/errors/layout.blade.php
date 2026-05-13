@@ -12,13 +12,13 @@
 <body class="min-h-screen grid place-items-center p-6" style="background: linear-gradient(135deg, #FFF7F1 0%, #FFE8DD 100%);">
     <div class="max-w-sm w-full text-center">
         <div class="w-24 h-24 rounded-3xl mx-auto mb-6 grid place-items-center shadow-2xl"
-             style="background: linear-gradient(135deg, {{ $bg ?? '#FF7A4D' }}, {{ $bg2 ?? '#FFB85C' }});">
+             style="background: linear-gradient(135deg, {{ $bg ?? '#2D5BFF' }}, {{ $bg2 ?? '#FFD440' }});">
             <div class="text-white">
                 {!! $icon ?? '' !!}
             </div>
         </div>
 
-        <div class="text-6xl font-black mb-1" style="color: {{ $bg ?? '#FF7A4D' }}">{{ $code ?? '' }}</div>
+        <div class="text-6xl font-black mb-1" style="color: {{ $bg ?? '#2D5BFF' }}">{{ $code ?? '' }}</div>
         <h1 class="text-2xl font-black text-ink-950 mb-2">{{ $heading ?? '' }}</h1>
         <p class="text-ink-500 text-sm leading-relaxed mb-8">{{ $message ?? '' }}</p>
 

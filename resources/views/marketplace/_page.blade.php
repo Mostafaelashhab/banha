@@ -2,8 +2,8 @@
     @php
         $km = $listing->kindMeta();
         $cm = $listing->categoryMeta();
-        $colorByTone = ['coral' => '#FF7A4D', 'mint' => '#1FA857', 'blush' => '#E64646', 'honey' => '#FFB85C'];
-        $kindColor = $colorByTone[$km['tone']] ?? '#FF7A4D';
+        $colorByTone = ['coral' => '#2D5BFF', 'mint' => '#1FA857', 'blush' => '#E64646', 'honey' => '#FFD440'];
+        $kindColor = $colorByTone[$km['tone']] ?? '#2D5BFF';
         $hasPrice = in_array($listing->kind, ['sale', 'buy'], true);
     @endphp
     <a href="{{ route('marketplace.show', $listing) }}"

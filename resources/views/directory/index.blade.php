@@ -76,13 +76,26 @@
 <div id="dir-filter-sheet" class="modal-wrap" role="dialog" aria-modal="true" aria-labelledby="dir-filter-title">
     <div class="modal-backdrop" data-close></div>
     <div class="modal-sheet">
-        <div class="p-5 pt-3">
-            <div class="mx-auto w-10 h-1 rounded-full bg-ink-950/15 mb-4"></div>
+        <div class="px-5 pt-3 pb-5">
+            {{-- Drag handle — wraps the top area so user can swipe down to dismiss --}}
+            <div class="modal-drag-handle" data-drag-handle>
+                <span class="modal-drag-bar"></span>
+            </div>
 
-            <div class="flex items-center justify-between mb-5">
-                <h3 id="dir-filter-title" class="text-lg font-black text-ink-950">فلتر</h3>
+            {{-- Header --}}
+            <div class="flex items-center justify-between mb-1">
+                <h3 id="dir-filter-title" class="text-lg font-black text-ink-950 inline-flex items-center gap-2">
+                    <span class="w-7 h-7 rounded-lg bg-coral-500 text-white grid place-items-center">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" class="w-3.5 h-3.5">
+                            <line x1="4"  y1="6"  x2="20" y2="6"/>
+                            <line x1="7"  y1="12" x2="17" y2="12"/>
+                            <line x1="10" y1="18" x2="14" y2="18"/>
+                        </svg>
+                    </span>
+                    فلتر
+                </h3>
                 <button type="button" data-close
-                        class="w-9 h-9 rounded-full grid place-items-center text-ink-500 hover:bg-ink-950/5"
+                        class="w-9 h-9 rounded-full grid place-items-center text-ink-500 hover:bg-ink-950/5 transition"
                         aria-label="إغلاق">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" class="w-5 h-5">
                         <line x1="18" y1="6" x2="6"  y2="18"/>
@@ -90,24 +103,26 @@
                     </svg>
                 </button>
             </div>
+            <p class="text-[11px] text-ink-500 mb-5">اختار منطقة لتفلتر النشاطات اللي فيها.</p>
 
             @if($topZones->isNotEmpty())
-                <div class="mb-1">
-                    <div class="flex items-baseline justify-between mb-3">
-                        <h4 class="text-sm font-extrabold text-ink-950">المناطق</h4>
-                        <a href="{{ route('zones') }}" class="text-xs font-bold text-coral-600">شوف الكل ←</a>
-                    </div>
-                    <div class="flex flex-wrap gap-2 max-h-[55vh] overflow-y-auto pb-3">
-                        @foreach($topZones as $z)
-                            <a href="{{ route('directory.index', ['zone' => $z->id]) }}"
-                               class="inline-flex items-center gap-1.5 bg-cream-100 hover:bg-coral-500 hover:text-white px-3.5 py-2 rounded-full text-ink-950 transition">
-                                <span class="text-[13px] font-extrabold">{{ $z->name }}</span>
-                                @if($z->businesses_count)
-                                    <span class="text-[10px] font-bold opacity-60">{{ $z->businesses_count }}</span>
-                                @endif
-                            </a>
-                        @endforeach
-                    </div>
+                <h4 class="text-xs font-extrabold text-ink-500 uppercase tracking-wider mb-3">المناطق</h4>
+                <div class="flex flex-wrap gap-2 max-h-[55vh] overflow-y-auto pb-2">
+                    @foreach($topZones as $z)
+                        <a href="{{ route('directory.index', ['zone' => $z->id]) }}"
+                           class="group inline-flex items-center gap-2 bg-white ring-1 ring-ink-950/8 hover:ring-coral-500 hover:bg-coral-500 hover:text-white px-3.5 py-2 rounded-full text-ink-950 transition">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-coral-500 group-hover:text-white transition">
+                                <path d="M20 10c0 7-8 13-8 13s-8-6-8-13a8 8 0 0 1 16 0Z"/>
+                                <circle cx="12" cy="10" r="3"/>
+                            </svg>
+                            <span class="text-[13px] font-extrabold">{{ $z->name }}</span>
+                            @if($z->businesses_count)
+                                <span class="text-[10px] font-extrabold bg-coral-100 text-coral-700 group-hover:bg-white/25 group-hover:text-white rounded-full px-1.5 py-0.5 transition">
+                                    {{ number_format($z->businesses_count) }}
+                                </span>
+                            @endif
+                        </a>
+                    @endforeach
                 </div>
             @else
                 <p class="text-sm text-ink-400 py-4 text-center">مفيش مناطق متاحة دلوقتي.</p>
@@ -153,14 +168,73 @@
     const sheet = document.getElementById('dir-filter-sheet');
 
     if (btn && sheet) {
+        const sheetEl = sheet.querySelector('.modal-sheet');
+        const handle  = sheet.querySelector('[data-drag-handle]');
+
         const open  = () => { sheet.classList.add('open');    document.body.style.overflow = 'hidden'; };
-        const close = () => { sheet.classList.remove('open'); document.body.style.overflow = ''; };
+        const close = () => {
+            sheet.classList.remove('open');
+            document.body.style.overflow = '';
+            // Reset any inline drag-translate so the next open animates from rest
+            if (sheetEl) sheetEl.style.transform = '';
+        };
 
         btn.addEventListener('click', open);
         sheet.querySelectorAll('[data-close]').forEach((el) => el.addEventListener('click', close));
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && sheet.classList.contains('open')) close();
         });
+
+        // ── Drag-to-dismiss ──────────────────────────────────────────
+        // Pointer events cover mouse + touch + pen. The handle has
+        // touch-action: none so the browser won't fight us by scrolling.
+        if (handle && sheetEl) {
+            let startY = 0, lastY = 0, dy = 0, startT = 0, dragging = false;
+
+            const onDown = (e) => {
+                if (! sheet.classList.contains('open')) return;
+                dragging = true;
+                startY = lastY = e.clientY ?? (e.touches && e.touches[0].clientY) ?? 0;
+                startT = performance.now();
+                dy = 0;
+                sheetEl.classList.add('is-dragging');
+                handle.setPointerCapture?.(e.pointerId);
+            };
+
+            const onMove = (e) => {
+                if (! dragging) return;
+                const y = e.clientY ?? (e.touches && e.touches[0].clientY) ?? 0;
+                dy = Math.max(0, y - startY);   // never allow upward drag
+                lastY = y;
+                sheetEl.style.transform = `translateY(${dy}px)`;
+            };
+
+            const onUp = () => {
+                if (! dragging) return;
+                dragging = false;
+                sheetEl.classList.remove('is-dragging');
+
+                const elapsed   = performance.now() - startT;
+                const velocity  = dy / Math.max(elapsed, 1);          // px/ms
+                const sheetH    = sheetEl.offsetHeight || 400;
+                const flicked   = velocity > 0.6;                     // fast swipe
+                const dragged30 = dy > sheetH * 0.30;                  // dragged > 30% down
+
+                if (flicked || dragged30) {
+                    // Slide it the rest of the way out, then close
+                    sheetEl.style.transform = `translateY(${sheetH + 40}px)`;
+                    setTimeout(close, 180);
+                } else {
+                    // Snap back
+                    sheetEl.style.transform = '';
+                }
+            };
+
+            handle.addEventListener('pointerdown', onDown);
+            handle.addEventListener('pointermove', onMove);
+            handle.addEventListener('pointerup',   onUp);
+            handle.addEventListener('pointercancel', onUp);
+        }
     }
 })();
 </script>

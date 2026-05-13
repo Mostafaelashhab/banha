@@ -65,12 +65,12 @@
             <div class="grid grid-cols-2 gap-2">
                 <div>
                     <label class="text-xs font-bold text-ink-500 mb-1 block">لون من</label>
-                    <input type="text" name="bg_from" maxlength="16" placeholder="#FF7A4D"
+                    <input type="text" name="bg_from" maxlength="16" placeholder="#2D5BFF"
                            class="w-full rounded-2xl px-3 py-2.5 text-sm outline-0 focus:border-coral-500 transition">
                 </div>
                 <div>
                     <label class="text-xs font-bold text-ink-500 mb-1 block">لون لـ</label>
-                    <input type="text" name="bg_to" maxlength="16" placeholder="#FFB85C"
+                    <input type="text" name="bg_to" maxlength="16" placeholder="#FFD440"
                            class="w-full rounded-2xl px-3 py-2.5 text-sm outline-0 focus:border-coral-500 transition">
                 </div>
             </div>
@@ -111,7 +111,7 @@
                         <img src="{{ $b->image_url }}" alt="{{ $b->title }}" class="w-full h-full object-cover">
                     @else
                         <div class="w-full h-full"
-                             style="background: linear-gradient(135deg, {{ $b->bg_from ?: '#FF7A4D' }}, {{ $b->bg_to ?: '#FFB85C' }})"></div>
+                             style="background: linear-gradient(135deg, {{ $b->bg_from ?: '#2D5BFF' }}, {{ $b->bg_to ?: '#FFD440' }})"></div>
                     @endif
                     <div class="absolute inset-0 bg-gradient-to-t from-ink-950/70 via-ink-950/20 to-transparent p-4 flex flex-col justify-end text-white">
                         @if($b->tag)

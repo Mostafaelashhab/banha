@@ -8,7 +8,7 @@
    class="card-light p-0 mb-3 overflow-hidden block hover:-translate-y-0.5 hover:shadow-lg transition relative {{ $isOfficialOutage ? 'ring-2 ring-coral-500/30' : '' }}">
     {{-- Top banner --}}
     <div class="px-4 py-2 flex items-center justify-between text-white text-xs font-bold pill-{{ $meta['tone'] }}"
-         style="background: linear-gradient(90deg, {{ $meta['tone'] === 'blush' ? '#E64646, #FF7A4D' : ($meta['tone'] === 'mint' ? '#1FA857, #0D8A3F' : '#FF7A4D, #FFB85C') }})">
+         style="background: linear-gradient(90deg, {{ $meta['tone'] === 'blush' ? '#E64646, #2D5BFF' : ($meta['tone'] === 'mint' ? '#1FA857, #0D8A3F' : '#2D5BFF, #FFD440') }})">
         <span class="inline-flex items-center gap-1.5 text-white">
             <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
             <x-icon :name="$meta['icon']" class="w-3.5 h-3.5"/>

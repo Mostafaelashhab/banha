@@ -6,24 +6,30 @@
 @source '../**/*.js';
 
 @theme {
-    /* Brand palette — Splitty inspired */
-    --color-coral-50:  #FFF1EA;
-    --color-coral-100: #FFE0D1;
-    --color-coral-200: #FFC1A3;
-    --color-coral-300: #FFA275;
-    --color-coral-400: #FF8C5A;
-    --color-coral-500: #FF7A4D;
-    --color-coral-600: #F55A2C;
-    --color-coral-700: #D83F12;
-    --color-coral-800: #A82F0A;
+    /* Brand palette — Shoppe-inspired blue primary, yellow accent.
+       Class names kept as `coral-*` and `honey-*` so existing markup stays
+       unchanged; only the values shift. */
 
-    --color-honey-300: #FFC97A;
-    --color-honey-400: #FFB85C;
-    --color-honey-500: #FFA037;
+    /* Primary (was coral / orange) — vibrant electric blue */
+    --color-coral-50:  #EEF2FF;
+    --color-coral-100: #DCE4FF;
+    --color-coral-200: #B6C5FF;
+    --color-coral-300: #8AA1FF;
+    --color-coral-400: #5C7DFF;
+    --color-coral-500: #2D5BFF;
+    --color-coral-600: #1F46DB;
+    --color-coral-700: #1736B0;
+    --color-coral-800: #0F2787;
 
-    --color-cream-50:  #FFFCF8;
-    --color-cream-100: #FFF7F1;
-    --color-cream-200: #FFEFE3;
+    /* Accent (was honey) — buttery yellow for sale banners / featured strips */
+    --color-honey-300: #FFE082;
+    --color-honey-400: #FFD440;
+    --color-honey-500: #F5BA12;
+
+    /* Background tones (was cream) — clean light-gray */
+    --color-cream-50:  #FAFAFC;
+    --color-cream-100: #F4F5F8;
+    --color-cream-200: #E9EBF1;
 
     --color-ink-950: #0B0B0C;
     --color-ink-900: #131316;
@@ -45,7 +51,7 @@
 
     --shadow-soft: 0 10px 30px -12px rgb(15 15 20 / 0.12);
     --shadow-card: 0 6px 20px -6px rgb(15 15 20 / 0.08);
-    --shadow-glow: 0 30px 80px -20px rgb(255 122 77 / 0.45);
+    --shadow-glow: 0 30px 80px -20px rgb(45 91 255 / 0.45);
 
     --radius-card: 26px;
 }
@@ -67,8 +73,8 @@ html[dir="rtl"] body {
     font-feature-settings: 'kern', 'liga';
     -webkit-font-smoothing: antialiased;
     background:
-        radial-gradient(45% 35% at 100% 0%, rgba(255, 122, 77, .14) 0%, transparent 60%),
-        radial-gradient(40% 30% at 0% 100%, rgba(255, 184, 92, .12) 0%, transparent 60%),
+        radial-gradient(45% 35% at 100% 0%, rgba(45, 91, 255, .08) 0%, transparent 60%),
+        radial-gradient(40% 30% at 0% 100%, rgba(255, 212, 64, .08) 0%, transparent 60%),
         var(--color-cream-100);
     color: var(--color-ink-950);
     overflow-x: hidden;
@@ -76,10 +82,10 @@ html[dir="rtl"] body {
 
 /* IMPORTANT: use background-image so bg-clip-text works alongside */
 .brand-gradient {
-    background-image: linear-gradient(135deg, var(--color-coral-500) 0%, var(--color-honey-400) 100%);
+    background-image: var(--color-coral-500);
 }
 .brand-bg {
-    background: linear-gradient(135deg, var(--color-coral-500) 0%, var(--color-honey-400) 100%);
+    background: var(--color-coral-500);
 }
 
 /* Replaces broken gradient-text approach: solid coral, no bg-clip-text needed */
@@ -93,7 +99,7 @@ html[dir="rtl"] body {
 }
 
 .card-orange {
-    background: linear-gradient(160deg, var(--color-coral-500) 0%, var(--color-honey-400) 100%);
+    background: var(--color-coral-500);
     border-radius: var(--radius-card);
     box-shadow: var(--shadow-glow);
     color: #fff;
@@ -115,7 +121,7 @@ html[dir="rtl"] body {
 }
 .card-light.tier-gold {
     background:
-        linear-gradient(135deg, rgba(29, 155, 240, .06), rgba(255, 184, 92, .05) 40%, transparent 70%),
+        linear-gradient(135deg, rgba(29, 155, 240, .06), rgba(255, 212, 64, .05) 40%, transparent 70%),
         #fff;
     border-color: rgba(29, 155, 240, .35);
     box-shadow:
@@ -128,7 +134,7 @@ html[dir="rtl"] body {
     inset: -1px;
     border-radius: 22px;
     padding: 1px;
-    background: linear-gradient(135deg, rgba(29, 155, 240, .4), rgba(255, 184, 92, .3) 50%, transparent);
+    background: linear-gradient(135deg, rgba(29, 155, 240, .4), rgba(255, 212, 64, .3) 50%, transparent);
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
@@ -156,8 +162,8 @@ html[dir="rtl"] body {
 /* Promoted business card — paid-ad treatment (subtle but distinguishable) */
 .biz-card-promoted {
     box-shadow:
-        0 12px 32px -10px rgba(255, 184, 92, .35),
-        0 0 0 1px rgba(255, 184, 92, .35);
+        0 12px 32px -10px rgba(255, 212, 64, .35),
+        0 0 0 1px rgba(255, 212, 64, .35);
     position: relative;
 }
 .biz-card-promoted::after {
@@ -166,18 +172,18 @@ html[dir="rtl"] body {
     inset: 0;
     border-radius: inherit;
     pointer-events: none;
-    background: linear-gradient(135deg, rgba(255, 184, 92, .08), transparent 30%);
+    background: linear-gradient(135deg, rgba(255, 212, 64, .08), transparent 30%);
 }
 
 /* Sponsored post — gold/honey accent */
 .card-light.post-sponsored {
     background:
-        linear-gradient(135deg, rgba(255, 184, 92, .12), transparent 50%),
+        linear-gradient(135deg, rgba(255, 212, 64, .12), transparent 50%),
         #fff;
-    border-color: rgba(255, 184, 92, .55);
+    border-color: rgba(255, 212, 64, .55);
     box-shadow:
-        0 8px 24px -8px rgba(255, 184, 92, .35),
-        0 0 0 2px rgba(255, 184, 92, .25);
+        0 8px 24px -8px rgba(255, 212, 64, .35),
+        0 0 0 2px rgba(255, 212, 64, .25);
 }
 
 /* Announcement post — mint green accent */
@@ -229,7 +235,7 @@ html[dir="rtl"] body {
     padding: 12px;
     background: linear-gradient(160deg, #2A2A30, #0B0B0C);
     box-shadow:
-        0 60px 100px -30px rgba(255, 122, 77, .35),
+        0 60px 100px -30px rgba(45, 91, 255, .35),
         0 0 0 1px rgba(15, 15, 20, .08),
         inset 0 0 0 2px rgba(255, 255, 255, .04);
     position: relative;
@@ -251,7 +257,7 @@ html[dir="rtl"] body {
     height: 100%;
     border-radius: 34px;
     overflow: hidden;
-    background: linear-gradient(180deg, var(--color-coral-500) 0%, var(--color-honey-400) 100%);
+    background: var(--color-coral-500);
     position: relative;
     padding: 38px 14px 14px;
 }
@@ -552,7 +558,7 @@ html[dir="rtl"] body {
 .biz-card__subtitle {
     font-size: 12px;
     font-weight: 700;
-    color: var(--color-coral-500, #FF7A4D);
+    color: var(--color-coral-500, #2D5BFF);
     margin-top: 2px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -580,7 +586,7 @@ html[dir="rtl"] body {
     display: grid;
     place-items: center;
     background: var(--color-cream-200, #FFF1EA);
-    color: var(--color-coral-500, #FF7A4D);
+    color: var(--color-coral-500, #2D5BFF);
     flex-shrink: 0;
 }
 .biz-card__stat-icon svg { width: 14px; height: 14px; }
@@ -724,13 +730,12 @@ html[dir="rtl"] body {
     border-radius: 50%;
     display: grid;
     place-items: center;
-    background: #fff;
-    color: #FF7A4D;
-    border: 1px solid rgba(11, 11, 12, .06);
-    transition: transform .25s cubic-bezier(.2,.9,.3,1), box-shadow .25s;
-    box-shadow: 0 6px 16px -10px rgba(11, 11, 12, .12);
+    background: var(--color-coral-50);   /* soft blue tint, same as bell */
+    color: var(--color-coral-600);
+    transition: transform .25s cubic-bezier(.2,.9,.3,1), background .15s;
 }
 .cat-circle:hover .cat-circle-disc {
+    background: var(--color-coral-100);
     transform: scale(1.06) rotate(-2deg);
 }
 .cat-circle-label {
@@ -748,7 +753,7 @@ html[dir="rtl"] body {
     padding: 20px 22px;
     color: #fff;
     overflow: hidden;
-    background: linear-gradient(135deg, #FF7A4D 0%, #FF9F2D 60%, #FFB85C 100%);
+    background: #2D5BFF;
     min-height: 160px;
     display: flex;
     flex-direction: column;
@@ -788,6 +793,82 @@ html[dir="rtl"] body {
 }
 .promo-card-cta:hover { transform: scale(1.05); }
 
+/* ─── Custom (admin-uploaded) banner — Shoppe-style ─────────── */
+.promo-card { min-height: 180px; }
+
+.promo-card-wave {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.promo-card-image {
+    position: absolute;
+    inset-inline-end: 0;
+    top: 0;
+    bottom: 0;
+    width: 45%;
+    z-index: 1;
+    pointer-events: none;
+    -webkit-mask-image: linear-gradient(to left, #000 60%, transparent 100%);
+    mask-image: linear-gradient(to left, #000 60%, transparent 100%);
+}
+.promo-card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+
+.promo-card-body {
+    position: relative;
+    z-index: 2;
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.promo-card-body.with-image { max-width: 60%; }
+
+.promo-card-body .promo-card-tag {
+    align-self: flex-start;
+    background: rgba(255,255,255,.22);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,255,255,.3);
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 800;
+    margin-bottom: 4px;
+}
+
+.promo-card-body .promo-card-title {
+    color: #fff;
+    font-weight: 900;
+    font-size: 26px;
+    line-height: 1.05;
+    letter-spacing: -.02em;
+    text-shadow: 0 2px 8px rgba(11,11,12,.18);
+}
+
+.promo-card-body .promo-card-desc {
+    color: rgba(255,255,255,.95);
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.3;
+    margin-top: 4px;
+}
+
+.promo-card-body .promo-card-cta {
+    margin-top: auto;
+    align-self: flex-start;
+}
+
 /* ─── Wallet card — modern fintech aesthetic ────────────────── */
 .wallet-card {
     position: relative;
@@ -797,7 +878,7 @@ html[dir="rtl"] body {
     background:
         radial-gradient(120% 80% at 100% 0%, rgba(255, 200, 120, .55) 0%, transparent 55%),
         radial-gradient(80% 60% at 0% 100%, rgba(192, 60, 30, .65) 0%, transparent 55%),
-        linear-gradient(135deg, #E0541C 0%, #C2410C 100%);
+        #2D5BFF;
     overflow: hidden;
     isolation: isolate;
     box-shadow:
@@ -908,7 +989,7 @@ html[dir="rtl"] body {
     display: block;
     height: 100%;
     border-radius: 999px;
-    background: linear-gradient(90deg, #FFD56B 0%, #FFFFFF 100%);
+    background: #FFD56B;
     box-shadow: 0 0 12px rgba(255, 213, 107, .55);
     transition: width .4s cubic-bezier(.2,.9,.3,1);
 }
@@ -973,7 +1054,7 @@ html[dir="rtl"] body {
     border-radius: 12px;
     display: grid;
     place-items: center;
-    background: linear-gradient(135deg, var(--color-coral-500), var(--color-honey-400));
+    background: var(--color-coral-500);
     color: #fff;
     flex-shrink: 0;
 }
@@ -984,7 +1065,7 @@ html[dir="rtl"] body {
     align-items: center;
     gap: 6px;
     background: var(--color-cream-100, #FFF7F1);
-    border: 1px dashed rgba(255, 122, 77, .4);
+    border: 1px dashed rgba(45, 91, 255, .4);
     padding: 6px 6px 6px 12px;
     border-radius: 10px;
 }
@@ -1048,7 +1129,7 @@ html[dir="rtl"] body {
 }
 .earn-row:last-child { border-bottom: 0; }
 .earn-row--hl {
-    background: linear-gradient(90deg, rgba(255, 122, 77, .06), transparent 60%);
+    background: linear-gradient(90deg, rgba(45, 91, 255, .06), transparent 60%);
 }
 .earn-row-icon {
     width: 28px;
@@ -1057,11 +1138,11 @@ html[dir="rtl"] body {
     display: grid;
     place-items: center;
     background: var(--color-cream-200, #FFEFE3);
-    color: var(--color-coral-500, #FF7A4D);
+    color: var(--color-coral-500, #2D5BFF);
     flex-shrink: 0;
 }
 .earn-row--hl .earn-row-icon {
-    background: linear-gradient(135deg, var(--color-coral-500), var(--color-honey-400));
+    background: var(--color-coral-500);
     color: #fff;
 }
 .earn-row-text {
@@ -1126,7 +1207,7 @@ html[dir="rtl"] body {
     font-weight: 800;
     font-size: 13px;
     gap: 8px;
-    background: linear-gradient(90deg, #DC2626 0%, #EF4444 100%);
+    background: #DC2626;
 }
 .notif-swipe-bg::before {
     /* Mirror the trash+label so a label shows whichever side the user swipes from */
@@ -1161,24 +1242,24 @@ html[dir="rtl"] body {
 /* Banner variants — all within the warm coral/honey brand family */
 .promo-card--map {
     /* Primary coral — vibrant brand */
-    /* background: linear-gradient(135deg, #FF7A4D 0%, #FF9F2D 60%, #FFB85C 100%); */
-     background: linear-gradient(135deg, #F97316 0%, #EA580C 20%, #C2410C 100%);
+    /* background: #2D5BFF; */
+     background: #F97316;
 }
 .promo-card--menu {
     /* Burnt orange — deeper, richer */
-    background: linear-gradient(135deg, #F97316 0%, #EA580C 20%, #C2410C 100%);
+    background: #F97316;
         /* background: linear-gradient(135deg, #C2410C 0%, #EA580C 55%, #F97316 100%); */
 
 }
 .promo-card--add {
     /* Golden honey — warm amber */
     /* background: linear-gradient(135deg, #B45309 0%, #D97706 55%, #F59E0B 100%); */
-     background: linear-gradient(135deg, #F97316 0%, #EA580C 20%, #C2410C 100%);
+     background: #F97316;
 }
 .promo-card--ad {
     /* Sunset — coral pushed toward red */
     /* background: linear-gradient(135deg, #DC2626 0%, #F97316 55%, #FB923C 100%); */
-     background: linear-gradient(135deg, #F97316 0%, #EA580C 20%, #C2410C 100%);
+     background: #F97316;
 }
 
 /* Per-variant CTA pill ink color (white pill on every variant) */
@@ -1216,11 +1297,11 @@ html[dir="rtl"] body {
     border-radius: 999px;
     font-weight: 700;
     color: #fff;
-    background: linear-gradient(135deg, var(--color-coral-500), var(--color-honey-400));
-    box-shadow: 0 12px 30px -10px rgba(255, 122, 77, .55);
+    background: var(--color-coral-500);
+    box-shadow: 0 12px 30px -10px rgba(45, 91, 255, .55);
     transition: transform .25s ease, box-shadow .25s ease;
 }
-.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 18px 40px -12px rgba(255, 122, 77, .7); }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 18px 40px -12px rgba(45, 91, 255, .7); }
 
 .btn-dark {
     display: inline-flex;
@@ -1254,8 +1335,8 @@ html[dir="rtl"] body {
     width: 56px; height: 56px;
     border-radius: 18px;
     display: grid; place-items: center;
-    background: linear-gradient(135deg, rgba(255,122,77,.15), rgba(255,184,92,.10));
-    border: 1px solid rgba(255, 122, 77, .25);
+    background: linear-gradient(135deg, rgba(45,91,255,.15), rgba(255,212,64,.10));
+    border: 1px solid rgba(45, 91, 255, .25);
 }
 
 /* ─── Map zone pins (Leaflet) ─────────────────────────────── */
@@ -1268,7 +1349,7 @@ html[dir="rtl"] body {
     width: 56px;
     height: 70px;
     pointer-events: auto;
-    --c: #FF7A4D;
+    --c: #2D5BFF;
 }
 .zone-pin-bubble {
     position: relative;
@@ -1344,7 +1425,7 @@ html[dir="rtl"] body {
     background:
         radial-gradient(circle at 25% 20%, rgba(255,255,255,.55), transparent 55%),
         radial-gradient(circle at 75% 85%, rgba(255,255,255,.30), transparent 50%),
-        linear-gradient(135deg, var(--cover-color, #FF7A4D), color-mix(in srgb, var(--cover-color, #FF7A4D) 55%, #FFFFFF));
+        linear-gradient(135deg, var(--cover-color, #2D5BFF), color-mix(in srgb, var(--cover-color, #2D5BFF) 55%, #FFFFFF));
     isolation: isolate;
 }
 .biz-cover-emoji {
@@ -1376,7 +1457,7 @@ html[dir="rtl"] body {
 }
 .action-chip:hover {
     transform: translateY(-1px);
-    border-color: rgba(255, 122, 77, .25);
+    border-color: rgba(45, 91, 255, .25);
     box-shadow: 0 4px 10px -4px rgb(15 15 20 / .12);
 }
 .action-chip-icon {
@@ -1408,7 +1489,7 @@ html[dir="rtl"] body {
 .quick-tile:active {
     transform: translateY(-3px);
     box-shadow: 0 14px 30px -10px rgb(15 15 20 / .15);
-    border-color: rgba(255, 122, 77, .25);
+    border-color: rgba(45, 91, 255, .25);
 }
 .quick-tile-icon {
     width: 44px; height: 44px;
@@ -1435,7 +1516,7 @@ html[dir="rtl"] body {
     transform: scaleX(0);
     z-index: 200;
     pointer-events: none;
-    box-shadow: 0 0 16px rgba(255, 122, 77, .7);
+    box-shadow: 0 0 16px rgba(45, 91, 255, .7);
     opacity: 0;
     transition: opacity .15s ease;
 }
@@ -1508,7 +1589,7 @@ html[dir="rtl"] body {
     place-items: center;
     box-shadow:
         0 4px 12px -4px rgba(11, 11, 12, .25),
-        0 0 0 3px rgba(255, 122, 77, .15);
+        0 0 0 3px rgba(45, 91, 255, .15);
     cursor: pointer;
     transition: all .2s ease;
 }
@@ -1580,13 +1661,13 @@ html[dir="rtl"] body {
     margin-top: 2px;
 }
 .install-cta {
-    background: linear-gradient(135deg, var(--color-coral-500), var(--color-honey-400));
+    background: var(--color-coral-500);
     color: #fff;
     font-weight: 800;
     font-size: 13px;
     padding: 8px 16px;
     border-radius: 999px;
-    box-shadow: 0 8px 16px -8px rgba(255, 122, 77, .55);
+    box-shadow: 0 8px 16px -8px rgba(45, 91, 255, .55);
 }
 .install-close {
     color: var(--color-ink-400);
@@ -1596,103 +1677,68 @@ html[dir="rtl"] body {
 .install-close:hover { background: var(--color-cream-200); color: var(--color-ink-950); }
 
 /* ─── Bottom Nav ──────────────────────────────────────────── */
+/* ─── Bottom nav — Shoppe-style flat bar ──────────────── */
 .bottom-nav {
     position: fixed;
     inset-inline: 0;
     bottom: 0;
     z-index: 40;
-    padding: 0 12px calc(12px + env(safe-area-inset-bottom));
-    pointer-events: none;
+    background: #fff;
+    border-top: 1px solid rgba(11, 11, 12, .06);
+    padding-bottom: env(safe-area-inset-bottom);
+    box-shadow: 0 -8px 24px -12px rgba(11, 11, 12, .08);
 }
 
 .bottom-nav-inner {
-    pointer-events: auto;
+    max-width: 32rem;
     margin: 0 auto;
-    max-width: 28rem;
-    background: #FFFFFF;
-    color: var(--color-ink-700, #232328);
-    border-radius: 999px;
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    align-items: center;
-    padding: 6px;
-    box-shadow:
-        0 18px 40px -12px rgba(11, 11, 12, .2),
-        0 0 0 1px rgba(11, 11, 12, .05);
+    align-items: stretch;
 }
 
 .nav-item {
+    position: relative;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 2px;
-    height: 52px;
-    border-radius: 999px;
-    /* color: rgba(255, 255, 255, .5); */
-    color: #616060;
-    transition: color .2s ease, background .2s ease, transform .2s ease;
+    min-height: 58px;
+    color: var(--color-coral-500);     /* all icons blue (Shoppe look) */
+    transition: transform .15s ease;
 }
-.nav-item:hover { color: var(--color-coral-500); }
-.nav-item.is-active {
-    color: var(--color-coral-600);
-    background: var(--color-coral-50, #FFF1EA);
-}
+.nav-item:active { transform: scale(.94); }
 
-/* Wallet nav item — small earn-money dot indicator to draw attention */
-.nav-item--wallet { position: relative; }
-.nav-item--wallet::after {
+/* Active item — same blue icon + short underline pill beneath (Shoppe pattern) */
+.nav-item.is-active { color: var(--color-coral-500); }
+.nav-item.is-active::after {
     content: '';
     position: absolute;
-    top: 8px;
-    inset-inline-end: 14px;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #FFB85C;
-    box-shadow: 0 0 0 2px #fff, 0 0 8px rgba(255, 184, 92, .8);
-    animation: wallet-pulse 2.2s ease-in-out infinite;
-}
-.nav-item--wallet.is-active::after { display: none; }
-@keyframes wallet-pulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50%      { transform: scale(1.25); opacity: .8; }
-}
-.nav-label {
-    font-size: 10px;
-    font-weight: 700;
-    line-height: 1;
-    /* opacity: 0; */
-    /* transform: translateY(2px); */
-    /* transition: opacity .2s ease, transform .2s ease; */
-}
-.nav-item.is-active .nav-label {
-    opacity: 1;
-    transform: none;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 14px;
+    height: 3px;
+    border-radius: 999px;
+    background: var(--color-coral-500);
 }
 
-.nav-fab {
-    align-self: center;
-    justify-self: center;
-    width: 56px;
-    height: 56px;
-    margin-top: -30px;
+/* Unread badge on the bell */
+.nav-item--bell { position: relative; }
+.nav-badge {
+    position: absolute;
+    top: 8px;
+    inset-inline-end: calc(50% - 18px);
+    min-width: 17px;
+    height: 17px;
+    padding: 0 4px;
     border-radius: 999px;
-    background: linear-gradient(135deg, var(--color-coral-500), var(--color-honey-400));
+    background: var(--color-blush-500);
     color: #fff;
+    font-size: 9px;
+    font-weight: 900;
     display: grid;
     place-items: center;
-    box-shadow:
-        0 14px 26px -8px rgba(255, 122, 77, .55),
-        0 0 0 5px #fff;
-    transition: transform .2s ease, box-shadow .2s ease;
-}
-.nav-fab:hover { transform: translateY(-2px); }
-.nav-fab.is-active {
-    box-shadow:
-        0 14px 26px -8px rgba(255, 122, 77, .65),
-        0 0 0 5px #fff,
-        0 0 0 9px rgba(255, 122, 77, .2);
+    box-shadow: 0 0 0 2px #fff;
 }
 
 /* ─── Chips (filter pills) ───────────────────────────────── */
@@ -1723,7 +1769,7 @@ html[dir="rtl"] body {
 .chip-coral.chip-active {
     background: var(--color-coral-500);
     border-color: var(--color-coral-500);
-    box-shadow: 0 6px 18px -6px rgba(255, 122, 77, .55);
+    box-shadow: 0 6px 18px -6px rgba(45, 91, 255, .55);
 }
 
 .scrollbar-hide::-webkit-scrollbar { display: none; }
@@ -1743,7 +1789,7 @@ html[dir="rtl"] body {
 }
 .select-styled::-ms-expand { display: none; }
 .select-styled:focus {
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='%23FF7A4D' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 24 24'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='%232D5BFF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 24 24'><polyline points='6 9 12 15 18 9'/></svg>");
 }
 
 /* ─── Modal / Sheet ──────────────────────────────────────── */
@@ -1781,6 +1827,31 @@ html[dir="rtl"] body {
     box-shadow: 0 -20px 60px -20px rgb(15 15 20 / .25);
     transform: translateY(20px);
     transition: transform .25s cubic-bezier(.2, .9, .3, 1);
+    will-change: transform;
+}
+/* When user is actively dragging, suppress the CSS transition so the
+   sheet follows the finger 1:1. The JS toggles this class. */
+.modal-sheet.is-dragging {
+    transition: none;
+}
+
+/* Drag handle — larger tappable area than just the visible bar */
+.modal-drag-handle {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 6px 0 10px;
+    margin: -6px 0 4px;
+    cursor: grab;
+    touch-action: none;            /* prevent native scrolling while dragging */
+    user-select: none;
+    -webkit-user-select: none;
+}
+.modal-drag-handle:active { cursor: grabbing; }
+.modal-drag-bar {
+    width: 40px; height: 4px;
+    border-radius: 999px;
+    background: rgba(11, 11, 12, .15);
 }
 @media (min-width: 640px) {
     .modal-sheet { border-radius: 28px; transform: translateY(20px) scale(.98); }
@@ -1901,7 +1972,7 @@ html[dir="rtl"] body {
 
 /* VARIANTS — flat brand colors (coral & honey family) */
 .promo-card--map {
-    background: var(--color-coral-500);   /* #FF7A4D */
+    background: var(--color-coral-500);   /* #2D5BFF */
 }
 .promo-card--map .promo-card-cta { color: var(--color-coral-700); }
 
@@ -1911,12 +1982,12 @@ html[dir="rtl"] body {
 .promo-card--menu .promo-card-cta { color: var(--color-coral-700); }
 
 .promo-card--add {
-    background: var(--color-honey-500);   /* #FFA037 */
+    background: var(--color-honey-500);   /* #F5BA12 */
 }
 .promo-card--add .promo-card-cta { color: var(--color-coral-700); }
 
 .promo-card--ad {
-    background: var(--color-honey-400);   /* #FFB85C */
+    background: var(--color-honey-400);   /* #FFD440 */
 }
 .promo-card--ad .promo-card-cta { color: var(--color-coral-700); }
 

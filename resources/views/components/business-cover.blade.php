@@ -8,7 +8,7 @@
     $userPhoto = $business->photo_url ?: null;
 
     $initial = mb_substr(trim($business->name ?: '?'), 0, 1);
-    $color   = $cm['color'] ?? '#FF7A4D';
+    $color   = $cm['color'] ?? '#2D5BFF';
 @endphp
 
 <div {{ $attributes->merge(['class' => "biz-cover {$class} relative overflow-hidden"]) }}

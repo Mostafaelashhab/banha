@@ -30,7 +30,7 @@
     </div>
 
     {{-- QR card --}}
-    <div class="card-light p-4 mb-4 bg-gradient-to-br from-coral-100/60 to-honey-100/60 border-coral-500/15">
+    <div class="card-light p-4 mb-4 bg-coral-50 border-coral-500/15">
         <div class="flex items-start gap-3">
             <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=8&color=0B0B0C&bgcolor=FFFFFF&data={{ urlencode($menuUrl) }}"
                  alt="QR" class="w-20 h-20 rounded-2xl bg-white p-1.5 shrink-0 shadow-sm">

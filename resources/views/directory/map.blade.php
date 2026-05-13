@@ -86,7 +86,7 @@
     .biz-pin-wrap.is-promoted .biz-pin {
         width: 48px;
         height: 48px;
-        background: linear-gradient(135deg, #FFB85C 0%, #FF9F2D 100%) !important;
+        background: #2D5BFF !important;
         box-shadow: 0 0 0 4px rgba(255, 184, 92, .35), 0 8px 18px -4px rgba(255, 159, 45, .55);
     }
     .biz-pin-wrap.is-promoted .biz-pin svg {
@@ -135,7 +135,7 @@
     .biz-cluster {
         width: 38px; height: 38px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #FF7A4D, #FF9F2D);
+        background: #2D5BFF;
         color: #fff;
         font-weight: 900;
         font-size: 13px;
@@ -156,7 +156,7 @@
         font-weight: 800;
         padding: 3px 9px;
         max-width: 140px;
-        border: 1.5px solid #FFB85C;
+        border: 1.5px solid #FFD440;
         background: #fff;
         box-shadow: 0 4px 12px -2px rgba(255, 159, 45, .35);
     }
@@ -182,7 +182,7 @@
         border: 3px solid #fff;
         display: grid;
         place-items: center;
-        background: linear-gradient(135deg, #FF7A4D, #FFB85C);
+        background: #2D5BFF;
     }
     .listing-pin svg {
         width: 16px; height: 16px; color: #fff;
@@ -192,7 +192,7 @@
         box-shadow: 0 0 0 3px rgba(255, 184, 92, .45);
     }
     .biz-pin-label.is-listing-label {
-        color: #9A3412;
+        color: #1736B0;
         background: #fff;
         border: 1px solid #FFD3B8;
     }
@@ -208,7 +208,7 @@
         width: 38px;
         height: 38px;
         border-radius: 12px;
-        background: linear-gradient(135deg, #1FA857, #10B981);
+        background: #1FA857;
         border: 3px solid #fff;
         display: grid;
         place-items: center;
@@ -241,12 +241,12 @@
         display: inline-flex; align-items: center; gap: 4px;
         padding: 2px 8px; border-radius: 999px;
         font-size: 10px; font-weight: 800;
-        background: var(--cat-color-soft, #FFEDD5);
-        color: var(--cat-color, #9A3412);
+        background: var(--cat-color-soft, #DCE4FF);
+        color: var(--cat-color, #1736B0);
     }
     .pop-rate {
         display: inline-flex; align-items: center; gap: 2px;
-        font-size: 12px; font-weight: 800; color: #FF7A4D;
+        font-size: 12px; font-weight: 800; color: #2D5BFF;
     }
     .pop-name { font-size: 15px; font-weight: 800; color: #0B0B0C; margin-top: 6px; line-height: 1.25; }
     .pop-badges { display: flex; gap: 4px; margin-top: 6px; flex-wrap: wrap; }
@@ -256,7 +256,7 @@
         font-size: 9px; font-weight: 800;
     }
     .pop-badge.verified { background: #DCFCE7; color: #166534; }
-    .pop-badge.menu { background: #FFEDD5; color: #9A3412; }
+    .pop-badge.menu { background: #DCE4FF; color: #1736B0; }
     .pop-actions { display: grid; grid-template-columns: 1fr auto; gap: 6px; margin-top: 10px; }
     .pop-btn {
         padding: 8px 10px;
@@ -271,14 +271,14 @@
     }
     .pop-btn:active { transform: scale(.97); }
     .pop-btn.primary {
-        background: linear-gradient(135deg, #FF7A4D, #FFB85C);
+        background: #2D5BFF;
         color: #fff;
         box-shadow: 0 6px 16px -4px rgba(255, 122, 77, .55);
     }
     .pop-btn.call {
         background: #fff;
-        color: #FF7A4D;
-        border: 1.5px solid #FF7A4D;
+        color: #2D5BFF;
+        border: 1.5px solid #2D5BFF;
         padding: 8px;
         width: 38px;
     }
@@ -288,12 +288,12 @@
     .map-cat-chip.is-active {
         color: #fff !important;
         border-color: transparent !important;
-        background: var(--cat-color, #FF7A4D) !important;
+        background: var(--cat-color, #2D5BFF) !important;
     }
     .map-filter-chip.is-active {
         color: #fff !important;
         border-color: transparent !important;
-        background: #FF7A4D !important;
+        background: #2D5BFF !important;
     }
 
     /* ── "My location" floating button — sits well above bottom-nav ── */
@@ -311,7 +311,7 @@
         place-items: center;
         z-index: 400;
         cursor: pointer;
-        color: #FF7A4D;
+        color: #2D5BFF;
         transition: transform .15s;
     }
     .map-locate-btn:hover { transform: scale(1.08); }
@@ -363,8 +363,8 @@
             </button>
             <button type="button" data-cat="__listings__"
                     class="map-cat-chip shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-white border border-ink-950/8 text-ink-700 transition"
-                    style="--cat-color: #FF7A4D;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5" style="color:#FF7A4D">
+                    style="--cat-color: #2D5BFF;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5" style="color:#2D5BFF">
                     <path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>
                 </svg>
                 إعلانات
@@ -483,7 +483,7 @@
     }
 
     function makePin(b, meta) {
-        const color = meta?.color || '#FF7A4D';
+        const color = meta?.color || '#2D5BFF';
         const iconKey = meta?.icon || 'bag';
         const svg = SVG[iconKey] || SVG.bag;
         const classes = ['biz-pin'];
@@ -537,10 +537,10 @@
 
     // Marketplace listing pin — rotated rounded-square + kind color tint
     const KIND_COLORS = {
-        sale:  ['#FF7A4D', '#FFB85C'],
+        sale:  ['#2D5BFF', '#FFD440'],
         buy:   ['#1FA857', '#10B981'],
         lost:  ['#E64646', '#F87171'],
-        found: ['#FFB85C', '#F59E0B'],
+        found: ['#FFD440', '#F59E0B'],
     };
     function makeListingPin(l) {
         const tagSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>';
@@ -610,7 +610,7 @@
     }
 
     function buildPopup(b, meta) {
-        const color = meta.color || '#FF7A4D';
+        const color = meta.color || '#2D5BFF';
         const badges = [];
         if (b.is_verified) badges.push('<span class="pop-badge verified">✓ موثّق</span>');
         if (b.has_menu)    badges.push('<span class="pop-badge menu">📋 منيو</span>');

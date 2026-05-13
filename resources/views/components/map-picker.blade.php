@@ -153,7 +153,7 @@
 
         // Pin icon (coral teardrop)
         const pinIcon = L.divIcon({
-            html: '<div style="width:32px;height:32px;background:#FF7A4D;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 4px 12px -2px rgba(255,122,77,.6);border:3px solid #fff;display:grid;place-items:center;"><div style="width:10px;height:10px;background:#fff;border-radius:50%;transform:rotate(45deg);"></div></div>',
+            html: '<div style="width:32px;height:32px;background:#2D5BFF;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 4px 12px -2px rgba(255,122,77,.6);border:3px solid #fff;display:grid;place-items:center;"><div style="width:10px;height:10px;background:#fff;border-radius:50%;transform:rotate(45deg);"></div></div>',
             className: '',
             iconSize: [32, 32],
             iconAnchor: [16, 30],

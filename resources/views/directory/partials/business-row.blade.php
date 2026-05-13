@@ -11,7 +11,7 @@
 
     {{-- Sponsored strip --}}
     @if($isPromoted)
-        <div class="flex items-center gap-2 px-4 py-2 bg-gradient-to-l from-honey-100 via-honey-50 to-cream-100">
+        <div class="flex items-center gap-2 px-4 py-2 bg-honey-100">
             <svg viewBox="0 0 24 24" fill="currentColor" class="w-3.5 h-3.5 text-honey-700"><polygon points="12 2 15 9 22 9.5 17 14.5 18.5 22 12 18 5.5 22 7 14.5 2 9.5 9 9"/></svg>
             <span class="text-[11px] font-extrabold text-honey-700 tracking-wide">مُموَّل · إعلان</span>
             <span class="ms-auto text-[10px] text-ink-400 font-bold">{{ $business->views_count }} مشاهدة</span>

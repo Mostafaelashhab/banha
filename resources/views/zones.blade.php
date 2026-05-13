@@ -64,7 +64,7 @@
                     <div style="text-align:center; font-family: Cairo, sans-serif; min-width: 140px;">
                         <div style="font-weight:900; font-size:16px; color:#0B0B0C">${z.name}</div>
                         <div style="font-size:11px; color:#5C5C66; margin: 2px 0 8px">${z.count} بوست النهاردة</div>
-                        <a href="${z.url}" style="display:inline-block; background: linear-gradient(135deg,#FF7A4D,#FFB85C); color:#fff; padding: 6px 14px; border-radius: 999px; font-size:12px; font-weight:700; text-decoration:none">شوف الفيد ←</a>
+                        <a href="${z.url}" style="display:inline-block; background: linear-gradient(135deg,#2D5BFF,#FFD440); color:#fff; padding: 6px 14px; border-radius: 999px; font-size:12px; font-weight:700; text-decoration:none">شوف الفيد ←</a>
                     </div>
                 `);
                 bounds.extend([z.lat, z.lng]);

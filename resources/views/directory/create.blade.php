@@ -80,7 +80,7 @@
     .step-num {
         width: 26px; height: 26px;
         border-radius: 50%;
-        background: var(--cat-color, #FF7A4D);
+        background: var(--cat-color, #2D5BFF);
         color: #fff;
         display: grid; place-items: center;
         font-weight: 900;
@@ -129,7 +129,7 @@
         {{-- ──── STEP 1: Category picker ──── --}}
         <section data-step="category" class="{{ $oldCat ? '' : 'is-active' }} card-light p-5">
             <div class="flex items-center gap-3 mb-4">
-                <span class="step-num" style="--cat-color: #FF7A4D">١</span>
+                <span class="step-num" style="--cat-color: #2D5BFF">١</span>
                 <div>
                     <h2 class="text-sm font-extrabold text-ink-950">اختار نوع نشاطك</h2>
                     <p class="text-[11px] text-ink-500">دوس على الفئة، بنوريك بعدها أنواع أدق.</p>
@@ -153,7 +153,7 @@
         <section data-step="details" class="{{ $oldCat ? 'is-active' : '' }} space-y-4">
 
             {{-- Type breadcrumb + change link --}}
-            <div class="card-light p-3 flex items-center gap-2" data-type-breadcrumb style="--cat-color: {{ \App\Models\Business::CATEGORIES[$oldCat]['color'] ?? '#FF7A4D' }};">
+            <div class="card-light p-3 flex items-center gap-2" data-type-breadcrumb style="--cat-color: {{ \App\Models\Business::CATEGORIES[$oldCat]['color'] ?? '#2D5BFF' }};">
                 <span class="text-xs font-bold text-ink-500">نوع النشاط:</span>
                 <span class="type-pill" data-bcrumb-pill>
                     <x-icon :name="\App\Models\Business::CATEGORIES[$oldCat]['icon'] ?? 'bag'" class="w-3 h-3" data-bcrumb-icon/>

@@ -57,6 +57,7 @@ Route::get('/m/{business}', [\App\Http\Controllers\MenuController::class, 'publi
 Route::get('/market',                  [\App\Http\Controllers\ListingController::class, 'index'])->name('marketplace.index');
 Route::get('/market/{listing}',        [\App\Http\Controllers\ListingController::class, 'show'])->name('marketplace.show')->whereNumber('listing');
 Route::get('/search',                  [\App\Http\Controllers\SearchController::class, 'index'])->name('search');
+Route::get('/search/suggest',          [\App\Http\Controllers\SearchController::class, 'suggest'])->name('search.suggest');
 Route::get('/tag/{tag}',               [\App\Http\Controllers\HashtagController::class, 'show'])->name('hashtag.show');
 Route::get('/tags',                    [\App\Http\Controllers\HashtagController::class, 'trending'])->name('hashtag.trending');
 
