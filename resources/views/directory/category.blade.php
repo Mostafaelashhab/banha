@@ -210,27 +210,36 @@
                 </div>
             </div>
 
-            {{-- Category section --}}
-            <details class="cat-section">
-                <summary class="cat-section-head">
-                    <span class="text-sm font-extrabold text-ink-950">الفئة</span>
-                    <span class="text-xs font-bold text-ink-400 truncate ms-auto me-2">{{ $meta['label'] }}</span>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" class="cat-section-chev w-4 h-4 text-ink-400 shrink-0">
-                        <polyline points="6 9 12 15 18 9"/>
-                    </svg>
-                </summary>
-                <div class="cat-section-body">
-                    <div class="flex flex-wrap gap-2">
-                        @foreach($allCategories as $key => $cat)
-                            <a href="{{ route('directory.category', ['category' => $key, 'q' => $q ?: null]) }}"
-                               class="chip inline-flex items-center gap-1.5 {{ $category === $key ? 'chip-active' : '' }}">
-                                <x-icon :name="$cat['icon'] ?? 'bag'" class="w-3.5 h-3.5"/>
-                                {{ $cat['label'] }}
-                            </a>
-                        @endforeach
+            {{-- Sub-type section --}}
+            @if($subTypes->isNotEmpty())
+                <details class="cat-section" open>
+                    <summary class="cat-section-head">
+                        <span class="text-sm font-extrabold text-ink-950">النوع</span>
+                        <span class="text-xs font-bold text-ink-400 truncate ms-auto me-2">
+                            {{ $activeSubType ? ($subTypes->firstWhere('key', $activeSubType)['label'] ?? '—') : 'الكل' }}
+                        </span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" class="cat-section-chev w-4 h-4 text-ink-400 shrink-0">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </summary>
+                    <div class="cat-section-body">
+                        <div class="flex flex-wrap gap-2">
+                            <a href="{{ route('directory.category', ['category' => $category, 'zone' => $activeZone, 'q' => $q ?: null]) }}"
+                               class="chip {{ ! $activeSubType ? 'chip-active' : '' }}">الكل</a>
+                            @foreach($subTypes as $st)
+                                <a href="{{ route('directory.category', ['category' => $category, 'type' => $st['key'], 'zone' => $activeZone, 'q' => $q ?: null]) }}"
+                                   class="chip inline-flex items-center gap-1.5 {{ $activeSubType === $st['key'] ? 'chip-active' : '' }}">
+                                    <x-icon :name="$st['icon'] ?? 'bag'" class="w-3.5 h-3.5"/>
+                                    {{ $st['label'] }}
+                                    @if(($subTypeCounts[$st['key']] ?? 0) > 0)
+                                        <span class="opacity-60 text-xs">{{ $subTypeCounts[$st['key']] }}</span>
+                                    @endif
+                                </a>
+                            @endforeach
+                        </div>
                     </div>
-                </div>
-            </details>
+                </details>
+            @endif
 
             {{-- Zones section --}}
             @if($zones->isNotEmpty())

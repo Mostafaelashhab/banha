@@ -189,10 +189,18 @@ class DirectoryController extends Controller
                     || collect($subTypes)->pluck('key')->intersect($def['applies_to'] ?? [])->isNotEmpty()))
             ->all();
 
+        $categoryCounts = DB::table('businesses')
+            ->where('is_active', true)
+            ->select('category', DB::raw('count(*) as c'))
+            ->groupBy('category')
+            ->pluck('c', 'category')
+            ->all();
+
         return view('directory.category', [
             'category'       => $category,
             'meta'           => Business::CATEGORIES[$category],
             'allCategories'  => Business::CATEGORIES,
+            'categoryCounts' => $categoryCounts,
             'businesses'     => $businesses,
             'subTypes'       => $subTypes,
             'subTypeCounts'  => $subTypeCounts,
