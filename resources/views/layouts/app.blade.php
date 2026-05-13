@@ -212,6 +212,7 @@
             </svg>
         </a>
     @endif
+
     @endunless
 
     @stack('scripts')

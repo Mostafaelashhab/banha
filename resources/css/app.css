@@ -869,21 +869,18 @@ html[dir="rtl"] body {
     align-self: flex-start;
 }
 
-/* ─── Wallet card — modern fintech aesthetic ────────────────── */
+/* ─── Wallet card — flat brand-blue, no gradients ───────────── */
 .wallet-card {
     position: relative;
     border-radius: 24px;
     padding: 22px;
     color: #fff;
-    background:
-        radial-gradient(120% 80% at 100% 0%, rgba(255, 200, 120, .55) 0%, transparent 55%),
-        radial-gradient(80% 60% at 0% 100%, rgba(192, 60, 30, .65) 0%, transparent 55%),
-        #2D5BFF;
+    background: #2D5BFF;
     overflow: hidden;
     isolation: isolate;
     box-shadow:
-        0 24px 48px -20px rgba(192, 60, 30, .45),
-        inset 0 1px 0 rgba(255, 255, 255, .22);
+        0 24px 48px -20px rgba(45, 91, 255, .35),
+        inset 0 1px 0 rgba(255, 255, 255, .18);
 }
 /* Subtle grid texture so it doesn't read as a flat gradient */
 .wallet-card-grid {
@@ -1014,7 +1011,7 @@ html[dir="rtl"] body {
 }
 .wallet-cta-pri {
     background: #fff;
-    color: #C2410C;
+    color: #1F46DB;
     box-shadow: 0 6px 16px -6px rgba(0, 0, 0, .25);
 }
 .wallet-cta-pri:not(.is-disabled):hover { transform: translateY(-1px); }
@@ -1333,10 +1330,10 @@ html[dir="rtl"] body {
 
 .icon-tile {
     width: 56px; height: 56px;
-    border-radius: 18px;
+    border-radius: 999px;
     display: grid; place-items: center;
-    background: linear-gradient(135deg, rgba(45,91,255,.15), rgba(255,212,64,.10));
-    border: 1px solid rgba(45, 91, 255, .25);
+    background: var(--color-coral-50);
+    color: var(--color-coral-600);
 }
 
 /* ─── Map zone pins (Leaflet) ─────────────────────────────── */
@@ -1505,37 +1502,6 @@ html[dir="rtl"] body {
     white-space: nowrap;
 }
 
-/* ─── Nav progress bar (top of page) ─────────────────────── */
-#nav-progress {
-    position: fixed;
-    top: 0;
-    inset-inline: 0;
-    height: 3.5px;
-    background: linear-gradient(270deg, var(--color-coral-500), var(--color-honey-400));
-    transform-origin: 100% 0;   /* RTL: grow from RIGHT (page start) toward LEFT */
-    transform: scaleX(0);
-    z-index: 200;
-    pointer-events: none;
-    box-shadow: 0 0 16px rgba(45, 91, 255, .7);
-    opacity: 0;
-    transition: opacity .15s ease;
-}
-#nav-progress.is-loading {
-    opacity: 1;
-    animation: nav-progress-anim 6s cubic-bezier(.05, .7, .15, 1) forwards;
-}
-#nav-progress.is-done {
-    opacity: 0;
-    transform: scaleX(1);
-    transition: opacity .25s ease, transform .25s ease;
-}
-@keyframes nav-progress-anim {
-    0%   { transform: scaleX(0);   }
-    20%  { transform: scaleX(.35); }
-    50%  { transform: scaleX(.7);  }
-    80%  { transform: scaleX(.9);  }
-    100% { transform: scaleX(.97); }
-}
 
 /* ─── Vote / action buttons (post card) ─────────────────── */
 .vote-btn {
@@ -1982,12 +1948,12 @@ html[dir="rtl"] body {
 .promo-card--menu .promo-card-cta { color: var(--color-coral-700); }
 
 .promo-card--add {
-    background: var(--color-honey-500);   /* #F5BA12 */
+    background: var(--color-coral-500);   /* #F5BA12 */
 }
 .promo-card--add .promo-card-cta { color: var(--color-coral-700); }
 
 .promo-card--ad {
-    background: var(--color-honey-400);   /* #FFD440 */
+    background: var(--color-coral-600);   /* #FFD440 */
 }
 .promo-card--ad .promo-card-cta { color: var(--color-coral-700); }
 
@@ -2044,7 +2010,125 @@ html[dir="rtl"] body {
     background: #fff;
 }
 
-::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-track { background: var(--color-cream-100); }
-::-webkit-scrollbar-thumb { background: var(--color-coral-200); border-radius: 999px; }
-::-webkit-scrollbar-thumb:hover { background: var(--color-coral-500); }
+/* ─── Auth screens (Shoppe-inspired blob + pill style) ───── */
+/* Full-bleed: break out of parent <main class="max-w-3xl px-4 py-4"> */
+.auth-page {
+    position: relative;
+    width: 100vw;
+    margin-inline-start: calc(50% - 50vw);
+    margin-top: -1rem;
+    min-height: calc(100vh - env(safe-area-inset-bottom));
+    overflow: hidden;
+    background: #fff;
+}
+/* Hero band — fixed-height area holding the decorative blobs */
+.auth-hero {
+    position: relative;
+    height: 240px;
+    overflow: hidden;
+}
+.auth-blob {
+    position: absolute;
+}
+.auth-blob.primary {
+    fill: #2D5BFF;
+    opacity: .95;
+    inset-inline-end: -90px;
+    top: -120px;
+    width: 360px;
+    height: 360px;
+}
+.auth-blob.tint {
+    fill: #DCE4FF;
+    opacity: .85;
+    inset-inline-end: 130px;
+    top: -40px;
+    width: 220px;
+    height: 220px;
+}
+/* Content card sits below the hero, centered, with the title hugging the top */
+.auth-content {
+    position: relative;
+    z-index: 1;
+    max-width: 22rem;
+    margin: 0 auto;
+    padding: 12px 24px 32px;
+}
+.auth-title {
+    font-size: 38px;
+    font-weight: 900;
+    color: #0B0B0C;
+    line-height: 1.05;
+    letter-spacing: -.01em;
+    margin-bottom: 8px;
+}
+.auth-sub {
+    color: rgba(11,11,12,.55);
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 24px;
+}
+.auth-input {
+    width: 100%;
+    background: #F4F5F8;
+    border-radius: 999px;
+    padding: 15px 22px;
+    font-size: 14px;
+    color: #0B0B0C;
+    outline: 0;
+    border: 0;
+    transition: background .15s, box-shadow .15s;
+}
+.auth-input::placeholder { color: rgba(11,11,12,.4); }
+.auth-input:focus {
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(45,91,255,.18);
+}
+.auth-input-with-icon {
+    position: relative;
+}
+.auth-input-with-icon .auth-input { padding-inline-end: 48px; }
+.auth-input-icon {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    inset-inline-end: 18px;
+    color: rgba(11,11,12,.45);
+    pointer-events: none;
+}
+.auth-input-icon.is-clickable { pointer-events: auto; cursor: pointer; }
+.auth-btn {
+    width: 100%;
+    background: #2D5BFF;
+    color: #fff;
+    border-radius: 999px;
+    padding: 15px 22px;
+    font-size: 14px;
+    font-weight: 900;
+    border: 0;
+    box-shadow: 0 12px 26px -10px rgba(45,91,255,.55);
+    transition: opacity .15s, transform .1s;
+    cursor: pointer;
+}
+.auth-btn:hover  { opacity: .92; }
+.auth-btn:active { transform: scale(.98); }
+.auth-cancel {
+    display: block;
+    text-align: center;
+    color: rgba(11,11,12,.5);
+    font-size: 13px;
+    font-weight: 700;
+    padding: 14px 0;
+    text-decoration: none;
+    transition: color .15s;
+}
+.auth-cancel:hover { color: #0B0B0C; }
+.auth-cancel b { color: #1F46DB; }
+.auth-error { color: #E64646; font-size: 11px; font-weight: 700; padding: 4px 16px 0; }
+
+/* ─── Hide scrollbars app-wide (still scrollable) ──────────── */
+html, body, * {
+    scrollbar-width: none;       /* Firefox */
+    -ms-overflow-style: none;    /* IE/Edge legacy */
+}
+::-webkit-scrollbar { width: 0; height: 0; display: none; }

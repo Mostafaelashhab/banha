@@ -10,31 +10,30 @@
         <h1 class="text-base font-bold text-ink-500">رادار الأسعار</h1>
     </div>
 
-    {{-- Hero card --}}
-    <div class="card-orange p-6 mb-4 relative overflow-hidden">
-        <div class="absolute -top-10 -end-10 w-40 h-40 rounded-full bg-white/15 blur-3xl"></div>
-        <div class="relative flex items-start justify-between gap-4">
+    {{-- Hero card — flat, no loud brand block --}}
+    <div class="bg-white rounded-2xl p-6 mb-4 ring-1 ring-ink-950/6">
+        <div class="flex items-start justify-between gap-4">
             <div>
                 <div class="text-6xl mb-1">{{ $product->emoji ?: '🛒' }}</div>
-                <h2 class="text-2xl font-black text-white">{{ $product->name }}</h2>
-                <div class="text-white/85 text-xs">{{ $product->unit }} · {{ \App\Models\Product::CATEGORIES[$product->category] ?? '' }}</div>
+                <h2 class="text-2xl font-black text-ink-950">{{ $product->name }}</h2>
+                <div class="text-ink-500 text-xs mt-1">{{ $product->unit }} · {{ \App\Models\Product::CATEGORIES[$product->category] ?? '' }}</div>
             </div>
-            <a href="{{ route('prices.create', ['product' => $product->id]) }}" class="btn-dark !py-2 !px-4 text-sm">
+            <a href="{{ route('prices.create', ['product' => $product->id]) }}" class="btn-primary !py-2 !px-4 text-sm">
                 <x-icon name="plus" class="w-4 h-4"/>
                 ضيف سعر
             </a>
         </div>
 
         @if($stats['avg_today'])
-            <div class="relative mt-5 pt-5 border-t border-white/20 flex items-end justify-between">
-                <div class="text-white">
-                    <div class="text-white/85 text-xs">متوسط النهاردة</div>
-                    <div class="text-4xl md:text-5xl font-black leading-none">
+            <div class="mt-5 pt-5 border-t border-ink-950/8 flex items-end justify-between">
+                <div>
+                    <div class="text-ink-500 text-xs">متوسط النهاردة</div>
+                    <div class="text-4xl md:text-5xl font-black leading-none text-ink-950">
                         {{ number_format($stats['avg_today'], 2) }}
-                        <span class="text-base text-white/85 font-bold">ج</span>
+                        <span class="text-base text-ink-500 font-bold">ج</span>
                     </div>
                 </div>
-                <div class="text-end text-white text-xs space-y-0.5">
+                <div class="text-end text-ink-500 text-xs space-y-0.5">
                     @if($stats['min']) <div>أقل: <b>{{ number_format($stats['min'], 2) }}</b></div> @endif
                     @if($stats['max']) <div>أكتر: <b>{{ number_format($stats['max'], 2) }}</b></div> @endif
                     <div>{{ $stats['reports'] }} تقرير</div>

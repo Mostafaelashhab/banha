@@ -3,47 +3,42 @@
 @section('content')
 <div class="max-w-3xl mx-auto pb-8">
 
-    {{-- ─── "Add your business" banner ────────────────────────── --}}
-    <div class="mb-5 rise rise-1">
-        @include('partials.promo-banner', [
-            'href'    => Auth::check() ? route('directory.create') : route('signup'),
-            'variant' => 'add',
-            'tag'     => 'مجاناً · أضف نشاطك',
-            'title'   => 'نشاطك في بنهاوي',
-            'desc'    => 'ضيف مكانك يطلع للناس اللي بتدوّر في بنها.',
-            'cta'     => 'ضيف نشاطك',
-        ])
+    {{-- ─── Title row ────────────────────────────────────────── --}}
+    <div class="flex items-center justify-between mb-4 rise rise-1">
+        <div>
+            <h1 class="text-2xl font-black text-ink-950 leading-none">الفئات</h1>
+            <p class="text-xs text-ink-500 mt-1.5">دوّر على نشاطات بنها حسب الفئة</p>
+        </div>
+        <a href="{{ Auth::check() ? route('directory.create') : route('signup') }}"
+           class="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-coral-500 text-white text-xs font-extrabold transition hover:opacity-90"
+           aria-label="ضيف نشاطك">
+            <x-icon name="plus" class="w-3.5 h-3.5"/>
+            ضيف نشاطك
+        </a>
     </div>
 
-    {{-- ─── Search + Filter ────────────────────────────────────── --}}
-    <div class="mb-5 rise rise-2">
+    {{-- ─── Search + Filter (matches home pill style) ─────────── --}}
+    <div class="mb-6 rise rise-2">
         <div class="flex items-center gap-2">
-            <div class="flex-1 relative">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                     class="absolute top-1/2 -translate-y-1/2 start-3.5 w-4 h-4 text-ink-400 pointer-events-none">
-                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                </svg>
+            <div class="flex-1 flex items-center gap-2 bg-cream-200 rounded-full ps-5 pe-5 py-3 ring-1 ring-ink-950/5 focus-within:ring-coral-500/40 transition">
+                <x-icon name="search" class="w-4 h-4 text-ink-400 shrink-0"/>
                 <input id="dir-search" type="search" autocomplete="off"
                        placeholder="دوّر على فئة..."
-                       class="w-full bg-cream-200 rounded-2xl ps-9 pe-4 py-3 text-sm placeholder-ink-400 focus:outline-none transition" />
+                       class="flex-1 bg-transparent text-sm text-ink-950 placeholder-ink-400 outline-none border-0"/>
             </div>
             <button type="button" id="dir-filter-btn"
-                    class="relative w-12 h-12 rounded-2xl bg-cream-200 grid place-items-center text-ink-950 transition shrink-0"
+                    class="w-12 h-12 rounded-full bg-coral-50 grid place-items-center text-coral-600 transition hover:bg-coral-200 shrink-0"
                     aria-label="فلتر">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" class="w-4 h-4">
-                    <line x1="4"  y1="6"  x2="20" y2="6"/>
-                    <line x1="7"  y1="12" x2="17" y2="12"/>
-                    <line x1="10" y1="18" x2="14" y2="18"/>
-                </svg>
+                <x-icon name="filter" class="w-4 h-4"/>
             </button>
         </div>
     </div>
 
-    {{-- ─── All categories — clean list ─────────────────────────── --}}
+    {{-- ─── All categories grid ─────────────────────────── --}}
     <section class="mb-7 rise rise-4">
-        <div class="flex items-baseline justify-between mb-3 px-1">
-            <h2 class="text-base font-extrabold text-ink-950">كل الفئات</h2>
-            <span class="text-[11px] font-bold text-ink-400" id="dir-cat-count">{{ count($categories) }}</span>
+        <div class="flex items-center justify-between mb-4 px-1">
+            <h2 class="text-xl font-black text-ink-950">كل الفئات</h2>
+            <span class="text-xs font-bold text-ink-400" id="dir-cat-count">{{ count($categories) }}</span>
         </div>
 
         <div id="dir-cat-list" class="grid grid-cols-2 gap-3">
@@ -52,10 +47,9 @@
                 <a href="{{ route('directory.category', $key) }}"
                    data-cat-card
                    data-label="{{ $meta['label'] }}"
-                   class="dir-cat-card bg-white rounded-2xl ring-1 ring-ink-950/8 p-4 flex flex-col items-center text-center hover:ring-coral-500/30 transition">
-                    <span class="w-16 h-16 rounded-2xl grid place-items-center"
-                          style="background: {{ $meta['color'] }}14; color: {{ $meta['color'] }};">
-                        <x-icon :name="$meta['icon'] ?? 'bag'" class="w-8 h-8"/>
+                   class="dir-cat-card group bg-white rounded-2xl p-4 flex flex-col items-center text-center transition hover:bg-cream-100">
+                    <span class="cat-circle-disc">
+                        <x-icon :name="$meta['icon'] ?? 'bag'" class="w-7 h-7"/>
                     </span>
                     <div class="mt-3 text-sm font-extrabold text-ink-950 leading-tight w-full truncate">{{ $meta['label'] }}</div>
                     <div class="text-[11px] text-ink-400 mt-0.5">
@@ -65,8 +59,20 @@
             @endforeach
         </div>
 
-        <div id="dir-empty" class="hidden text-center py-10 text-sm text-ink-400">
-            مفيش فئة بالاسم ده
+        <div id="dir-empty" class="hidden bg-white rounded-3xl px-6 pt-12 pb-20 text-center">
+            <div class="relative w-24 h-24 mx-auto mb-5">
+                <span class="absolute inset-0 rounded-full bg-coral-50"></span>
+                <span class="absolute inset-3 rounded-full bg-coral-100/70"></span>
+                <span class="absolute inset-0 grid place-items-center text-coral-600">
+                    <x-icon name="search" class="w-9 h-9"/>
+                </span>
+            </div>
+            <h3 class="text-lg font-black text-ink-950 mb-1.5">مفيش فئة بالاسم ده</h3>
+            <p class="text-ink-500 text-sm leading-relaxed max-w-xs mx-auto">جرّب اسم تاني أو امسح البحث عشان تشوف كل الفئات.</p>
+            <button type="button" id="dir-clear-search"
+                    class="mt-5 inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-coral-50 text-coral-600 text-xs font-extrabold hover:bg-coral-100 transition">
+                مسح البحث
+            </button>
         </div>
     </section>
 
@@ -161,6 +167,15 @@
         };
 
         input.addEventListener('input', apply);
+
+        const clearBtn = document.getElementById('dir-clear-search');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                input.value = '';
+                apply();
+                input.focus();
+            });
+        }
     }
 
     // ── Filter bottom sheet ─────────────────────────────────

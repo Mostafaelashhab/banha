@@ -1,54 +1,53 @@
 @extends('layouts.app', ['title' => 'دخول · بنهاوي'])
 
 @section('content')
-<div class="max-w-sm mx-auto pt-6 pb-10">
-
-    {{-- Brand mark --}}
-    <div class="text-center mb-7">
-        <div class="w-14 h-14 mx-auto rounded-2xl brand-bg grid place-items-center text-white font-black text-xl shadow-lg shadow-coral-500/25">ب</div>
-        <h1 class="text-xl font-black text-ink-950 mt-3.5">أهلاً بيك تاني</h1>
-        <p class="text-ink-500 text-sm mt-1">ادخل برقمك وباسوردك علشان تكمّل.</p>
+<div class="auth-page">
+    {{-- Hero band with decorative blue blobs --}}
+    <div class="auth-hero" aria-hidden="true">
+        <svg class="auth-blob primary" viewBox="0 0 360 360" preserveAspectRatio="xMidYMid meet">
+            <path d="M180 30 C 270 30 330 100 330 190 C 330 280 260 330 170 330 C 80 330 30 260 30 170 C 30 90 100 30 180 30 Z"/>
+        </svg>
+        <svg class="auth-blob tint" viewBox="0 0 220 220" preserveAspectRatio="xMidYMid meet">
+            <path d="M110 20 C 170 30 200 90 190 150 C 180 200 110 210 60 190 C 10 170 5 110 30 70 C 50 35 80 15 110 20 Z"/>
+        </svg>
     </div>
 
-    <form method="POST" action="{{ route('login.attempt') }}" class="card-light p-5 space-y-4">
-        @csrf
+    <div class="auth-content">
+        <h1 class="auth-title">دخول</h1>
+        <p class="auth-sub">يا أهلاً بيك تاني في بنهاوي</p>
 
-        <div>
-            <label class="text-xs font-bold text-ink-500 mb-1.5 block">رقم الموبايل</label>
-            <input type="tel" name="phone" inputmode="numeric" maxlength="11" required autofocus dir="ltr"
-                   value="{{ old('phone') }}"
-                   placeholder="010xxxxxxxx"
-                   class="w-full bg-cream-100 rounded-2xl px-4 py-3.5 text-ink-950 placeholder-ink-400 outline-0 border border-ink-950/8 focus:border-coral-500 focus:bg-white transition text-center tracking-wider">
-            @error('phone') <p class="text-blush-500 text-xs mt-1.5">{{ $message }}</p> @enderror
-        </div>
+        <form method="POST" action="{{ route('login.attempt') }}" class="mt-8 space-y-3">
+            @csrf
 
-        <div>
-            <div class="flex items-center justify-between mb-1.5">
-                <label class="text-xs font-bold text-ink-500">الباسورد</label>
-                <a href="{{ route('forgot') }}" class="text-[11px] font-bold text-coral-600 hover:underline">نسيت الباسورد؟</a>
+            <div>
+                <input type="tel" name="phone" inputmode="numeric" maxlength="11" required autofocus dir="ltr"
+                       value="{{ old('phone') }}" placeholder="رقم الموبايل"
+                       class="auth-input text-center tracking-wider">
+                @error('phone') <p class="auth-error">{{ $message }}</p> @enderror
             </div>
-            <input type="password" name="password" required minlength="6" maxlength="80"
-                   placeholder="••••••••"
-                   class="w-full bg-cream-100 rounded-2xl px-4 py-3.5 text-ink-950 placeholder-ink-400 outline-0 border border-ink-950/8 focus:border-coral-500 focus:bg-white transition">
-            @error('password') <p class="text-blush-500 text-xs mt-1.5">{{ $message }}</p> @enderror
-        </div>
 
-        <button type="submit" class="btn-primary w-full justify-center !py-3.5 text-sm">
-            ادخل
-            <x-icon name="arrow-left" class="w-4 h-4"/>
-        </button>
-    </form>
+            <div class="auth-input-with-icon">
+                <input type="password" name="password" required minlength="6" maxlength="80"
+                       placeholder="الباسورد"
+                       class="auth-input" id="login-password">
+                <button type="button" class="auth-input-icon is-clickable" onclick="(()=>{const i=document.getElementById('login-password'); i.type = i.type==='password'?'text':'password';})()" aria-label="إظهار">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                </button>
+                @error('password') <p class="auth-error">{{ $message }}</p> @enderror
+            </div>
 
-    <p class="text-center text-ink-500 text-sm mt-6">
-        لسه مش معانا؟
-        <a href="{{ route('signup') }}" class="text-coral font-extrabold hover:underline">اعمل حساب</a>
-    </p>
+            <div class="text-end">
+                <a href="{{ route('forgot') }}" class="text-[12px] font-extrabold text-coral-600 hover:underline">نسيت الباسورد؟</a>
+            </div>
 
-    <p class="text-center mt-4">
-        <a href="{{ route('feed') }}" class="text-xs text-ink-400 hover:text-ink-950 inline-flex items-center gap-1">
-            <x-icon name="arrow-right" class="w-3 h-3"/>
-            رجوع للموقع
-        </a>
-    </p>
+            <button type="submit" class="auth-btn mt-2">ادخل</button>
+        </form>
+
+        <a href="{{ route('signup') }}" class="auth-cancel">لسه مش معانا؟ <b>اعمل حساب</b></a>
+        <a href="{{ route('feed') }}" class="auth-cancel" style="padding-top:0">رجوع</a>
+    </div>
 </div>
 @endsection

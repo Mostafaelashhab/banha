@@ -152,7 +152,7 @@
         @php
             $promotedActive = $business->promoted_until && $business->promoted_until->isFuture();
         @endphp
-        <div class="card-light p-4 mb-3 ring-2 ring-coral-500/25" style="background: linear-gradient(135deg, #EEF2FF, #FFF);">
+        <div class="card-light p-4 mb-3 bg-coral-50 ring-1 ring-coral-500/15">
             <div class="flex items-center gap-2 mb-3">
                 <span class="w-7 h-7 rounded-lg bg-coral-500 text-white grid place-items-center text-xs font-black">★</span>
                 <h3 class="text-sm font-extrabold text-ink-950">لوحة الأدمن السريعة</h3>

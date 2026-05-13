@@ -198,7 +198,7 @@ class FeedController extends Controller
             ->take(12)
             ->values();
 
-        $homeCatKeys = ['food', 'medical', 'shops', 'services', 'transport', 'education'];
+        $homeCatKeys = ['food', 'medical', 'shops', 'services', 'transport', 'education' , 'tourist' , 'craftsmen'];
         $homeCats    = collect($homeCatKeys)
             ->map(fn ($k) => ['key' => $k] + (Business::CATEGORIES[$k] ?? []));
 

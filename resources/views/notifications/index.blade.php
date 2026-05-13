@@ -5,12 +5,26 @@
     <h1 class="text-xl font-extrabold text-ink-950 mb-4">الإشعارات</h1>
 
     @if($notifications->isEmpty())
-        <div class="card-light p-10 text-center">
-            <div class="icon-tile mx-auto mb-4 text-coral-600 w-16 h-16">
-                <x-icon name="bell" class="w-7 h-7"/>
+        <div class="bg-white rounded-3xl px-6 pt-14 pb-12 text-center ring-1 ring-ink-950/6">
+            <div class="relative w-28 h-28 mx-auto mb-6">
+                {{-- soft outer halo --}}
+                <span class="absolute inset-0 rounded-full bg-coral-50"></span>
+                <span class="absolute inset-3 rounded-full bg-coral-100/70"></span>
+                {{-- bell --}}
+                <span class="absolute inset-0 grid place-items-center text-coral-600">
+                    <x-icon name="bell" class="w-11 h-11"/>
+                </span>
+                {{-- small zero badge --}}
+                <span class="absolute -top-1 -end-1 min-w-7 h-7 px-2 rounded-full bg-white ring-1 ring-ink-950/8 grid place-items-center text-xs font-black text-ink-950">0</span>
             </div>
-            <h3 class="text-xl font-extrabold text-ink-950 mb-1">مفيش إشعارات لسه</h3>
-            <p class="text-ink-500 text-sm">لما حد يتفاعل مع بوستك أو يبعتلك حاجة هتلاقيها هنا.</p>
+            <h3 class="text-xl font-black text-ink-950 mb-1.5">هدوء تام</h3>
+            <p class="text-ink-500 text-sm leading-relaxed max-w-xs mx-auto">مفيش إشعارات لسه. لما حد يتفاعل مع بوستك أو يبعتلك حاجة، هتلاقيها هنا.</p>
+            <div class="mt-6 flex items-center justify-center gap-2">
+                <a href="{{ route('feed') }}" class="btn-primary !py-2.5 !px-5 text-sm">
+                    اكتشف الأماكن
+                    <x-icon name="arrow-left" class="w-4 h-4"/>
+                </a>
+            </div>
         </div>
     @else
         <div class="card-light p-2 space-y-1" id="notif-list">

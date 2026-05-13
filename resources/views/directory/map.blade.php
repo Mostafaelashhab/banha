@@ -6,10 +6,11 @@
 @push('head')
 {{-- Preconnect: cuts TLS+DNS handshake time on mobile networks --}}
 <link rel="preconnect" href="https://unpkg.com" crossorigin>
-<link rel="preconnect" href="https://tile.openstreetmap.org" crossorigin>
-<link rel="dns-prefetch" href="https://a.tile.openstreetmap.org">
-<link rel="dns-prefetch" href="https://b.tile.openstreetmap.org">
-<link rel="dns-prefetch" href="https://c.tile.openstreetmap.org">
+<link rel="preconnect" href="https://basemaps.cartocdn.com" crossorigin>
+<link rel="dns-prefetch" href="https://a.basemaps.cartocdn.com">
+<link rel="dns-prefetch" href="https://b.basemaps.cartocdn.com">
+<link rel="dns-prefetch" href="https://c.basemaps.cartocdn.com">
+<link rel="dns-prefetch" href="https://d.basemaps.cartocdn.com">
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
@@ -21,16 +22,93 @@
 <link rel="preload" as="fetch" href="{{ route('directory.map.data') }}" crossorigin="use-credentials">
 <style>
     #banha-map {
-        height: calc(100vh - 180px);
-        min-height: 520px;
+        height: calc(100vh - 130px);
+        min-height: 560px;
         border-radius: 28px;
         z-index: 0;
-        background: #FFF7F1;
+        background: #EEF2FA;
         box-shadow: 0 12px 40px -10px rgba(11,11,12,.18);
     }
-    /* Soften OSM tiles + slight warm shift to match cream palette */
+
+    /* ── Skeleton: faux-map texture + loader, fades out when ready ── */
+    .map-skeleton {
+        position: absolute;
+        inset: 0;
+        border-radius: 28px;
+        overflow: hidden;
+        z-index: 350;
+        pointer-events: none;
+        transition: opacity .45s ease;
+        background-color: #EEF2FA;
+        background-image:
+            radial-gradient(circle at 28% 38%, rgba(45,91,255,.10) 0, transparent 18%),
+            radial-gradient(circle at 72% 60%, rgba(45,91,255,.08) 0, transparent 22%),
+            radial-gradient(circle at 50% 50%, rgba(255,255,255,.5) 0, transparent 45%),
+            linear-gradient(110deg, transparent 44%, rgba(11,11,12,.05) 46%, transparent 49%),
+            linear-gradient(20deg,  transparent 44%, rgba(11,11,12,.05) 46%, transparent 49%),
+            linear-gradient(70deg,  transparent 44%, rgba(11,11,12,.05) 46%, transparent 49%);
+        background-size: 100% 100%, 100% 100%, 100% 100%, 240px 240px, 320px 320px, 200px 200px;
+    }
+    .map-skeleton::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(110deg, transparent 35%, rgba(255,255,255,.55) 50%, transparent 65%);
+        animation: map-shimmer 1.8s ease-in-out infinite;
+    }
+    .map-skeleton .ghost-pin {
+        position: absolute;
+        width: 16px; height: 20px;
+        border-radius: 50% 50% 50% 0;
+        transform: rotate(-45deg);
+        background: rgba(45,91,255,.18);
+        box-shadow: 0 3px 6px -1px rgba(45,91,255,.15);
+        animation: map-pin-pulse 2s ease-in-out infinite;
+    }
+    .map-skeleton .ghost-pin:nth-child(1) { top: 32%; left: 38%; animation-delay: .0s; }
+    .map-skeleton .ghost-pin:nth-child(2) { top: 48%; left: 56%; animation-delay: .3s; }
+    .map-skeleton .ghost-pin:nth-child(3) { top: 62%; left: 30%; animation-delay: .6s; }
+    .map-skeleton .ghost-pin:nth-child(4) { top: 40%; left: 70%; animation-delay: .9s; }
+
+    .map-skeleton .map-skeleton-loader {
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 18px;
+        border-radius: 999px;
+        background: #fff;
+        box-shadow: 0 10px 28px -8px rgba(11,11,12,.18);
+        color: #2D5BFF;
+        font-weight: 800;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+    .map-skeleton .map-skeleton-loader::before {
+        content: '';
+        width: 14px; height: 14px;
+        border-radius: 999px;
+        border: 2.5px solid currentColor;
+        border-inline-end-color: transparent;
+        animation: map-spin .75s linear infinite;
+    }
+    .map-skeleton.is-hidden { opacity: 0; }
+
+    @keyframes map-shimmer {
+        0%   { transform: translateX(-30%); }
+        100% { transform: translateX(30%);  }
+    }
+    @keyframes map-pin-pulse {
+        0%, 100% { opacity: .55; transform: rotate(-45deg) scale(1); }
+        50%      { opacity: .95; transform: rotate(-45deg) scale(1.15); }
+    }
+    @keyframes map-spin { to { transform: rotate(360deg); } }
+    /* CARTO Positron is already minimal — just a hair of blue brand-warmth so
+       the map feels part of the app, not a generic third-party widget. */
     #banha-map .leaflet-tile {
-        filter: saturate(.75) brightness(1.04) contrast(.95);
+        filter: saturate(.92) brightness(1.02) hue-rotate(-4deg);
     }
 
     /* ── Custom pin (modern teardrop with subtle inner highlight) ── */
@@ -322,6 +400,91 @@
         .leaflet-control-zoom { display: none; }
     }
 
+    /* ── User location avatar marker — feels like "your character" on the map ── */
+    .user-loc-icon { background: transparent !important; border: 0 !important; }
+    .user-loc-wrap {
+        position: relative;
+        width: 44px; height: 52px;
+        pointer-events: none;
+    }
+    .user-loc-pulse {
+        position: absolute;
+        left: 50%; top: 18px;
+        width: 36px; height: 36px;
+        transform: translate(-50%, -50%);
+        border-radius: 50%;
+        background: rgba(45, 91, 255, .35);
+        animation: user-loc-pulse 2.2s ease-out infinite;
+    }
+    .user-loc-avatar {
+        position: absolute;
+        left: 50%; top: 0;
+        transform: translateX(-50%);
+        width: 36px; height: 36px;
+        border-radius: 50%;
+        background: #2D5BFF;
+        border: 3px solid #fff;
+        box-shadow: 0 4px 12px -2px rgba(45, 91, 255, .55);
+        display: grid;
+        place-items: center;
+        color: #fff;
+        font-weight: 900;
+        font-size: 14px;
+        overflow: hidden;
+    }
+    .user-loc-avatar img {
+        width: 100%; height: 100%;
+        object-fit: cover;
+    }
+    .user-loc-tail {
+        position: absolute;
+        left: 50%; top: 32px;
+        transform: translateX(-50%);
+        width: 0; height: 0;
+        border-left: 7px solid transparent;
+        border-right: 7px solid transparent;
+        border-top: 10px solid #fff;
+        filter: drop-shadow(0 3px 3px rgba(45, 91, 255, .35));
+    }
+    .user-loc-tail::after {
+        content: '';
+        position: absolute;
+        left: -5px; top: -10px;
+        width: 0; height: 0;
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
+        border-top: 7px solid #2D5BFF;
+    }
+    @keyframes user-loc-pulse {
+        0%   { transform: translate(-50%, -50%) scale(.6); opacity: .8; }
+        100% { transform: translate(-50%, -50%) scale(2.4); opacity: 0; }
+    }
+
+    /* Spinner state on locate button */
+    .map-locate-btn.is-loading { pointer-events: none; opacity: .7; }
+    .map-locate-btn.is-loading svg { animation: map-spin .8s linear infinite; }
+
+    /* Toast (used for geolocation errors / low-accuracy warnings) */
+    #map-toast {
+        position: fixed;
+        bottom: 96px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(11,11,12,.92);
+        color: #fff;
+        padding: 10px 18px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 800;
+        z-index: 9999;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity .3s ease, transform .3s ease;
+        max-width: 88vw;
+        text-align: center;
+    }
+    #map-toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+
 </style>
 @endpush
 
@@ -329,85 +492,45 @@
 <div class="max-w-3xl mx-auto">
 
     <div class="flex items-center gap-2 mb-3">
-        <a href="{{ route('directory.index') }}" class="w-9 h-9 rounded-full bg-white border border-ink-950/8 grid place-items-center text-ink-950">
-            <x-icon name="arrow-right" class="w-4 h-4"/>
-        </a>
+       
         <h1 class="text-xl font-extrabold text-ink-950 inline-flex items-center gap-2">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-mint-700">
-                <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
-                <line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/>
-            </svg>
+            
             خريطة بنها
         </h1>
         <span class="ms-auto text-xs font-bold text-ink-500" id="biz-count">…</span>
     </div>
 
-    {{-- Category filter chips (with category SVG icon) --}}
-    <div class="overflow-x-auto scrollbar-hide -mx-4 mb-3">
-        <div class="flex gap-2 px-4 w-max">
-            <button type="button" data-cat=""
-                    class="map-cat-chip is-active shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-extrabold bg-white border border-ink-950/8 transition"
-                    style="--cat-color: #0B0B0C;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3">
-                    <circle cx="12" cy="12" r="10"/>
+    {{-- Compact summary bar: category pill + filters button --}}
+    <div class="flex items-center gap-2 mb-3">
+        <button type="button" id="map-filter-btn"
+                class="flex-1 inline-flex items-center gap-2 px-3.5 py-2.5 rounded-full bg-white ring-1 ring-ink-950/8 text-ink-950 transition hover:ring-coral-500/40">
+            <span class="w-7 h-7 rounded-full bg-coral-50 text-coral-600 grid place-items-center shrink-0">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5">
+                    <line x1="4" y1="6" x2="20" y2="6"/>
+                    <line x1="7" y1="12" x2="17" y2="12"/>
+                    <line x1="10" y1="18" x2="14" y2="18"/>
                 </svg>
-                الكل
-            </button>
-            <button type="button" data-cat="__events__"
-                    class="map-cat-chip shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-white border border-ink-950/8 text-ink-700 transition"
-                    style="--cat-color: #1FA857;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-mint-700">
-                    <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-                </svg>
-                أحداث
-            </button>
-            <button type="button" data-cat="__listings__"
-                    class="map-cat-chip shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-white border border-ink-950/8 text-ink-700 transition"
-                    style="--cat-color: #2D5BFF;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5" style="color:#2D5BFF">
-                    <path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>
-                </svg>
-                إعلانات
-            </button>
-            @foreach($categories as $key => $cat)
-                <button type="button" data-cat="{{ $key }}"
-                        class="map-cat-chip shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-white border border-ink-950/8 text-ink-700 transition"
-                        style="--cat-color: {{ $cat['color'] }};">
-                    <span class="inline-flex" style="color: {{ $cat['color'] }}">
-                        <x-icon :name="$cat['icon'] ?? 'bag'" class="w-3.5 h-3.5"/>
-                    </span>
-                    {{ $cat['label'] }}
-                </button>
-            @endforeach
-        </div>
-    </div>
-
-    {{-- Filter row: open-now / verified / 24h --}}
-    <div class="overflow-x-auto scrollbar-hide -mx-4 mb-3 pb-1">
-        <div class="flex gap-2 px-4 w-max">
-            <button type="button" data-mfilter="open_now"
-                    class="map-filter-chip shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-extrabold bg-white border border-ink-950/8 text-ink-700 transition">
-                <span class="w-1.5 h-1.5 rounded-full bg-mint-500"></span>
-                مفتوح دلوقتي
-            </button>
-            <button type="button" data-mfilter="verified"
-                    class="map-filter-chip shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-extrabold bg-white border border-ink-950/8 text-ink-700 transition">
-                <x-icon name="check" class="w-3 h-3"/>
-                موثّق
-            </button>
-            <button type="button" data-mfilter="open24"
-                    class="map-filter-chip shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-extrabold bg-white border border-ink-950/8 text-ink-700 transition">
-                ٢٤ ساعة
-            </button>
-            <button type="button" data-mfilter="has_menu"
-                    class="map-filter-chip shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-extrabold bg-white border border-ink-950/8 text-ink-700 transition">
-                عنده منيو
-            </button>
-        </div>
+            </span>
+            <span class="flex-1 text-start min-w-0">
+                <span id="map-filter-summary" class="block text-sm font-extrabold truncate">الكل</span>
+                <span id="map-filter-subtitle" class="block text-[10px] text-ink-400 truncate">اضغط لتغيير الفلتر</span>
+            </span>
+            <span id="map-filter-count" class="hidden min-w-5 h-5 px-1.5 rounded-full bg-coral-500 text-white text-[10px] font-black grid place-items-center">0</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-ink-400">
+                <polyline points="6 9 12 15 18 9"/>
+            </svg>
+        </button>
     </div>
 
     <div class="relative">
         <div id="banha-map"></div>
+        <div class="map-skeleton" id="map-skeleton" aria-hidden="true">
+            <span class="ghost-pin"></span>
+            <span class="ghost-pin"></span>
+            <span class="ghost-pin"></span>
+            <span class="ghost-pin"></span>
+            <span class="map-skeleton-loader">جاري تحميل الخريطة...</span>
+        </div>
         <button type="button" id="locate-me" class="map-locate-btn" aria-label="موقعي">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
                 <circle cx="12" cy="12" r="3"/>
@@ -424,6 +547,113 @@
     </p>
 </div>
 
+{{-- ─── Map filter bottom sheet ───────────────────────────────── --}}
+<div id="map-filter-sheet" class="modal-wrap" role="dialog" aria-modal="true" aria-labelledby="map-filter-title">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-sheet">
+        <div class="px-5 pt-3 pb-6 max-h-[82vh] overflow-y-auto">
+            <div class="modal-drag-handle" data-drag-handle>
+                <span class="modal-drag-bar"></span>
+            </div>
+
+            <div class="flex items-center justify-between mb-4">
+                <h3 id="map-filter-title" class="text-lg font-black text-ink-950 inline-flex items-center gap-2">
+                    <span class="w-7 h-7 rounded-full bg-coral-50 text-coral-600 grid place-items-center">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" class="w-3.5 h-3.5">
+                            <line x1="4" y1="6" x2="20" y2="6"/>
+                            <line x1="7" y1="12" x2="17" y2="12"/>
+                            <line x1="10" y1="18" x2="14" y2="18"/>
+                        </svg>
+                    </span>
+                    فلتر الخريطة
+                </h3>
+                <button type="button" data-close
+                        class="w-9 h-9 rounded-full grid place-items-center text-ink-500 hover:bg-ink-950/5 transition"
+                        aria-label="إغلاق">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" class="w-5 h-5">
+                        <line x1="18" y1="6" x2="6"  y2="18"/>
+                        <line x1="6"  y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+
+            {{-- Category section --}}
+            <h4 class="text-xs font-extrabold text-ink-500 uppercase tracking-wider mb-3">اعرض</h4>
+            <div class="flex flex-wrap gap-2 mb-6">
+                <button type="button" data-cat=""
+                        class="map-cat-chip is-active inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-extrabold bg-white ring-1 ring-ink-950/8 transition"
+                        style="--cat-color: #0B0B0C;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3">
+                        <circle cx="12" cy="12" r="10"/>
+                    </svg>
+                    الكل
+                </button>
+                <button type="button" data-cat="__events__"
+                        class="map-cat-chip inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold bg-white ring-1 ring-ink-950/8 text-ink-700 transition"
+                        style="--cat-color: #1FA857;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-mint-700">
+                        <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                    أحداث
+                </button>
+                <button type="button" data-cat="__listings__"
+                        class="map-cat-chip inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold bg-white ring-1 ring-ink-950/8 text-ink-700 transition"
+                        style="--cat-color: #2D5BFF;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5" style="color:#2D5BFF">
+                        <path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>
+                    </svg>
+                    إعلانات
+                </button>
+                @foreach($categories as $key => $cat)
+                    <button type="button" data-cat="{{ $key }}"
+                            class="map-cat-chip inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold bg-white ring-1 ring-ink-950/8 text-ink-700 transition"
+                            style="--cat-color: {{ $cat['color'] }};">
+                        <span class="inline-flex" style="color: {{ $cat['color'] }}">
+                            <x-icon :name="$cat['icon'] ?? 'bag'" class="w-3.5 h-3.5"/>
+                        </span>
+                        {{ $cat['label'] }}
+                    </button>
+                @endforeach
+            </div>
+
+            {{-- Boolean filter section --}}
+            <h4 class="text-xs font-extrabold text-ink-500 uppercase tracking-wider mb-3">حالة</h4>
+            <div class="flex flex-wrap gap-2 mb-6">
+                <button type="button" data-mfilter="open_now"
+                        class="map-filter-chip inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-extrabold bg-white ring-1 ring-ink-950/8 text-ink-700 transition">
+                    <span class="w-1.5 h-1.5 rounded-full bg-mint-500"></span>
+                    مفتوح دلوقتي
+                </button>
+                <button type="button" data-mfilter="verified"
+                        class="map-filter-chip inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-extrabold bg-white ring-1 ring-ink-950/8 text-ink-700 transition">
+                    <x-icon name="check" class="w-3 h-3"/>
+                    موثّق
+                </button>
+                <button type="button" data-mfilter="open24"
+                        class="map-filter-chip inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-extrabold bg-white ring-1 ring-ink-950/8 text-ink-700 transition">
+                    ٢٤ ساعة
+                </button>
+                <button type="button" data-mfilter="has_menu"
+                        class="map-filter-chip inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-extrabold bg-white ring-1 ring-ink-950/8 text-ink-700 transition">
+                    عنده منيو
+                </button>
+            </div>
+
+            {{-- Footer actions --}}
+            <div class="flex items-center gap-2 pt-2 border-t border-ink-950/6">
+                <button type="button" id="map-filter-reset"
+                        class="flex-1 py-2.5 rounded-full bg-white ring-1 ring-ink-950/8 text-ink-700 text-sm font-extrabold hover:bg-ink-950/5 transition">
+                    مسح الكل
+                </button>
+                <button type="button" data-close
+                        class="flex-1 btn-primary !py-2.5 text-sm">
+                    عرض النتائج
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
@@ -431,6 +661,21 @@
 <script>
 (async function () {
     const BANHA = [30.4582, 31.1797];
+
+    @php
+        $authUser = null;
+        if (Auth::check()) {
+            $u = Auth::user();
+            $authUser = [
+                'initial' => \App\Support\AnonSeed::initial($u->username),
+                'color'   => \App\Support\AnonSeed::avatarColor($u->username),
+                'photo'   => $u->avatar_url ?? null,
+            ];
+        }
+    @endphp
+    // Auth user → render them as a "character" on the map (avatar + tail).
+    // Falls back to plain dot for guests.
+    const AUTH_USER = {!! json_encode($authUser) !!};
 
     const map = L.map('banha-map', {
         center: BANHA,
@@ -441,17 +686,39 @@
         preferCanvas: true,
     });
 
-    // Tile layer with Arabic labels (OpenStreetMap default uses local language)
-    // For Egypt this shows Arabic city/street names.
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    // CARTO Positron — minimal light-gray basemap (Uber/Airbnb aesthetic).
+    // Free, no API key, 4 subdomains for parallel tile fetches.
+    // {r} resolves to '@2x' on retina screens.
+    const tileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        subdomains: 'abcd',
         maxZoom: 19,
         crossOrigin: true,
-        attribution: '© OpenStreetMap',
-        // mobile perf: keep recent tiles cached so pan/zoom feel instant
+        attribution: '© OpenStreetMap · © CARTO',
         keepBuffer: 4,
         updateWhenIdle: true,
         updateWhenZooming: false,
-    }).addTo(map);
+    });
+    tileLayer.addTo(map);
+
+    // ── Skeleton fade-out when map is ready ────────────────
+    // Hide once first tile set has loaded AND first render() finished.
+    // Safety: hide after 6s no matter what (slow network / offline).
+    const skeletonEl = document.getElementById('map-skeleton');
+    let tilesReady = false;
+    let dataReady = false;
+    function maybeHideSkeleton() {
+        if (! skeletonEl) return;
+        if (tilesReady && dataReady) {
+            skeletonEl.classList.add('is-hidden');
+            setTimeout(() => skeletonEl.remove(), 500);
+        }
+    }
+    tileLayer.once('load', () => { tilesReady = true; maybeHideSkeleton(); });
+    setTimeout(() => {
+        if (skeletonEl && skeletonEl.isConnected) {
+            tilesReady = true; dataReady = true; maybeHideSkeleton();
+        }
+    }, 6000);
 
     // Toggle a class on the map container so CSS can hide labels at low zoom.
     // 500 overlapping labels at zoom 13 kill mobile FPS — only show when zoomed in.
@@ -786,12 +1053,43 @@
         addMarkersChunked(makers, myToken);
     }
 
-    // Wire filter chips
+    // ── Filter summary bar (reflects active selection) ──────
+    const summaryEl  = document.getElementById('map-filter-summary');
+    const subtitleEl = document.getElementById('map-filter-subtitle');
+    const countEl    = document.getElementById('map-filter-count');
+
+    const FILTER_LABELS = {
+        open_now: 'مفتوح',
+        verified: 'موثّق',
+        open24:   '٢٤ ساعة',
+        has_menu: 'منيو',
+    };
+
+    function updateSummary() {
+        const activeCat = document.querySelector('[data-cat].is-active');
+        const catLabel  = activeCat ? activeCat.textContent.trim() : 'الكل';
+        if (summaryEl) summaryEl.textContent = catLabel;
+
+        const fNames = [...activeFilters].map(k => FILTER_LABELS[k] || k);
+        if (subtitleEl) {
+            subtitleEl.textContent = fNames.length
+                ? fNames.join(' · ')
+                : 'اضغط لتغيير الفلتر';
+        }
+        if (countEl) {
+            const total = fNames.length + (activeCat && activeCat.dataset.cat ? 1 : 0);
+            countEl.textContent = total;
+            countEl.classList.toggle('hidden', total === 0);
+        }
+    }
+
+    // Wire category chips
     document.querySelectorAll('[data-cat]').forEach((btn) => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('[data-cat]').forEach(x => x.classList.remove('is-active'));
             btn.classList.add('is-active');
             render(btn.dataset.cat || '');
+            updateSummary();
         });
     });
 
@@ -803,29 +1101,191 @@
             wasActive ? activeFilters.delete(key) : activeFilters.add(key);
             btn.classList.toggle('is-active', !wasActive);
             render(currentCat);
+            updateSummary();
         });
     });
 
-    // "My location" button (only fires on click — no silent tracking)
+    // ── Bottom sheet open/close + drag-to-dismiss ──────────
+    const filterBtn   = document.getElementById('map-filter-btn');
+    const filterSheet = document.getElementById('map-filter-sheet');
+    if (filterBtn && filterSheet) {
+        const sheetEl = filterSheet.querySelector('.modal-sheet');
+        const handle  = filterSheet.querySelector('[data-drag-handle]');
+
+        const openSheet  = () => { filterSheet.classList.add('open'); document.body.style.overflow = 'hidden'; };
+        const closeSheet = () => {
+            filterSheet.classList.remove('open');
+            document.body.style.overflow = '';
+            if (sheetEl) sheetEl.style.transform = '';
+        };
+
+        filterBtn.addEventListener('click', openSheet);
+        filterSheet.querySelectorAll('[data-close]').forEach(el => el.addEventListener('click', closeSheet));
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && filterSheet.classList.contains('open')) closeSheet();
+        });
+
+        // Reset button
+        const resetBtn = document.getElementById('map-filter-reset');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => {
+                activeFilters.clear();
+                document.querySelectorAll('[data-mfilter]').forEach(x => x.classList.remove('is-active'));
+                document.querySelectorAll('[data-cat]').forEach(x => x.classList.remove('is-active'));
+                const allBtn = document.querySelector('[data-cat=""]');
+                if (allBtn) allBtn.classList.add('is-active');
+                render('');
+                updateSummary();
+            });
+        }
+
+        if (handle && sheetEl) {
+            let startY = 0, dy = 0, startT = 0, dragging = false;
+            const onDown = (e) => {
+                if (! filterSheet.classList.contains('open')) return;
+                dragging = true;
+                startY = e.clientY ?? (e.touches && e.touches[0].clientY) ?? 0;
+                startT = performance.now();
+                dy = 0;
+                sheetEl.classList.add('is-dragging');
+                handle.setPointerCapture?.(e.pointerId);
+            };
+            const onMove = (e) => {
+                if (! dragging) return;
+                const y = e.clientY ?? (e.touches && e.touches[0].clientY) ?? 0;
+                dy = Math.max(0, y - startY);
+                sheetEl.style.transform = `translateY(${dy}px)`;
+            };
+            const onUp = () => {
+                if (! dragging) return;
+                dragging = false;
+                sheetEl.classList.remove('is-dragging');
+                const elapsed  = performance.now() - startT;
+                const velocity = dy / Math.max(elapsed, 1);
+                const sheetH   = sheetEl.offsetHeight || 400;
+                if (velocity > 0.6 || dy > sheetH * 0.30) {
+                    sheetEl.style.transform = `translateY(${sheetH + 40}px)`;
+                    setTimeout(closeSheet, 180);
+                } else {
+                    sheetEl.style.transform = '';
+                }
+            };
+            handle.addEventListener('pointerdown', onDown);
+            handle.addEventListener('pointermove', onMove);
+            handle.addEventListener('pointerup',   onUp);
+            handle.addEventListener('pointercancel', onUp);
+        }
+    }
+
+    updateSummary();
+
+    // ── "My location" — GPS-precise + avatar character on the map ─────
     let userMarker = null;
-    document.getElementById('locate-me').addEventListener('click', () => {
-        if (!navigator.geolocation) return;
+    let accuracyCircle = null;
+    let isLocating = false;
+    const locateBtn = document.getElementById('locate-me');
+    const ORIGINAL_LOCATE_HTML = locateBtn.innerHTML;
+    const SPINNER_HTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="w-5 h-5"><path d="M21 12a9 9 0 0 1-9 9"/><path d="M3 12a9 9 0 0 1 9-9"/></svg>';
+
+    function toast(msg) {
+        let t = document.getElementById('map-toast');
+        if (!t) {
+            t = document.createElement('div');
+            t.id = 'map-toast';
+            document.body.appendChild(t);
+        }
+        t.textContent = msg;
+        t.classList.add('show');
+        clearTimeout(t._timer);
+        t._timer = setTimeout(() => t.classList.remove('show'), 3800);
+    }
+
+    function buildUserIcon() {
+        let inner;
+        if (AUTH_USER) {
+            const bg = AUTH_USER.color || '#2D5BFF';
+            inner = AUTH_USER.photo
+                ? `<div class="user-loc-avatar"><img src="${AUTH_USER.photo}" alt=""></div>`
+                : `<div class="user-loc-avatar" style="background:${bg}">${AUTH_USER.initial}</div>`;
+        } else {
+            inner = `<div class="user-loc-avatar"></div>`;
+        }
+        return L.divIcon({
+            html: `<div class="user-loc-wrap"><span class="user-loc-pulse"></span>${inner}<span class="user-loc-tail"></span></div>`,
+            className: 'user-loc-icon',
+            iconSize: [44, 52],
+            iconAnchor: [22, 48],   // tail tip = real location
+        });
+    }
+
+    locateBtn.addEventListener('click', () => {
+        if (isLocating) return;
+        if (!navigator.geolocation) {
+            toast('متصفحك مش بيدعم تحديد الموقع');
+            return;
+        }
+
+        isLocating = true;
+        locateBtn.classList.add('is-loading');
+        locateBtn.innerHTML = SPINNER_HTML;
+
         navigator.geolocation.getCurrentPosition(
             (pos) => {
+                isLocating = false;
+                locateBtn.classList.remove('is-loading');
+                locateBtn.innerHTML = ORIGINAL_LOCATE_HTML;
+
                 const c = [pos.coords.latitude, pos.coords.longitude];
-                if (userMarker) map.removeLayer(userMarker);
-                userMarker = L.circleMarker(c, {
-                    radius: 9, color: '#fff', weight: 3,
-                    fillColor: '#1D9BF0', fillOpacity: 1,
+                const accuracy = pos.coords.accuracy || 0;
+
+                // Reject IP-based "country-level" fixes (>5km accuracy is useless).
+                if (accuracy > 5000) {
+                    toast('دقة GPS ضعيفة. شغّل الموقع من إعدادات الموبايل وحاول تاني.');
+                    return;
+                }
+
+                // Replace any prior marker + accuracy halo
+                if (userMarker)    map.removeLayer(userMarker);
+                if (accuracyCircle) map.removeLayer(accuracyCircle);
+
+                // Faint accuracy halo (so user understands the precision)
+                accuracyCircle = L.circle(c, {
+                    radius: accuracy,
+                    color: '#2D5BFF',
+                    weight: 1,
+                    opacity: .25,
+                    fillColor: '#2D5BFF',
+                    fillOpacity: .08,
                 }).addTo(map);
-                map.setView(c, 15, { animate: true });
+
+                // Avatar marker (their "character" on the map)
+                userMarker = L.marker(c, {
+                    icon: buildUserIcon(),
+                    zIndexOffset: 2000,
+                    interactive: false,
+                }).addTo(map);
+
+                // Zoom in based on accuracy — closer for precise GPS, wider for rough
+                const targetZoom = accuracy < 50 ? 17 : accuracy < 200 ? 16 : 15;
+                map.flyTo(c, targetZoom, { animate: true, duration: .9 });
             },
-            () => {},
-            { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
+            (err) => {
+                isLocating = false;
+                locateBtn.classList.remove('is-loading');
+                locateBtn.innerHTML = ORIGINAL_LOCATE_HTML;
+                const msgs = {
+                    1: 'لازم تسمح بتحديد الموقع من إعدادات المتصفح',
+                    2: 'مش قادر يجيب موقعك. اتأكد إن GPS شغّال.',
+                    3: 'الطلب اتأخر. حاول تاني.',
+                };
+                toast(msgs[err.code] || 'حصل خطأ في تحديد الموقع');
+            },
+            // High-accuracy + fresh fix. maximumAge=0 means no cached old fix.
+            { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
         );
     });
 
-    render('');
+    render('').then(() => { dataReady = true; maybeHideSkeleton(); });
 })();
 </script>
 @endpush
