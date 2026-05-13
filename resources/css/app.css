@@ -1790,6 +1790,35 @@ html[dir="rtl"] body {
 }
 .modal-sm { max-width: 380px; }
 
+/* ─── Filter sheet — collapsible section ────────────────── */
+.cat-section {
+    border-top: 1px solid rgba(11, 11, 12, .06);
+}
+.cat-section:last-child {
+    border-bottom: 1px solid rgba(11, 11, 12, .06);
+}
+.cat-section > summary {
+    list-style: none;
+    cursor: pointer;
+    user-select: none;
+}
+.cat-section > summary::-webkit-details-marker { display: none; }
+.cat-section-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 2px;
+}
+.cat-section-chev {
+    transition: transform .2s cubic-bezier(.2, .9, .3, 1);
+}
+.cat-section[open] .cat-section-chev {
+    transform: rotate(180deg);
+}
+.cat-section-body {
+    padding: 2px 2px 14px;
+}
+
 /* ───────────────── PROMO CARD — flat, brand-aligned ───────────────── */
 .promo-card {
     position: relative;

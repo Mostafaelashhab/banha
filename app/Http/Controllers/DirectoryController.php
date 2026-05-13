@@ -192,6 +192,7 @@ class DirectoryController extends Controller
         return view('directory.category', [
             'category'       => $category,
             'meta'           => Business::CATEGORIES[$category],
+            'allCategories'  => Business::CATEGORIES,
             'businesses'     => $businesses,
             'subTypes'       => $subTypes,
             'subTypeCounts'  => $subTypeCounts,
