@@ -76,19 +76,37 @@ class DirectoryController extends Controller
             ->pluck('c', 'category')
             ->all();
 
-        $featured = Business::query()
+        $stats = [
+            'total' => (int) array_sum($counts),
+            'zones' => Zone::count(),
+        ];
+
+        $promoted = Business::query()
             ->where('is_active', true)
-            ->where('is_verified', true)
-            ->with('zone:id,name')
-            ->latest()
-            ->limit(6)
+            ->where('promoted_until', '>', now())
+            ->with(['zone:id,name', 'photos:id,business_id,url'])
+            ->orderByDesc('promoted_until')
+            ->limit(10)
+            ->get();
+
+        $topZones = Zone::query()
+            ->select('zones.*')
+            ->selectSub(
+                Business::selectRaw('count(*)')
+                    ->whereColumn('businesses.zone_id', 'zones.id')
+                    ->where('is_active', true),
+                'businesses_count'
+            )
+            ->orderByDesc('businesses_count')
+            ->limit(12)
             ->get();
 
         return view('directory.index', [
             'categories' => Business::CATEGORIES,
             'counts'     => $counts,
-            'featured'   => $featured,
-            'is24h'      => Business::where('is_active', true)->where('is_24h', true)->limit(8)->get(),
+            'promoted'   => $promoted,
+            'topZones'   => $topZones,
+            'stats'      => $stats,
         ]);
     }
 

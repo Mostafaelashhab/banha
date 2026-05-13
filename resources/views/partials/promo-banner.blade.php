@@ -30,86 +30,326 @@
 
     @if(! $isCustom)
     {{-- Decorative illustration per variant --}}
-    <svg class="promo-card-art" viewBox="0 0 160 160" fill="none" aria-hidden="true">
-        @switch($variant)
-            @case('map')
-                {{-- city skyline + floating pin --}}
-                <circle cx="120" cy="42" r="32" fill="rgba(255,255,255,.18)"/>
-                <circle cx="120" cy="42" r="20" fill="rgba(255,255,255,.28)"/>
-                <g fill="rgba(255,255,255,.85)">
-                    <rect x="22"  y="78"  width="22" height="64" rx="3"/>
-                    <rect x="48"  y="62"  width="26" height="80" rx="3"/>
-                    <rect x="78"  y="86"  width="18" height="56" rx="3"/>
-                    <rect x="100" y="70"  width="22" height="72" rx="3"/>
-                    <rect x="126" y="92"  width="22" height="50" rx="3"/>
-                </g>
-                <g transform="translate(70 38)">
-                    <path d="M0 22c-12-9-18-17-18-26a18 18 0 0 1 36 0c0 9-6 17-18 26Z" fill="rgba(255,255,255,.95)"/>
-                    <circle r="6" cx="0" cy="-5" fill="#FF7A4D"/>
-                </g>
-                @break
+   <svg class="promo-card-art" viewBox="0 0 160 160" fill="none" aria-hidden="true">
+    <defs>
+        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#DCEEFF"/>
+            <stop offset="100%" stop-color="#F8FBFF"/>
+        </linearGradient>
 
-            @case('menu')
-                {{-- QR code grid + phone --}}
-                <rect x="36" y="32" width="88" height="88" rx="12" fill="rgba(255,255,255,.18)"/>
-                <g fill="rgba(255,255,255,.95)">
-                    <rect x="48" y="44" width="20" height="20" rx="3"/>
-                    <rect x="92" y="44" width="20" height="20" rx="3"/>
-                    <rect x="48" y="88" width="20" height="20" rx="3"/>
-                    <rect x="76" y="76" width="8"  height="8"/>
-                    <rect x="88" y="76" width="8"  height="8"/>
-                    <rect x="100" y="76" width="8" height="8"/>
-                    <rect x="76" y="88" width="8"  height="8"/>
-                    <rect x="100" y="88" width="8" height="8"/>
-                    <rect x="76" y="100" width="8" height="8"/>
-                    <rect x="88" y="100" width="8" height="8"/>
-                    <rect x="100" y="100" width="8" height="8"/>
-                </g>
-                <g fill="rgba(255,255,255,.4)">
-                    <rect x="53" y="49" width="10" height="10" rx="1"/>
-                    <rect x="97" y="49" width="10" height="10" rx="1"/>
-                    <rect x="53" y="93" width="10" height="10" rx="1"/>
-                </g>
-                @break
+        <linearGradient id="road" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#CBD5E1"/>
+            <stop offset="100%" stop-color="#94A3B8"/>
+        </linearGradient>
 
-            @case('add')
-                {{-- storefront/shop --}}
-                <g fill="rgba(255,255,255,.95)">
-                    <rect x="32" y="64" width="96" height="76" rx="6"/>
-                </g>
-                <g fill="rgba(255,255,255,.55)">
-                    <path d="M28 58 L40 36 L120 36 L132 58 Z"/>
-                </g>
-                <g fill="rgba(11,11,12,.18)">
-                    <rect x="50" y="82" width="22" height="38" rx="3"/>
-                    <rect x="88" y="82" width="22" height="20" rx="3"/>
-                </g>
-                <circle cx="80" cy="48" r="6" fill="#fff"/>
-                <text x="80" y="52" font-size="10" font-weight="900" text-anchor="middle" fill="#0F766E">+</text>
-                @break
+        <linearGradient id="phoneBody" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#2B2B2B"/>
+            <stop offset="100%" stop-color="#111111"/>
+        </linearGradient>
 
-            @case('ad')
-                {{-- megaphone / speaker --}}
-                <g transform="translate(20 50)">
-                    <path d="M0 30 L60 10 L60 70 L0 50 Z" fill="rgba(255,255,255,.95)"/>
-                    <path d="M60 5 L120 -10 L120 90 L60 75 Z" fill="rgba(255,255,255,.7)"/>
-                    <path d="M0 30 L0 50 L-12 50 L-12 30 Z" fill="rgba(255,255,255,.6)"/>
-                </g>
-                <g stroke="rgba(255,255,255,.8)" stroke-width="3" stroke-linecap="round" fill="none">
-                    <line x1="130" y1="40" x2="142" y2="32"/>
-                    <line x1="134" y1="60" x2="148" y2="60"/>
-                    <line x1="130" y1="80" x2="142" y2="88"/>
-                </g>
-                @break
-        @endswitch
-    </svg>
+        <linearGradient id="screen" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#F8FAFC"/>
+            <stop offset="100%" stop-color="#E2E8F0"/>
+        </linearGradient>
+
+        <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+            <feDropShadow dx="0" dy="10" stdDeviation="10" flood-opacity=".18"/>
+        </filter>
+
+        <filter id="blur">
+            <feGaussianBlur stdDeviation="10"/>
+        </filter>
+    </defs>
+
+    @switch($variant)
+
+        {{-- ================= MAP ================= --}}
+        @case('map')
+
+            {{-- background glow --}}
+            <circle cx="120" cy="34" r="28"
+                fill="rgba(255,255,255,.45)"
+                filter="url(#blur)"/>
+
+            {{-- realistic map --}}
+            <g filter="url(#shadow)">
+                <rect x="18" y="24" width="124" height="112" rx="16"
+                    fill="url(#sky)"/>
+
+                {{-- roads --}}
+                <path d="M10 78C40 70 58 72 82 90C108 110 126 112 154 98"
+                    stroke="url(#road)"
+                    stroke-width="12"
+                    stroke-linecap="round"/>
+
+                <path d="M52 18C60 42 66 66 72 140"
+                    stroke="#D1D5DB"
+                    stroke-width="8"
+                    stroke-linecap="round"/>
+
+                <path d="M18 52C54 56 94 54 140 42"
+                    stroke="#E2E8F0"
+                    stroke-width="6"
+                    stroke-linecap="round"/>
+
+                {{-- blocks / buildings --}}
+                <rect x="28" y="34" width="22" height="16" rx="4"
+                    fill="#BFE3C0"/>
+
+                <rect x="92" y="58" width="34" height="22" rx="5"
+                    fill="#C7D2FE"/>
+
+                <rect x="102" y="92" width="26" height="18" rx="5"
+                    fill="#FCD34D"/>
+
+                <rect x="24" y="94" width="38" height="20" rx="5"
+                    fill="#FBCFE8"/>
+            </g>
+
+            {{-- realistic pin --}}
+            <g transform="translate(84 66)" filter="url(#shadow)">
+                <path d="M0 28C-14 16-20 8-20-4A20 20 0 1 1 20-4C20 8 14 16 0 28Z"
+                    fill="#FF5A36"/>
+
+                <circle cx="0" cy="-2" r="8" fill="#fff"/>
+
+                {{-- glossy reflection --}}
+                <path d="M-6 -10C-2 -16 4 -16 8 -10"
+                    stroke="rgba(255,255,255,.5)"
+                    stroke-width="2"
+                    stroke-linecap="round"/>
+            </g>
+
+            @break
+
+
+
+        {{-- ================= QR ================= --}}
+        @case('menu')
+
+            {{-- phone shadow --}}
+            <g filter="url(#shadow)">
+                <rect x="42" y="12" width="76" height="136" rx="22"
+                    fill="url(#phoneBody)"/>
+
+                {{-- screen --}}
+                <rect x="48" y="20" width="64" height="120" rx="16"
+                    fill="url(#screen)"/>
+            </g>
+
+            {{-- dynamic island --}}
+            <rect x="68" y="28" width="24" height="6" rx="3"
+                fill="#0F172A"/>
+
+            {{-- qr white card --}}
+            <g filter="url(#shadow)">
+                <rect x="58" y="48" width="44" height="44" rx="8"
+                    fill="#fff"/>
+            </g>
+
+            {{-- realistic qr --}}
+            <g fill="#111827">
+                {{-- corners --}}
+                <rect x="64" y="54" width="10" height="10" rx="2"/>
+                <rect x="86" y="54" width="10" height="10" rx="2"/>
+                <rect x="64" y="76" width="10" height="10" rx="2"/>
+
+                {{-- center bits --}}
+                <rect x="78" y="68" width="4" height="4"/>
+                <rect x="84" y="68" width="4" height="4"/>
+                <rect x="90" y="68" width="4" height="4"/>
+
+                <rect x="78" y="74" width="4" height="4"/>
+                <rect x="90" y="74" width="4" height="4"/>
+
+                <rect x="78" y="80" width="4" height="4"/>
+                <rect x="84" y="80" width="4" height="4"/>
+                <rect x="90" y="80" width="4" height="4"/>
+            </g>
+
+            {{-- scan glow --}}
+            <line x1="60" y1="70" x2="100" y2="70"
+                stroke="#22D3EE"
+                stroke-width="2"
+                stroke-linecap="round">
+
+                <animate attributeName="y1"
+                    values="52;88;52"
+                    dur="2s"
+                    repeatCount="indefinite"/>
+
+                <animate attributeName="y2"
+                    values="52;88;52"
+                    dur="2s"
+                    repeatCount="indefinite"/>
+            </line>
+
+            {{-- reflection --}}
+            <path d="M54 26 L74 26 L58 136 L54 136 Z"
+                fill="rgba(255,255,255,.12)"/>
+
+            @break
+            {{-- ================= STORE ================= --}}
+@case('add')
+
+    {{-- background glow --}}
+    <circle cx="122" cy="34" r="28"
+        fill="rgba(255,255,255,.38)"
+        filter="url(#blur)"/>
+
+    {{-- realistic storefront --}}
+    <g filter="url(#shadow)">
+        {{-- building --}}
+        <rect x="26" y="48" width="108" height="88" rx="12"
+            fill="#ffffff"/>
+
+        {{-- awning top --}}
+        <path d="M22 54L34 30H126L138 54Z"
+            fill="#F97316"/>
+
+        {{-- awning stripes --}}
+        <path d="M34 30H48L42 54H28Z" fill="#FDBA74"/>
+        <path d="M56 30H70L64 54H50Z" fill="#FED7AA"/>
+        <path d="M78 30H92L86 54H72Z" fill="#FDBA74"/>
+        <path d="M100 30H114L108 54H94Z" fill="#FED7AA"/>
+
+        {{-- glass windows --}}
+        <rect x="38" y="72" width="28" height="34" rx="5"
+            fill="#D6EEFF"/>
+
+        <rect x="94" y="72" width="28" height="34" rx="5"
+            fill="#D6EEFF"/>
+
+        {{-- reflections --}}
+        <path d="M42 76L52 76L44 102L38 102Z"
+            fill="rgba(255,255,255,.35)"/>
+
+        <path d="M98 76L108 76L100 102L94 102Z"
+            fill="rgba(255,255,255,.35)"/>
+
+        {{-- door --}}
+        <rect x="70" y="66" width="20" height="58" rx="6"
+            fill="#374151"/>
+
+        <circle cx="84" cy="96" r="2"
+            fill="#D1D5DB"/>
+    </g>
+
+    {{-- floating add badge --}}
+    <g filter="url(#shadow)">
+        <circle cx="118" cy="48" r="14"
+            fill="#14B8A6"/>
+
+        <path d="M118 41V55"
+            stroke="#fff"
+            stroke-width="3"
+            stroke-linecap="round"/>
+
+        <path d="M111 48H125"
+            stroke="#fff"
+            stroke-width="3"
+            stroke-linecap="round"/>
+    </g>
+
+    @break
+
+
+
+
+{{-- ================= MARKETPLACE ================= --}}
+@case('ad')
+
+    {{-- glow --}}
+    <circle cx="124" cy="36" r="30"
+        fill="rgba(255,255,255,.35)"
+        filter="url(#blur)"/>
+
+    {{-- marketplace cards --}}
+    <g filter="url(#shadow)">
+
+        {{-- back card --}}
+        <rect x="34" y="42"
+            width="72"
+            height="90"
+            rx="14"
+            transform="rotate(-6 34 42)"
+            fill="#E2E8F0"/>
+
+        {{-- front product card --}}
+        <rect x="52" y="28"
+            width="76"
+            height="104"
+            rx="16"
+            fill="#ffffff"/>
+
+        {{-- image area --}}
+        <rect x="62" y="40"
+            width="56"
+            height="42"
+            rx="10"
+            fill="#DBEAFE"/>
+
+        {{-- fake product image --}}
+        <circle cx="90" cy="58" r="12"
+            fill="#60A5FA"/>
+
+        <path d="M82 66C86 60 94 60 98 66"
+            stroke="#fff"
+            stroke-width="3"
+            stroke-linecap="round"/>
+
+        {{-- title lines --}}
+        <rect x="64" y="92"
+            width="40"
+            height="6"
+            rx="3"
+            fill="#CBD5E1"/>
+
+        <rect x="64" y="104"
+            width="28"
+            height="6"
+            rx="3"
+            fill="#E2E8F0"/>
+
+        {{-- price --}}
+        <rect x="64" y="116"
+            width="22"
+            height="10"
+            rx="5"
+            fill="#14B8A6"/>
+
+        {{-- favorite button --}}
+        <circle cx="112" cy="116" r="10"
+            fill="#FEE2E2"/>
+
+        <path d="M112 120
+                L106 114
+                A4 4 0 0 1 112 108
+                A4 4 0 0 1 118 114Z"
+            fill="#EF4444"/>
+    </g>
+
+    {{-- floating marketplace dots --}}
+    <g fill="rgba(255,255,255,.7)">
+        <circle cx="26" cy="54" r="4"/>
+        <circle cx="136" cy="82" r="5"/>
+        <circle cx="42" cy="126" r="3"/>
+    </g>
+
+    @break
+
+    @endswitch
+</svg>
     @endif
 
     <div class="relative max-w-[60%]">
         @if($tag)
-            <div class="text-[10px] font-extrabold tracking-wider uppercase opacity-80 mb-1.5">{{ $tag }}</div>
+            <span class="promo-card-tag">
+                <span class="promo-card-tag-dot"></span>
+                {{ $tag }}
+            </span>
         @endif
-        <div class="font-black text-lg leading-tight">{{ $title }}</div>
+        <div class="font-black text-lg leading-tight mt-2">{{ $title }}</div>
         @if($desc)
             <p class="text-white/90 text-[12px] mt-1 leading-snug font-bold">{{ $desc }}</p>
         @endif

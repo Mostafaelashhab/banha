@@ -1,64 +1,5 @@
 @extends('layouts.app', ['title' => 'بنهاوي · دليلك الكامل لمدينة بنها'])
 
-@php
-    use App\Models\Business;
-
-       use App\Models\PromoBanner;
-
-    // Admin-managed promo banners for the homepage slider
-    $promoBanners = PromoBanner::live()
-        ->orderBy('sort_order')
-        ->orderByDesc('id')
-        ->get();
-    // Sponsored (paid) — appears first
-    $promoted = Business::query()
-        ->where('is_active', true)
-        ->where('promoted_until', '>', now())
-        ->with(['zone:id,name', 'photos:id,business_id,url'])
-        ->orderByDesc('promoted_until')
-        ->limit(6)
-        ->get();
-
-    // Top rated — verified or 4+ stars (photo not required; we fall back per category)
-    $featured = Business::query()
-        ->where('is_active', true)
-        ->where(function ($q) {
-            $q->where('is_verified', true)->orWhere('rating_avg', '>=', 4);
-        })
-        ->with(['zone:id,name', 'photos:id,business_id,url'])
-        ->orderByDesc('is_verified')
-        ->orderByDesc('rating_avg')
-        ->orderByDesc('views_count')
-        ->limit(12)
-        ->get();
-
-
-    // Open now — broader pool filtered by isOpenNow() in PHP since the schedule
-    // lives in a JSON column. We pull a generous candidate set then take 12.
-    $openNow = Business::query()
-        ->where('is_active', true)
-        ->where(function ($q) {
-            $q->where('is_24h', true)->orWhereNotNull('hours_schedule');
-        })
-        ->with(['zone:id,name', 'photos:id,business_id,url'])
-        ->orderByDesc('is_verified')
-        ->orderByDesc('rating_avg')
-        ->orderByDesc('views_count')
-        ->limit(60)
-        ->get()
-        ->filter(fn ($b) => $b->isOpenNow() === true)
-        ->take(12)
-        ->values();
-
-    // Main 6 categories for the home grid
-    $homeCatKeys = ['food', 'medical', 'shops', 'services', 'transport', 'education'];
-    $homeCats    = collect($homeCatKeys)->map(fn ($k) => ['key' => $k] + (Business::CATEGORIES[$k] ?? []));
-    $catCounts   = Business::where('is_active', true)
-        ->whereIn('category', $homeCatKeys)
-        ->selectRaw('category, count(*) as c')->groupBy('category')->pluck('c', 'category')->all();
-
-@endphp
-
 @section('content')
 <div class="max-w-3xl mx-auto">
 
@@ -90,20 +31,23 @@
     {{-- ───── Promo banners — 4-card slider (map, QR menu, add biz, post ad) ──── --}}
       @if($promoBanners->isNotEmpty())
         <div class="mb-10 rise rise-2">
-            <div class="promo-slider" data-auto-rotate="4500">
-                @foreach($promoBanners as $banner)
-                    @include('partials.promo-banner', [
-                        'href'    => $banner->href ?: '#',
-                        'variant' => 'custom',
-                        'tag'     => $banner->tag,
-                        'title'   => $banner->title,
-                        'desc'    => $banner->description,
-                        'cta'     => $banner->cta_text,
-                        'image'   => $banner->image_url,
-                        'bgFrom'  => $banner->bg_from,
-                        'bgTo'    => $banner->bg_to,
-                    ])
-                @endforeach
+            <div class="promo-slider-wrap">
+                <div class="promo-slider" data-auto-rotate="4500">
+                    @foreach($promoBanners as $banner)
+                        @include('partials.promo-banner', [
+                            'href'    => $banner->href ?: '#',
+                            'variant' => 'custom',
+                            'tag'     => $banner->tag,
+                            'title'   => $banner->title,
+                            'desc'    => $banner->description,
+                            'cta'     => $banner->cta_text,
+                            'image'   => $banner->image_url,
+                            'bgFrom'  => $banner->bg_from,
+                            'bgTo'    => $banner->bg_to,
+                        ])
+                    @endforeach
+                </div>
+                <div class="promo-slider-dots" aria-hidden="true"></div>
             </div>
         </div>
     @endif
@@ -206,39 +150,42 @@
     @endif
     {{-- ───── Promo banners — 4-card slider (map, QR menu, add biz, post ad) ──── --}}
     <div class="mb-10 rise rise-2">
-        <div class="promo-slider" data-auto-rotate="4500">
-            @include('partials.promo-banner', [
-                'href'    => route('directory.map'),
-                'variant' => 'map',
-                'tag'     => 'جديد · خريطة بنها',
-                'title'   => 'لاقي أحسن أماكن بنها قربك',
-                'desc'    => 'مطاعم، صيدليات، خدمات — كلهم على خريطة واحدة.',
-                'cta'     => 'افتح الخريطة',
-            ])
-            @include('partials.promo-banner', [
-                'href'    => Auth::check() ? route('directory.mine') : route('signup'),
-                'variant' => 'menu',
-                'tag'     => 'جديد · منيو رقمي',
-                'title'   => 'منيو نشاطك على QR',
-                'desc'    => 'حدّث الأسعار في ثانية، الضيف يقرا المنيو من موبايله.',
-                'cta'     => 'جرّب QR Menu',
-            ])
-            @include('partials.promo-banner', [
-                'href'    => Auth::check() ? route('directory.create') : route('signup'),
-                'variant' => 'add',
-                'tag'     => 'مجاناً · أضف نشاطك',
-                'title'   => 'نشاطك في بنهاوي',
-                'desc'    => 'ضيف مكانك يطلع للناس اللي بتدوّر في بنها.',
-                'cta'     => 'ضيف نشاطك',
-            ])
-            @include('partials.promo-banner', [
-                'href'    => Auth::check() ? route('marketplace.create') : route('signup'),
-                'variant' => 'ad',
-                'tag'     => 'سوق · إعلانات',
-                'title'   => 'بيع، اشتري، إعلن',
-                'desc'    => 'انشر إعلانك في سوق بنها ووصلّه لآلاف الزوار.',
-                'cta'     => 'انشر إعلان',
-            ])
+        <div class="promo-slider-wrap">
+            <div class="promo-slider" data-auto-rotate="4500">
+                @include('partials.promo-banner', [
+                    'href'    => route('directory.map'),
+                    'variant' => 'map',
+                    'tag'     => 'جديد · خريطة بنها',
+                    'title'   => 'لاقي أحسن أماكن بنها قربك',
+                    'desc'    => 'مطاعم، صيدليات، خدمات — كلهم على خريطة واحدة.',
+                    'cta'     => 'افتح الخريطة',
+                ])
+                @include('partials.promo-banner', [
+                    'href'    => Auth::check() ? route('directory.mine') : route('signup'),
+                    'variant' => 'menu',
+                    'tag'     => 'جديد · منيو رقمي',
+                    'title'   => 'منيو نشاطك على QR',
+                    'desc'    => 'حدّث الأسعار في ثانية، الضيف يقرا المنيو من موبايله.',
+                    'cta'     => 'جرّب QR Menu',
+                ])
+                @include('partials.promo-banner', [
+                    'href'    => Auth::check() ? route('directory.create') : route('signup'),
+                    'variant' => 'add',
+                    'tag'     => 'مجاناً · أضف نشاطك',
+                    'title'   => 'نشاطك في بنهاوي',
+                    'desc'    => 'ضيف مكانك يطلع للناس اللي بتدوّر في بنها.',
+                    'cta'     => 'ضيف نشاطك',
+                ])
+                @include('partials.promo-banner', [
+                    'href'    => Auth::check() ? route('marketplace.create') : route('signup'),
+                    'variant' => 'ad',
+                    'tag'     => 'سوق · إعلانات',
+                    'title'   => 'بيع، اشتري، إعلن',
+                    'desc'    => 'انشر إعلانك في سوق بنها ووصلّه لآلاف الزوار.',
+                    'cta'     => 'انشر إعلان',
+                ])
+            </div>
+            <div class="promo-slider-dots" aria-hidden="true"></div>
         </div>
     </div>
 
@@ -269,11 +216,24 @@
 
 @push('scripts')
 <script>
-    (() => {
-        const slider = document.querySelector('.promo-slider[data-auto-rotate]');
-        if (!slider) return;
-
+    function initPromoSlider(slider) {
         const cards = Array.from(slider.children).filter(el => el.classList.contains('promo-card'));
+        if (cards.length < 1) return;
+
+        // Build pagination dots even for a single card so the layout matches across sliders
+        const dotsHost = slider.parentElement && slider.parentElement.querySelector('.promo-slider-dots');
+        if (dotsHost) {
+            dotsHost.innerHTML = '';
+            cards.forEach((_, i) => {
+                const d = document.createElement('button');
+                d.type = 'button';
+                d.className = 'promo-slider-dot' + (i === 0 ? ' is-active' : '');
+                d.setAttribute('aria-label', 'Slide ' + (i + 1));
+                dotsHost.appendChild(d);
+            });
+        }
+
+        // Only single card — no auto-rotation, no scroll wiring needed
         if (cards.length < 2) return;
 
         const interval    = parseInt(slider.dataset.autoRotate, 10) || 4500;
@@ -284,18 +244,24 @@
         let   pauseT    = null;
         let   animating = false;
 
-        // ease-in-out cubic
         const ease = t => t < .5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2;
+        const targetLeftFor = (card) => card.offsetLeft - (slider.clientWidth - card.offsetWidth) / 2;
 
-        const targetLeftFor = (card) =>
-            card.offsetLeft - (slider.clientWidth - card.offsetWidth) / 2;
+        // Hook click handlers on the dots we already created above
+        const dots = dotsHost ? Array.from(dotsHost.querySelectorAll('.promo-slider-dot')) : [];
+        dots.forEach((d, i) => d.addEventListener('click', () => { pauseAndResume(); slideTo(i); }));
 
-        // Smooth scroll with snap temporarily disabled so animation isn't interrupted
-        const slideTo = (i) => {
+        const setActive = (i) => {
             idx = (i + cards.length) % cards.length;
-            const target = cards[idx];
+            dots.forEach((d, j) => d.classList.toggle('is-active', j === idx));
+        };
+
+        const slideTo = (i) => {
+            const next = (i + cards.length) % cards.length;
+            const target = cards[next];
             const from   = slider.scrollLeft;
             const to     = targetLeftFor(target);
+            setActive(next);
             if (Math.abs(to - from) < 1) return;
 
             animating = true;
@@ -332,7 +298,6 @@
         slider.addEventListener('touchstart',  pauseAndResume, { passive: true });
         slider.addEventListener('wheel',       pauseAndResume, { passive: true });
 
-        // Sync idx when user scrolls manually
         let scrollT;
         slider.addEventListener('scroll', () => {
             if (animating) return;
@@ -345,7 +310,7 @@
                     const d = Math.abs(center - cCenter);
                     if (d < bestDist) { bestDist = d; best = i; }
                 });
-                idx = best;
+                setActive(best);
             }, 120);
         }, { passive: true });
 
@@ -354,8 +319,9 @@
         });
 
         start();
-    })();
-       document.querySelectorAll('.promo-slider[data-auto-rotate]').forEach(initPromoSlider);
+    }
+
+    document.querySelectorAll('.promo-slider[data-auto-rotate]').forEach(initPromoSlider);
 </script>
 @endpush
 @endsection

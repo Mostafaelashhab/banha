@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Alert;
 use App\Models\Business;
 use App\Models\Post;
+use App\Models\PromoBanner;
 use App\Models\Vote;
 use App\Models\Zone;
 use Illuminate\Http\Request;
@@ -144,6 +145,63 @@ class FeedController extends Controller
             'activeZone' => $zoneId ? (int) $zoneId : null,
             'userVotes'  => $userVotes,
             'categories' => Post::CATEGORIES,
+            ...$this->homepageData(),
         ]);
+    }
+
+    /**
+     * Data for the homepage sections rendered at the top of feed.blade.php:
+     * admin promo banners, sponsored/featured/open-now businesses, and the
+     * 6 category tiles.
+     */
+    private function homepageData(): array
+    {
+        $promoBanners = PromoBanner::live()
+            ->orderBy('sort_order')
+            ->orderByDesc('id')
+            ->get();
+
+        $promoted = Business::query()
+            ->where('is_active', true)
+            ->where('promoted_until', '>', now())
+            ->with(['zone:id,name', 'photos:id,business_id,url'])
+            ->orderByDesc('promoted_until')
+            ->limit(6)
+            ->get();
+
+        $featured = Business::query()
+            ->where('is_active', true)
+            ->where(function ($q) {
+                $q->where('is_verified', true)->orWhere('rating_avg', '>=', 4);
+            })
+            ->with(['zone:id,name', 'photos:id,business_id,url'])
+            ->orderByDesc('is_verified')
+            ->orderByDesc('rating_avg')
+            ->orderByDesc('views_count')
+            ->limit(12)
+            ->get();
+
+        // Schedule lives in a JSON column, so isOpenNow() runs in PHP after
+        // pulling a generous candidate set.
+        $openNow = Business::query()
+            ->where('is_active', true)
+            ->where(function ($q) {
+                $q->where('is_24h', true)->orWhereNotNull('hours_schedule');
+            })
+            ->with(['zone:id,name', 'photos:id,business_id,url'])
+            ->orderByDesc('is_verified')
+            ->orderByDesc('rating_avg')
+            ->orderByDesc('views_count')
+            ->limit(60)
+            ->get()
+            ->filter(fn ($b) => $b->isOpenNow() === true)
+            ->take(12)
+            ->values();
+
+        $homeCatKeys = ['food', 'medical', 'shops', 'services', 'transport', 'education'];
+        $homeCats    = collect($homeCatKeys)
+            ->map(fn ($k) => ['key' => $k] + (Business::CATEGORIES[$k] ?? []));
+
+        return compact('promoBanners', 'promoted', 'featured', 'openNow', 'homeCats');
     }
 }

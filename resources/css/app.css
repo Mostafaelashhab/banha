@@ -1161,26 +1161,31 @@ html[dir="rtl"] body {
 /* Banner variants — all within the warm coral/honey brand family */
 .promo-card--map {
     /* Primary coral — vibrant brand */
-    background: linear-gradient(135deg, #FF7A4D 0%, #FF9F2D 60%, #FFB85C 100%);
+    /* background: linear-gradient(135deg, #FF7A4D 0%, #FF9F2D 60%, #FFB85C 100%); */
+     background: linear-gradient(135deg, #F97316 0%, #EA580C 20%, #C2410C 100%);
 }
 .promo-card--menu {
     /* Burnt orange — deeper, richer */
-    background: linear-gradient(135deg, #C2410C 0%, #EA580C 55%, #F97316 100%);
+    background: linear-gradient(135deg, #F97316 0%, #EA580C 20%, #C2410C 100%);
+        /* background: linear-gradient(135deg, #C2410C 0%, #EA580C 55%, #F97316 100%); */
+
 }
 .promo-card--add {
     /* Golden honey — warm amber */
-    background: linear-gradient(135deg, #B45309 0%, #D97706 55%, #F59E0B 100%);
+    /* background: linear-gradient(135deg, #B45309 0%, #D97706 55%, #F59E0B 100%); */
+     background: linear-gradient(135deg, #F97316 0%, #EA580C 20%, #C2410C 100%);
 }
 .promo-card--ad {
     /* Sunset — coral pushed toward red */
-    background: linear-gradient(135deg, #DC2626 0%, #F97316 55%, #FB923C 100%);
+    /* background: linear-gradient(135deg, #DC2626 0%, #F97316 55%, #FB923C 100%); */
+     background: linear-gradient(135deg, #F97316 0%, #EA580C 20%, #C2410C 100%);
 }
 
 /* Per-variant CTA pill ink color (white pill on every variant) */
-.promo-card--map  .promo-card-cta { color: #C2410C; }
+.promo-card--map  .promo-card-cta { color: #7C2D12; }
 .promo-card--menu .promo-card-cta { color: #7C2D12; }
-.promo-card--add  .promo-card-cta { color: #92400E; }
-.promo-card--ad   .promo-card-cta { color: #991B1B; }
+.promo-card--add  .promo-card-cta { color: #7C2D12; }
+.promo-card--ad   .promo-card-cta { color: #7C2D12; }
 
 .reveal { opacity: 0; transform: translateY(24px); transition: opacity .8s ease, transform .8s ease; }
 .reveal.in { opacity: 1; transform: none; }
@@ -1657,9 +1662,9 @@ html[dir="rtl"] body {
     font-size: 10px;
     font-weight: 700;
     line-height: 1;
-    opacity: 0;
-    transform: translateY(2px);
-    transition: opacity .2s ease, transform .2s ease;
+    /* opacity: 0; */
+    /* transform: translateY(2px); */
+    /* transition: opacity .2s ease, transform .2s ease; */
 }
 .nav-item.is-active .nav-label {
     opacity: 1;
@@ -1784,6 +1789,160 @@ html[dir="rtl"] body {
     transform: none;
 }
 .modal-sm { max-width: 380px; }
+
+/* ───────────────── PROMO CARD — flat, brand-aligned ───────────────── */
+.promo-card {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 180px;
+    padding: 20px 22px;
+    border-radius: 22px;
+    color: #fff;
+    text-decoration: none;
+    background: var(--color-coral-500);
+    box-shadow: none;
+}
+.promo-card::before { content: none; }
+.promo-card::after  { content: none; }
+.promo-card:hover { transform: none; box-shadow: none; }
+.promo-card-glow { display: none; }
+
+/* Decorative artwork — flat, no drop-shadow */
+.promo-card-art {
+    position: absolute;
+    bottom: -10px;
+    inset-inline-end: -10px;
+    width: 150px;
+    height: 150px;
+    opacity: .9;
+    pointer-events: none;
+    z-index: 1;
+    filter: none;
+    transition: none;
+}
+.promo-card-art svg { width: 100%; height: 100%; display: block; }
+.promo-card:hover .promo-card-art { transform: none; }
+
+/* Text container above artwork */
+.promo-card > .relative {
+    position: relative;
+    z-index: 2;
+    max-width: 62%;
+}
+
+/* CTA — solid white pill, brand ink, NO shadow */
+.promo-card-cta {
+    align-self: flex-start;
+    position: relative;
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #fff;
+    color: var(--color-coral-600);
+    padding: 9px 16px;
+    border-radius: 999px;
+    font-weight: 900;
+    font-size: 12px;
+    box-shadow: none;
+    transition: none;
+}
+.promo-card-cta:hover { transform: none; box-shadow: none; }
+
+/* Slider track */
+.promo-slider {
+    display: flex;
+    gap: 14px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 4px 0 6px;
+}
+.promo-slider::-webkit-scrollbar { display: none; }
+.promo-slider > .promo-card {
+    flex: 0 0 100%;
+    scroll-snap-align: center;
+}
+
+/* VARIANTS — flat brand colors (coral & honey family) */
+.promo-card--map {
+    background: var(--color-coral-500);   /* #FF7A4D */
+}
+.promo-card--map .promo-card-cta { color: var(--color-coral-700); }
+
+.promo-card--menu {
+    background: var(--color-coral-600);   /* #F55A2C */
+}
+.promo-card--menu .promo-card-cta { color: var(--color-coral-700); }
+
+.promo-card--add {
+    background: var(--color-honey-500);   /* #FFA037 */
+}
+.promo-card--add .promo-card-cta { color: var(--color-coral-700); }
+
+.promo-card--ad {
+    background: var(--color-honey-400);   /* #FFB85C */
+}
+.promo-card--ad .promo-card-cta { color: var(--color-coral-700); }
+
+/* Slider wrapper + pagination dots — flat */
+.promo-slider-wrap {
+    position: relative;
+}
+.promo-slider-dots {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    margin-top: 12px;
+    min-height: 8px;
+}
+.promo-slider-dot {
+    width: 6px;
+    height: 6px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(15, 15, 20, .14);
+    cursor: pointer;
+    box-shadow: none;
+    transition: width .35s cubic-bezier(.2, .9, .3, 1), background .35s ease;
+}
+.promo-slider-dot.is-active {
+    width: 24px;
+    background: var(--color-coral-500);
+    box-shadow: none;
+}
+.promo-slider-dot:hover:not(.is-active) {
+    background: rgba(15, 15, 20, .28);
+}
+
+/* Tag pill inside promo cards — flat */
+.promo-card-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(255, 255, 255, .22);
+    padding: 4px 10px 4px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .03em;
+    color: #fff;
+    text-transform: uppercase;
+}
+.promo-card-tag-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #fff;
+}
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: var(--color-cream-100); }
