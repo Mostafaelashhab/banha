@@ -40,7 +40,7 @@
             <button type="button" class="hidden text-ink-400 hover:text-ink-950 transition text-lg leading-none" data-suggest-clear aria-label="مسح">×</button>
             <button type="submit" class="w-9 h-9 rounded-full bg-coral-500 text-white grid place-items-center shrink-0 hover:bg-coral-600 transition" aria-label="ابحث">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="w-4 h-4">
-                    <polyline points="9 18 15 12 9 6"/>
+                    <polyline points="15 18 9 12 15 6"/>
                 </svg>
             </button>
         </form>

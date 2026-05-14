@@ -76,7 +76,7 @@ function e(){let e=document.body;if(e?.dataset.guest!==`1`)return!0;let t=e?.dat
                 <h3 class="text-lg font-extrabold text-ink-950 mb-2">نوصّلك أهم اللي بيحصل في بنها؟</h3>
                 <p class="text-ink-500 text-sm leading-relaxed mb-5">
                     تنبيهات لحظية عن الزحمة والكهربا في حيك،
-                    <br>وإشعارات لو حد عمل like أو علّق على بوستك.
+                    <br>وإشعارات بأحدث الأماكن والعروض في بنها.
                 </p>
                 <div class="flex gap-2">
                     <button type="button" class="btn-ghost flex-1 justify-center" data-notif-skip>مش دلوقتي</button>
@@ -104,4 +104,4 @@ function e(){let e=document.body;if(e?.dataset.guest!==`1`)return!0;let t=e?.dat
             </div>
         </div>`,document.body.appendChild(a),requestAnimationFrame(()=>a.classList.add(`open`));let o=()=>{a.classList.remove(`open`),setTimeout(()=>a.remove(),220)};a.querySelector(`.modal-backdrop`).addEventListener(`click`,o),a.querySelector(`[data-close]`).addEventListener(`click`,o)}),document.addEventListener(`click`,async e=>{let t=e.target.closest(`[data-share]`);if(!t)return;e.preventDefault();let n=new URL(t.dataset.shareUrl||location.href,location.origin).href,r=t.dataset.shareTitle||`بنهاوي`,i=t.dataset.shareText||``,a=`${i?i+`
 
-`:``}${n}\n\nمن بنهاوي 🔥`;if(navigator.share)try{await navigator.share({title:r,text:a,url:n});return}catch(e){if(e.name===`AbortError`)return}try{await navigator.clipboard.writeText(a),_(`✓ اللينك اتنسخ — جاهز للشير`)}catch{prompt(`انسخ اللينك:`,n)}});
+`:``}${n}\n\nمن بنهاوي 🔥`;if(navigator.share)try{await navigator.share({title:r,text:a,url:n});return}catch(e){if(e.name===`AbortError`)return}try{await navigator.clipboard.writeText(a),_(`✓ اللينك اتنسخ — جاهز للشير`)}catch{prompt(`انسخ اللينك:`,n)}}),document.addEventListener(`click`,e=>{let t=e.target.closest(`[data-promoted-info]`);if(t){e.preventDefault(),e.stopPropagation(),document.querySelectorAll(`[data-promoted-info].is-open`).forEach(e=>{e!==t&&e.classList.remove(`is-open`)}),t.classList.toggle(`is-open`);return}document.querySelectorAll(`[data-promoted-info].is-open`).forEach(e=>e.classList.remove(`is-open`))}),document.addEventListener(`keydown`,e=>{e.key===`Escape`&&document.querySelectorAll(`[data-promoted-info].is-open`).forEach(e=>e.classList.remove(`is-open`))});

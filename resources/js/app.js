@@ -531,7 +531,7 @@ window.banhawyPush = { subscribe: pushSubscribe, unsubscribe: pushUnsubscribe };
                 <h3 class="text-lg font-extrabold text-ink-950 mb-2">نوصّلك أهم اللي بيحصل في بنها؟</h3>
                 <p class="text-ink-500 text-sm leading-relaxed mb-5">
                     تنبيهات لحظية عن الزحمة والكهربا في حيك،
-                    <br>وإشعارات لو حد عمل like أو علّق على بوستك.
+                    <br>وإشعارات بأحدث الأماكن والعروض في بنها.
                 </p>
                 <div class="flex gap-2">
                     <button type="button" class="btn-ghost flex-1 justify-center" data-notif-skip>مش دلوقتي</button>
@@ -982,6 +982,30 @@ document.addEventListener('click', async (e) => {
         showShareToast('✓ اللينك اتنسخ — جاهز للشير');
     } catch (err) {
         prompt('انسخ اللينك:', url);
+    }
+});
+
+// ─── Promoted badge tooltip toggle ──────────────────────────
+// Click the "مُموَّل" badge to reveal an explanation; click outside or Esc to close.
+document.addEventListener('click', (e) => {
+    const badge = e.target.closest('[data-promoted-info]');
+    if (badge) {
+        e.preventDefault();
+        e.stopPropagation();
+        // Close any other open badges first
+        document.querySelectorAll('[data-promoted-info].is-open').forEach((b) => {
+            if (b !== badge) b.classList.remove('is-open');
+        });
+        badge.classList.toggle('is-open');
+        return;
+    }
+    // Clicked elsewhere — close any open badge
+    document.querySelectorAll('[data-promoted-info].is-open').forEach((b) => b.classList.remove('is-open'));
+});
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        document.querySelectorAll('[data-promoted-info].is-open').forEach((b) => b.classList.remove('is-open'));
     }
 });
 

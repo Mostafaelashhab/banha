@@ -159,20 +159,126 @@ html[dir="rtl"] body {
     overflow: visible;
 }
 
-/* Promoted business card — paid-ad treatment (subtle but distinguishable) */
-.biz-card-promoted {
-    box-shadow:
-        0 12px 32px -10px rgba(255, 212, 64, .35),
-        0 0 0 1px rgba(255, 212, 64, .35);
-    position: relative;
-}
-.biz-card-promoted::after {
-    content: '';
+/* Promoted business card — no special photo treatment; the inline badge does the signaling */
+
+/* Photo chips row — bottom of the photo */
+.biz-card__photo-chips {
     position: absolute;
-    inset: 0;
-    border-radius: inherit;
+    bottom: 12px;
+    inset-inline-start: 12px;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Promoted badge — inline next to name, mimics verified-badge style */
+.p-badge {
+    display: inline-grid;
+    place-items: center;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #2D5BFF;
+    cursor: pointer;
+    position: relative;
+    filter: drop-shadow(0 1px 2px rgba(11, 11, 12, .15));
+}
+.p-badge svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+.p-badge:hover {
+    transform: scale(1.08);
+}
+
+/* Tooltip popover — appears above the badge on click */
+.p-badge::after {
+    content: 'إعلان مُموَّل · النشاط ده دفع علشان يطلع في النتايج';
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%) translateY(4px);
+    width: max-content;
+    max-width: 220px;
+    padding: 8px 12px;
+    border-radius: 12px;
+    background: #0B0B0C;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: 0;
+    text-align: center;
+    box-shadow: 0 10px 30px -8px rgba(11, 11, 12, .4);
+    opacity: 0;
     pointer-events: none;
-    background: linear-gradient(135deg, rgba(255, 212, 64, .08), transparent 30%);
+    transition: opacity .18s, transform .18s;
+    white-space: normal;
+    z-index: 50;
+}
+.p-badge.is-open::after {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* Photo chips (24h, etc) */
+.biz-card__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: rgba(11, 11, 12, .82);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+.biz-card__chip-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-mint-400, #4ADE80);
+    animation: pulse 1.6s ease-in-out infinite;
+}
+
+/* Action row — sits below the stats */
+.biz-card__actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+}
+.biz-card__action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 42px;
+    border-radius: 14px;
+    font-weight: 800;
+    font-size: 13px;
+    text-decoration: none;
+    transition: opacity .15s;
+}
+.biz-card__action:hover { opacity: .92; }
+.biz-card__action--primary {
+    flex: 1;
+    background: var(--color-coral-500, #2D5BFF);
+    color: #fff;
+}
+.biz-card__action--wa {
+    width: 42px;
+    background: #25D366;
+    color: #fff;
+    flex-shrink: 0;
 }
 
 /* Sponsored post — gold/honey accent */
@@ -556,13 +662,30 @@ html[dir="rtl"] body {
     flex-shrink: 0;
 }
 .biz-card__subtitle {
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--color-coral-500, #2D5BFF);
-    margin-top: 2px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 800;
+    color: #1E40AF;
+    background: rgba(45, 91, 255, .08);
+    padding: 3px 9px;
+    border-radius: 999px;
+    margin-top: 5px;
+    max-width: 100%;
+    overflow: hidden;
+}
+.biz-card__subtitle span {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    min-width: 0;
+}
+.biz-card__subtitle-icon {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+    color: #2D5BFF;
 }
 .biz-card__stats {
     display: flex;
@@ -1712,27 +1835,28 @@ html[dir="rtl"] body {
     gap: .375rem;
     padding: .5rem 1rem;
     border-radius: 999px;
-    font-size: .875rem;
-    font-weight: 700;
-    background: #fff;
-    color: var(--color-ink-500);
-    border: 1px solid rgb(15 15 20 / .08);
+    font-size: .8125rem;
+    font-weight: 800;
+    background: rgba(45, 91, 255, .08);
+    color: #1E40AF;
+    border: 0;
     white-space: nowrap;
-    transition: background .15s ease, color .15s ease, border-color .15s ease, transform .15s ease;
+    transition: background .15s ease, color .15s ease, transform .15s ease;
     user-select: none;
 }
 .chip:hover {
-    background: var(--color-cream-200);
-    color: var(--color-ink-950);
+    background: rgba(45, 91, 255, .14);
 }
 .chip-active {
-    background: var(--color-ink-950);
+    background: var(--color-coral-500, #2D5BFF);
     color: #fff;
-    border-color: var(--color-ink-950);
+}
+.chip-active:hover {
+    background: var(--color-coral-600, #1E3FCF);
+    color: #fff;
 }
 .chip-coral.chip-active {
     background: var(--color-coral-500);
-    border-color: var(--color-coral-500);
     box-shadow: 0 6px 18px -6px rgba(45, 91, 255, .55);
 }
 
