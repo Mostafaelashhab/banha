@@ -22,12 +22,46 @@
 <link rel="preload" as="fetch" href="{{ route('directory.map.data') }}" crossorigin="use-credentials">
 <style>
     #banha-map {
-        height: calc(100vh - 130px);
-        min-height: 560px;
+        height: 100%;
+        min-height: 0;
         border-radius: 28px;
         z-index: 0;
         background: #EEF2FA;
         box-shadow: 0 12px 40px -10px rgba(11,11,12,.18);
+    }
+
+    /* Fit the whole map route in the viewport — no page scroll */
+    body:has(#banha-map) {
+        overflow: hidden;
+        height: 100dvh;
+        padding-bottom: 0 !important;
+    }
+    body:has(#banha-map) > main {
+        height: 100dvh;
+        box-sizing: border-box;
+        padding-top: 0.75rem;
+        padding-bottom: calc(7rem + env(safe-area-inset-bottom));
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+    body:has(#banha-map) > main {
+        align-items: stretch;
+    }
+    body:has(#banha-map) > main > .max-w-3xl {
+        width: 100%;
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+    body:has(#banha-map) > main > .max-w-3xl > .relative {
+        flex: 1;
+        min-height: 0;
+    }
+    /* Caption below the map is hidden so the map can take all remaining space */
+    body:has(#banha-map) > main > .max-w-3xl > p {
+        display: none;
     }
 
     /* ── Skeleton: faux-map texture + loader, fades out when ready ── */

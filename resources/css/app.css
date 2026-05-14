@@ -220,17 +220,6 @@ html[dir="rtl"] body {
     transform: translateX(-50%) translateY(0);
 }
 
-/* Photo chips row — bottom of the photo */
-.biz-card__photo-chips {
-    position: absolute;
-    bottom: 12px;
-    inset-inline-start: 12px;
-    z-index: 3;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
 /* Promoted badge — inline next to name, mimics verified-badge style */
 .p-badge {
     display: inline-grid;
@@ -284,28 +273,6 @@ html[dir="rtl"] body {
 .p-badge.is-open::after {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
-}
-
-/* Photo chips (24h, etc) */
-.biz-card__chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 5px 10px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.651);
-    color: var(--color-coral-500);
-    font-size: 10px;
-    font-weight: 800;
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-}
-.biz-card__chip-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--color-mint-400, #00f159);
-    animation: pulse 1.6s ease-in-out infinite;
 }
 
 /* Action row — sits below the stats */

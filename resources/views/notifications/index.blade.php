@@ -18,12 +18,9 @@
                 <span class="absolute -top-1 -end-1 min-w-7 h-7 px-2 rounded-full bg-white ring-1 ring-ink-950/8 grid place-items-center text-xs font-black text-ink-950">0</span>
             </div>
             <h3 class="text-xl font-black text-ink-950 mb-1.5">هدوء تام</h3>
-            <p class="text-ink-500 text-sm leading-relaxed max-w-xs mx-auto">مفيش إشعارات لسه. لما حد يتفاعل مع بوستك أو يبعتلك حاجة، هتلاقيها هنا.</p>
+            <p class="text-ink-500 text-sm leading-relaxed max-w-xs mx-auto">مفيش إشعارات لسه. لما يحصل أي جديد يخصك، هتلاقيه هنا.</p>
             <div class="mt-6 flex items-center justify-center gap-2">
-                <a href="{{ route('feed') }}" class="btn-primary !py-2.5 !px-5 text-sm">
-                    اكتشف الأماكن
-                    <x-icon name="arrow-left" class="w-4 h-4"/>
-                </a>
+             
             </div>
         </div>
     @else
