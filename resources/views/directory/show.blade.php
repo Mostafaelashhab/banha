@@ -1,23 +1,33 @@
 @php
     use App\Models\Business as BizModel;
+    use App\Support\Geo;
+
     $bizCatLabel = ($business->categoryMeta()['label'] ?? '') ?: 'نشاط';
-    $bizZoneName = $business->zone->name ?? 'بنها';
+    $bizCity     = Geo::businessCityLabel($business);
+    $inCity      = Geo::inCity($business->zone);   // "في {city}" — honest geography
 
-    // Tighter SEO title: "{Name} - {Category} في {Zone}"  (brand only at end)
-    $bizSeoTitle = $business->name.' - '.$bizCatLabel.' في '.$bizZoneName.' | بنهاوي';
+    // Category-aware SEO title.
+    //  - food: leads with "منيو ورقم" (matches search intent for restaurants)
+    //  - medical: leads with name + "العنوان والمواعيد ورقم التليفون"
+    //  - other: name + city + brand
+    $bizSeoTitle = match (true) {
+        in_array($business->category, ['food'], true)
+            => 'منيو ورقم '.$business->name.' '.$inCity.' | بنهاوي',
+        in_array($business->category, ['medical'], true)
+            => $business->name.' '.$inCity.' | العنوان والمواعيد ورقم التليفون',
+        default
+            => $business->name.' '.$inCity.' | بنهاوي',
+    };
 
-    // Rich, factual description. Order: name + category + zone + (open-now or hours) + phone.
-    $hoursPart = $business->is_24h ? 'مفتوح ٢٤ ساعة'
-        : ($business->openStatusLabel() ?: 'بنهاوي يدلّك على مواعيد العمل');
-    $contactPart = $business->phone ? ('هاتف '.$business->phone)
-        : ($business->hotline ? ('خط ساخن '.$business->hotline) : null);
-    $bizSeoDesc = trim(implode(' · ', array_filter([
-        $business->name.' في '.$bizZoneName,
-        $bizCatLabel,
-        $hoursPart,
-        $contactPart,
-    ])));
-    if ($business->address) $bizSeoDesc .= ' · '.$business->address;
+    // Category-aware SEO description.
+    $bizSeoDesc = match (true) {
+        in_array($business->category, ['food'], true)
+            => 'شوف رقم '.$business->name.'، العنوان، المواعيد، المنيو، العروض، والاتجاهات على بنهاوي.',
+        in_array($business->category, ['medical'], true)
+            => 'اعرف عنوان '.$business->name.'، مواعيد العمل، رقم التليفون، والاتجاهات على بنهاوي.',
+        default
+            => 'اعرف رقم وعنوان ومواعيد '.$business->name.'، وشوف الاتجاهات وتواصل بسهولة على بنهاوي.',
+    };
 @endphp
 
 @extends('layouts.app', [
@@ -26,15 +36,22 @@
     'ogImage'     => $business->photo_url,
     'ogType'      => 'business.business',
     'canonical'   => route('directory.show', $business),
-    'keywords'    => $business->name.', '.$bizCatLabel.', '.$bizZoneName.', بنها, دليل بنها, '.($business->sub_type ?? ''),
+    'keywords'    => $business->name.', '.$bizCatLabel.', '.$bizCity.', بنها, دليل بنها, '.($business->sub_type ?? ''),
 ])
 
 @push('json-ld')
 @php
-    // LocalBusiness schema — gets us into Google Map Pack & rich results
+    // LocalBusiness schema — gets us into Google Map Pack & rich results.
+    // Use the most specific Schema.org type we can defensibly claim.
+    $schemaType = match ($business->category) {
+        'food'    => 'Restaurant',
+        'medical' => 'MedicalBusiness',
+        'shops'   => 'Store',
+        default   => 'LocalBusiness',
+    };
     $ld = [
         '@context'       => 'https://schema.org',
-        '@type'          => 'LocalBusiness',
+        '@type'          => $schemaType,
         '@id'            => route('directory.show', $business),
         'name'           => $business->name,
         'url'            => route('directory.show', $business),
@@ -43,7 +60,7 @@
         'address'        => array_filter([
             '@type'           => 'PostalAddress',
             'streetAddress'   => $business->address,
-            'addressLocality' => $bizZoneName,
+            'addressLocality' => $bizCity,
             'addressRegion'   => 'القليوبية',
             'addressCountry'  => 'EG',
         ]),
@@ -1113,19 +1130,44 @@
             <span class="font-bold text-ink-950 text-sm">{{ '@'.$business->owner->username }}</span>
         </a>
     @else
-        {{-- Claim CTA: this business has no owner (typically OSM-imported) --}}
-        <a href="{{ auth()->check() ? route('directory.claim.show', $business) : route('login').'?redirect='.urlencode(route('directory.claim.show', $business)) }}"
-           class="card-light p-4 mb-3 flex items-center gap-3 hover:bg-cream-100 transition border-coral-500/20 bg-coral-50">
-            <span class="w-10 h-10 rounded-2xl bg-coral-500 grid place-items-center text-white shrink-0">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
-                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z"/>
-                </svg>
+        {{-- Category-aware claim CTA. Public landmarks (mosque/transport/etc.)
+             get a "report wrong data" framing instead of an ownership pitch. --}}
+        @php
+            $claim       = \App\Support\ClaimCta::forBusiness($business);
+            $reportTo    = config('services.banhawy.support_whatsapp', '01000000000');
+            $correctMsg  = "تبليغ تحديث بيانات على بنهاوي\nالنشاط: {$business->name}\nرابط: ".route('directory.show', $business)."\nالغلط: ";
+            $claimUrl    = auth()->check()
+                ? route('directory.claim.show', $business)
+                : route('login').'?redirect='.urlencode(route('directory.claim.show', $business));
+            $ctaHref     = $claim['mode'] === 'correction'
+                ? 'https://wa.me/'.\App\Services\WaapiService::toIntl($reportTo).'?text='.urlencode($correctMsg)
+                : $claimUrl;
+            $ctaTone     = $claim['mode'] === 'correction'
+                ? ['bg' => 'bg-honey-50', 'ring' => 'ring-honey-500/20', 'pill' => 'bg-honey-500', 'arrow' => 'text-honey-700']
+                : ['bg' => 'bg-coral-50', 'ring' => 'ring-coral-500/20', 'pill' => 'bg-coral-500', 'arrow' => 'text-coral-600'];
+        @endphp
+        <a href="{{ $ctaHref }}"
+           @if($claim['mode'] === 'correction') target="_blank" rel="noopener" @endif
+           data-track-click="{{ $claim['mode'] === 'correction' ? 'business_report' : 'business_claim' }}"
+           data-business="{{ $business->id }}"
+           class="card-light p-4 mb-3 flex items-center gap-3 hover:bg-cream-100 transition ring-1 {{ $ctaTone['ring'] }} {{ $ctaTone['bg'] }}">
+            <span class="w-10 h-10 rounded-2xl {{ $ctaTone['pill'] }} grid place-items-center text-white shrink-0">
+                @if($claim['mode'] === 'correction')
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                        <line x1="4" y1="22" x2="4" y2="15"/>
+                        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
+                    </svg>
+                @else
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z"/>
+                    </svg>
+                @endif
             </span>
             <div class="flex-1 min-w-0">
-                <div class="text-sm font-extrabold text-ink-950">ده نشاطك؟ امتلكه</div>
-                <p class="text-[11px] text-ink-500 leading-relaxed">عدّل البيانات، ضيف صور، ارفع منيو، ورد على التقييمات.</p>
+                <div class="text-sm font-extrabold text-ink-950">{{ $claim['title'] }}</div>
+                <p class="text-[11px] text-ink-500 leading-relaxed">{{ $claim['desc'] }}</p>
             </div>
-            <x-icon name="arrow-left" class="w-4 h-4 text-coral-600 shrink-0"/>
+            <x-icon name="arrow-left" class="w-4 h-4 {{ $ctaTone['arrow'] }} shrink-0"/>
         </a>
     @endif
 
@@ -1143,48 +1185,99 @@
     <div class="h-24 lg:hidden" aria-hidden="true"></div>
 </div>
 
-{{-- ─── Sticky mobile CTA bar (call · whatsapp · directions) ─── --}}
+{{-- ─── Sticky mobile CTA bar ───────────────────────────────────────
+     Builds up to 3 actions in priority order. When a primary action is
+     unavailable, falls back to "report wrong data" or "claim this page" so
+     the bar always offers something useful instead of showing fewer buttons. --}}
 @php
-    $hasAny = ($business->phone ?: $business->hotline) || $business->whatsapp || ($business->lat && $business->lng);
+    $callNumberSticky = $business->phone ?: $business->hotline;
+    $hasPhone = (bool) $callNumberSticky;
+    $hasWa    = (bool) $business->whatsapp;
+    $hasDir   = $business->lat && $business->lng;
+
+    $reportTo  = config('services.banhawy.support_whatsapp', '01000000000');
+    $reportMsg = "بلاغ عن بيانات غلط على بنهاوي\nالنشاط: {$business->name}\nرابط: ".route('directory.show', $business)."\nالغلط: ";
+    $reportUrl = 'https://wa.me/'.\App\Services\WaapiService::toIntl($reportTo).'?text='.urlencode($reportMsg);
+    $claimUrl  = auth()->check()
+        ? route('directory.claim.show', $business)
+        : route('login').'?redirect='.urlencode(route('directory.claim.show', $business));
+
+    $stickyActions = [];
+    if ($hasPhone) {
+        $stickyActions[] = ['kind' => 'phone', 'label' => 'اتصال',
+            'href'  => 'tel:'.preg_replace('/[^0-9+]/', '', $callNumberSticky),
+            'cls'   => 'bg-ink-950 text-white hover:bg-ink-800',
+            'track' => 'business_call'];
+    }
+    if ($hasWa) {
+        $stickyActions[] = ['kind' => 'whatsapp', 'label' => 'واتساب',
+            'href'  => 'https://wa.me/'.\App\Services\WaapiService::toIntl($business->whatsapp),
+            'cls'   => 'bg-mint-600 text-white hover:bg-mint-500',
+            'track' => 'business_whatsapp', 'external' => true];
+    }
+    if ($hasDir) {
+        $stickyActions[] = ['kind' => 'directions', 'label' => 'الاتجاهات',
+            'href'  => "https://www.google.com/maps/dir/?api=1&destination={$business->lat},{$business->lng}",
+            'cls'   => 'bg-coral-50 text-coral-600 hover:bg-coral-100',
+            'track' => 'business_directions', 'external' => true];
+    }
+    // Fallbacks fill up to 3 slots so the bar never looks empty.
+    if (count($stickyActions) < 3) {
+        if (! $hasPhone && ! $business->owner) {
+            $stickyActions[] = ['kind' => 'claim', 'label' => 'امتلك الصفحة',
+                'href' => $claimUrl,
+                'cls'  => 'bg-coral-500 text-white hover:bg-coral-600',
+                'track' => 'business_claim'];
+        }
+        if (count($stickyActions) < 3) {
+            $stickyActions[] = ['kind' => 'report', 'label' => 'بلّغ عن خطأ',
+                'href'  => $reportUrl,
+                'cls'   => 'bg-honey-100 text-honey-700 hover:bg-honey-500 hover:text-ink-950',
+                'track' => 'business_report', 'external' => true];
+        }
+    }
+    // Hard cap at 3 — keeps the row compact on small screens.
+    $stickyActions = array_slice($stickyActions, 0, 3);
 @endphp
-@if($hasAny)
-    @php
-        $callNumberSticky = $business->phone ?: $business->hotline;
-    @endphp
+@if(! empty($stickyActions))
     <div class="lg:hidden fixed inset-x-0 z-30"
          style="bottom: calc(4.5rem + env(safe-area-inset-bottom));">
         <div class="mx-3 bg-white rounded-2xl shadow-2xl ring-1 ring-ink-950/8 p-1.5 flex items-center gap-1.5">
-            @if($callNumberSticky)
-                <a href="tel:{{ preg_replace('/[^0-9+]/', '', $callNumberSticky) }}"
-                   data-track-click="phone" data-business="{{ $business->id }}"
-                   class="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-ink-950 text-white text-xs font-extrabold hover:bg-ink-800 transition">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="w-4 h-4">
-                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-                    </svg>
-                    اتصل
+            @foreach($stickyActions as $a)
+                <a href="{{ $a['href'] }}"
+                   @if(! empty($a['external'])) target="_blank" rel="noopener" @endif
+                   data-track-click="{{ $a['track'] }}" data-business="{{ $business->id }}"
+                   class="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-extrabold transition {{ $a['cls'] }}">
+                    @switch($a['kind'])
+                        @case('phone')
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="w-4 h-4">
+                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                            </svg>
+                            @break
+                        @case('whatsapp')
+                            <x-icon name="whatsapp" class="w-4 h-4"/>
+                            @break
+                        @case('directions')
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                                <path d="M21.71 11.29 12.71 2.29a1 1 0 0 0-1.42 0l-9 9a1 1 0 0 0 0 1.42l9 9a1 1 0 0 0 1.42 0l9-9a1 1 0 0 0 0-1.42z"/>
+                                <polyline points="9 12 11 14 15 10"/>
+                            </svg>
+                            @break
+                        @case('claim')
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                                <path d="M12 2 4 6v6c0 5 3.4 9.6 8 11 4.6-1.4 8-6 8-11V6Z"/>
+                            </svg>
+                            @break
+                        @case('report')
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                                <line x1="4" y1="22" x2="4" y2="15"/>
+                                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
+                            </svg>
+                            @break
+                    @endswitch
+                    {{ $a['label'] }}
                 </a>
-            @endif
-            @if($business->whatsapp)
-                <a href="https://wa.me/{{ \App\Services\WaapiService::toIntl($business->whatsapp) }}"
-                   target="_blank" rel="noopener"
-                   data-track-click="whatsapp" data-business="{{ $business->id }}"
-                   class="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-mint-600 text-white text-xs font-extrabold hover:bg-mint-500 transition">
-                    <x-icon name="whatsapp" class="w-4 h-4"/>
-                    واتساب
-                </a>
-            @endif
-            @if($business->lat && $business->lng)
-                <a href="https://www.google.com/maps/dir/?api=1&destination={{ $business->lat }},{{ $business->lng }}"
-                   target="_blank" rel="noopener"
-                   data-track-click="directions" data-business="{{ $business->id }}"
-                   class="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-coral-50 text-coral-600 text-xs font-extrabold hover:bg-coral-100 transition">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
-                        <path d="M21.71 11.29 12.71 2.29a1 1 0 0 0-1.42 0l-9 9a1 1 0 0 0 0 1.42l9 9a1 1 0 0 0 1.42 0l9-9a1 1 0 0 0 0-1.42z"/>
-                        <polyline points="9 12 11 14 15 10"/>
-                    </svg>
-                    الاتجاهات
-                </a>
-            @endif
+            @endforeach
         </div>
     </div>
 @endif

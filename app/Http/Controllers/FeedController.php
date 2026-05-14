@@ -11,6 +11,7 @@ use App\Models\Zone;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class FeedController extends Controller
 {
@@ -145,91 +146,131 @@ class FeedController extends Controller
             'activeZone' => $zoneId ? (int) $zoneId : null,
             'userVotes'  => $userVotes,
             'categories' => Post::CATEGORIES,
-            ...$this->homepageData(),
+            ...$this->homepageData($zoneId ? (int) $zoneId : null),
         ]);
     }
 
     /**
-     * Data for the homepage sections rendered at the top of feed.blade.php:
-     * admin promo banners, sponsored/featured/open-now businesses, category tiles,
-     * utility shortcuts (offers / emergency / university), newest marketplace items.
+     * Data for the homepage sections rendered at the top of feed.blade.php.
+     *
+     * Caches only the *expensive* parts: which business IDs go in each rail, plus
+     * the popular-searches list. The cheap part — re-loading those rows with their
+     * relations — runs fresh per request. This avoids serializing Eloquent models
+     * to cache (which can blow up under the database/file drivers when unserialize
+     * encounters a partial class shape) while still saving the costly bits: the
+     * in-PHP `isOpenNow()` scan over 60 rows, the JOINs, and the hashtag query.
      */
-    private function homepageData(): array
+    private function homepageData(?int $zoneId = null): array
     {
+        $cacheKey = 'homepage-ids:v4:'.($zoneId ?: 'all');
+
+        $resolved = Cache::remember($cacheKey, now()->addMinutes(5), function () {
+            $promoted = Business::query()
+                ->where('is_active', true)
+                ->where('promoted_until', '>', now())
+                ->orderByDesc('promoted_until')
+                ->limit(6)
+                ->pluck('id')
+                ->all();
+
+            $featured = Business::query()
+                ->where('is_active', true)
+                ->where(function ($q) {
+                    $q->where('is_verified', true)->orWhere('rating_avg', '>=', 4);
+                })
+                ->orderByDesc('is_verified')
+                ->orderByDesc('rating_avg')
+                ->orderByDesc('views_count')
+                ->limit(12)
+                ->pluck('id')
+                ->all();
+
+            // The expensive part: 60-row PHP scan calling isOpenNow().
+            $openNow = Business::query()
+                ->where('is_active', true)
+                ->where(function ($q) {
+                    $q->where('is_24h', true)->orWhereNotNull('hours_schedule');
+                })
+                ->orderByDesc('is_verified')
+                ->orderByDesc('rating_avg')
+                ->orderByDesc('views_count')
+                ->limit(60)
+                ->get(['id', 'is_24h', 'hours_schedule'])
+                ->filter(fn ($b) => $b->isOpenNow() === true)
+                ->take(12)
+                ->pluck('id')
+                ->all();
+
+            $newListings = \App\Models\Listing::query()
+                ->where('status', 'active')
+                ->latest()
+                ->limit(8)
+                ->pluck('id')
+                ->all();
+
+            $popularSearches = [];
+            try {
+                $popularSearches = \App\Models\Hashtag::query()
+                    ->orderByDesc('uses_count')
+                    ->limit(8)
+                    ->pluck('tag')
+                    ->all();
+            } catch (\Throwable $e) {
+                $popularSearches = [];
+            }
+            if (empty($popularSearches)) {
+                $popularSearches = ['كشري', 'دكتور أسنان', 'صيدلية', 'كافيه', 'صنايعي', 'شقة للإيجار', 'كورس', 'عرض'];
+            }
+
+            return compact('promoted', 'featured', 'openNow', 'newListings', 'popularSearches');
+        });
+
+        // Fresh load — the IN-clause on indexed PK is cheap.
+        $bizCols  = ['id', 'name', 'category', 'sub_type', 'custom_sub_type',
+                     'zone_id', 'owner_user_id', 'phone', 'whatsapp', 'hotline',
+                     'address', 'lat', 'lng', 'is_24h', 'hours_schedule',
+                     'is_verified', 'promoted_until', 'photo_url', 'has_menu',
+                     'rating_avg', 'ratings_count', 'views_count'];
+
+        $rehydrate = function (array $ids) use ($bizCols) {
+            if (empty($ids)) return collect();
+            $models = Business::query()
+                ->select($bizCols)
+                ->whereIn('id', $ids)
+                ->with(['zone:id,name', 'photos:id,business_id,url'])
+                ->get()
+                ->keyBy('id');
+            // Preserve the cached order.
+            return collect($ids)->map(fn ($id) => $models[$id] ?? null)->filter()->values();
+        };
+
+        $promoted = $rehydrate($resolved['promoted']);
+        $featured = $rehydrate($resolved['featured']);
+        $openNow  = $rehydrate($resolved['openNow']);
+
+        $newListings = empty($resolved['newListings'])
+            ? collect()
+            : \App\Models\Listing::query()
+                ->whereIn('id', $resolved['newListings'])
+                ->with(['zone:id,name'])
+                ->get()
+                ->keyBy('id')
+                ->only($resolved['newListings'])
+                ->values();
+
+        // PromoBanners are tiny — load fresh, no caching needed.
         $promoBanners = PromoBanner::live()
             ->orderBy('sort_order')
             ->orderByDesc('id')
             ->get();
 
-        $promoted = Business::query()
-            ->where('is_active', true)
-            ->where('promoted_until', '>', now())
-            ->with(['zone:id,name', 'photos:id,business_id,url'])
-            ->orderByDesc('promoted_until')
-            ->limit(6)
-            ->get();
-
-        $featured = Business::query()
-            ->where('is_active', true)
-            ->where(function ($q) {
-                $q->where('is_verified', true)->orWhere('rating_avg', '>=', 4);
-            })
-            ->with(['zone:id,name', 'photos:id,business_id,url'])
-            ->orderByDesc('is_verified')
-            ->orderByDesc('rating_avg')
-            ->orderByDesc('views_count')
-            ->limit(12)
-            ->get();
-
-        // Schedule lives in a JSON column, so isOpenNow() runs in PHP after
-        // pulling a generous candidate set.
-        $openNow = Business::query()
-            ->where('is_active', true)
-            ->where(function ($q) {
-                $q->where('is_24h', true)->orWhereNotNull('hours_schedule');
-            })
-            ->with(['zone:id,name', 'photos:id,business_id,url'])
-            ->orderByDesc('is_verified')
-            ->orderByDesc('rating_avg')
-            ->orderByDesc('views_count')
-            ->limit(60)
-            ->get()
-            ->filter(fn ($b) => $b->isOpenNow() === true)
-            ->take(12)
-            ->values();
-
-        $homeCatKeys = ['food', 'medical', 'shops', 'services', 'transport', 'education' , 'tourist' , 'craftsmen'];
+        $homeCatKeys = ['food', 'medical', 'shops', 'services', 'transport', 'education', 'tourist', 'craftsmen'];
         $homeCats    = collect($homeCatKeys)
             ->map(fn ($k) => ['key' => $k] + (Business::CATEGORIES[$k] ?? []));
 
-        // Newest active marketplace listings ("جديد في السوق")
-        $newListings = \App\Models\Listing::query()
-            ->where('status', 'active')
-            ->with(['user:id,username,avatar_seed,avatar_url', 'zone:id,name'])
-            ->latest()
-            ->limit(8)
-            ->get();
-
-        // Trending search terms — derived from active hashtags if present.
-        // Hashtag tables may not exist on all envs; tolerate missing table.
-        $popularSearches = [];
-        try {
-            $popularSearches = \App\Models\Hashtag::query()
-                ->orderByDesc('uses_count')
-                ->limit(8)
-                ->pluck('tag')
-                ->all();
-        } catch (\Throwable $e) {
-            $popularSearches = [];
-        }
-        if (empty($popularSearches)) {
-            // Safe fallback so the homepage always shows something useful.
-            $popularSearches = ['كشري', 'دكتور أسنان', 'صيدلية', 'كافيه', 'صنايعي', 'شقة للإيجار', 'كورس', 'عرض'];
-        }
-
         return compact(
             'promoBanners', 'promoted', 'featured', 'openNow',
-            'homeCats', 'newListings', 'popularSearches'
-        );
+            'homeCats', 'newListings',
+        ) + ['popularSearches' => $resolved['popularSearches']];
     }
 }

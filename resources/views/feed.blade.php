@@ -1,4 +1,8 @@
-@extends('layouts.app', ['title' => 'بنهاوي · دليلك الكامل لمدينة بنها'])
+@extends('layouts.app', [
+    'title'       => 'بنهاوي | كل حاجة في بنها: مطاعم، دكاترة، صيدليات، عروض وبيع وشراء',
+    'description' => 'دور على مطاعم، دكاترة، صيدليات، صنايعية، عروض، أرقام طوارئ، وبيع وشراء في بنها والقليوبية. اتصل، ابعت واتساب، وشوف الاتجاهات بسهولة.',
+    'keywords'    => 'بنها, القليوبية, مطاعم بنها, دكاترة بنها, صيدليات بنها, صنايعية بنها, عروض بنها, طوارئ بنها, بيع وشراء بنها, جامعة بنها, دليل بنها',
+])
 
 @section('content')
 <div class="max-w-3xl mx-auto">
@@ -9,7 +13,7 @@
             @auth
                 <div class="text-[11px] font-bold text-ink-500">أهلاً {{ auth()->user()->username }}</div>
             @endauth
-            <h1 class="text-xl font-black text-ink-950 leading-tight truncate">
+            <h1 class="text-xl font-black text-ink-950 leading-tight">
                 بتدور على إيه في بنها؟
             </h1>
         </div>
@@ -64,7 +68,7 @@
         @php
             $utilityShortcuts = [
                 ['route' => route('offers.index'),           'label' => 'عروض',         'icon' => 'tag',          'pill' => 'bg-coral-50 text-coral-600'],
-                ['route' => route('directory.index', ['open_now' => 1]), 'label' => 'مفتوح دلوقتي', 'icon' => 'bell',         'pill' => 'bg-mint-100 text-mint-700'],
+                ['route' => route('open-now.index'),         'label' => 'مفتوح دلوقتي', 'icon' => 'bell',         'pill' => 'bg-mint-100 text-mint-700'],
                 ['route' => route('emergency.index'),        'label' => 'طوارئ',         'icon' => 'bolt',         'pill' => 'bg-blush-100 text-blush-600'],
                 ['route' => route('university.index'),       'label' => 'جامعة بنها',   'icon' => 'graduation',   'pill' => 'bg-honey-100 text-honey-700'],
             ];
@@ -270,7 +274,7 @@
                     'href'    => Auth::check() ? route('marketplace.create') : route('signup'),
                     'variant' => 'ad',
                     'tag'     => 'سوق · إعلانات',
-                    'title'   => 'بيع، اشتري، إعلن',
+                    'title'   => 'بيع، اشترِ، أعلن',
                     'desc'    => 'انشر إعلانك في سوق بنها ووصلّه لآلاف الزوار.',
                     'cta'     => 'انشر إعلان',
                 ])

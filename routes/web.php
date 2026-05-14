@@ -91,6 +91,7 @@ Route::get('/support', [\App\Http\Controllers\SupportController::class, 'open'])
 
 // ─── Public utility hubs (no auth) ─────────────────────────────
 Route::get('/offers',           [\App\Http\Controllers\OffersController::class,     'index'])->name('offers.index');
+Route::get('/open-now',         [\App\Http\Controllers\OpenNowController::class,    'index'])->name('open-now.index');
 Route::get('/emergency',        [\App\Http\Controllers\EmergencyController::class,  'index'])->name('emergency.index');
 Route::get('/benha-university', [\App\Http\Controllers\UniversityController::class, 'index'])->name('university.index');
 
