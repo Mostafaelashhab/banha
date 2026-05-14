@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2D5BFF">
+<title>بنهاوي</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="preload" href="/feed" as="document">
+<style>
+    :root { color-scheme: light; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+        height: 100%;
+        background: #2D5BFF;
+        font-family: 'Cairo', 'Noto Kufi Arabic', 'Segoe UI', system-ui, sans-serif;
+        overflow: hidden;
+        -webkit-font-smoothing: antialiased;
+    }
+    body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        text-align: center;
+        padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        animation: fadein .25s ease-out;
+    }
+    .wordmark {
+        font-size: clamp(48px, 16vw, 96px);
+        font-weight: 900;
+        letter-spacing: -0.025em;
+        line-height: 1;
+        margin-bottom: 14px;
+        text-shadow: 0 2px 30px rgba(0, 0, 0, 0.12);
+    }
+    .underline {
+        width: 84px;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.55);
+        border-radius: 9999px;
+        margin-bottom: 36px;
+    }
+    .spinner {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        border: 3px solid rgba(255, 255, 255, 0.25);
+        border-top-color: #fff;
+        animation: spin 0.8s linear infinite;
+    }
+    .tagline {
+        margin-top: 18px;
+        font-size: 13px;
+        font-weight: 600;
+        opacity: 0.75;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+</style>
+</head>
+<body>
+    <div class="wordmark">بنهاوي</div>
+    <div class="underline"></div>
+    <div class="spinner" aria-hidden="true"></div>
+    <p class="tagline">مدينتك على راحة إيدك</p>
+
+    <script>
+        // Register the SW eagerly (first launch only — afterwards already registered).
+        if ('serviceWorker' in navigator && !navigator.serviceWorker.controller) {
+            navigator.serviceWorker.register('/sw.js').catch(() => {});
+        }
+        // Honour any deep link (e.g. share target / shortcut). Otherwise go to /feed.
+        var params = new URLSearchParams(location.search);
+        var dest = params.get('to') || '/feed';
+        // Skip the launch frame in browser history so Back doesn't return here.
+        location.replace(dest);
+    </script>
+</body>
+</html>
