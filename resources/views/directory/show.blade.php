@@ -613,6 +613,39 @@
                 .biz-map { height: 240px; border-radius: 18px; background: #FFF7F1; z-index: 0; overflow: hidden; }
                 .biz-map .leaflet-tile { filter: saturate(.75) brightness(1.04) contrast(.95); }
                 .biz-map-card .leaflet-control-attribution { font-size: 9px; opacity: .6; }
+                .biz-map-info {
+                    position: absolute;
+                    top: 8px; inset-inline-start: 8px;
+                    z-index: 500;
+                    background: #fff;
+                    border-radius: 12px;
+                    padding: 6px 10px;
+                    font-size: 11px;
+                    font-weight: 800;
+                    color: #0B0B0C;
+                    box-shadow: 0 6px 18px -4px rgba(11,11,12,.18);
+                    display: inline-flex; align-items: center; gap: 6px;
+                    max-width: calc(100% - 16px);
+                }
+                .biz-map-info[hidden] { display: none; }
+                .biz-map-info .dot { width: 8px; height: 8px; border-radius: 999px; background: #FF7A4D; }
+                .biz-map-info.is-error { color: #DC2626; }
+                .biz-user-pin {
+                    width: 18px; height: 18px;
+                    border-radius: 50%;
+                    background: #2D5BFF;
+                    border: 3px solid #fff;
+                    box-shadow: 0 0 0 2px rgba(45,91,255,.25), 0 4px 10px -2px rgba(45,91,255,.5);
+                }
+                @keyframes biz-route-spin { to { transform: rotate(360deg); } }
+                .biz-route-spinner {
+                    width: 14px; height: 14px;
+                    border: 2px solid currentColor;
+                    border-inline-end-color: transparent;
+                    border-radius: 999px;
+                    animation: biz-route-spin .7s linear infinite;
+                    display: inline-block;
+                }
             </style>
         @endpush
 
@@ -624,29 +657,32 @@
                 المكان على الخريطة
             </h3>
 
-            <div id="biz-map-{{ $business->id }}" class="biz-map mb-3"
+            <div id="biz-map-{{ $business->id }}" class="biz-map mb-3 relative"
                  data-biz-map
                  data-lat="{{ $business->lat }}"
                  data-lng="{{ $business->lng }}"
                  data-color="{{ $cm['color'] ?? '#2D5BFF' }}"
-                 data-name="{{ $business->name }}"></div>
+                 data-name="{{ $business->name }}">
+                <div class="biz-map-info" data-route-info hidden></div>
+            </div>
 
             <div class="grid grid-cols-2 gap-2">
-                <a href="https://www.google.com/maps/dir/?api=1&destination={{ $business->lat }},{{ $business->lng }}"
-                   target="_blank" rel="noopener"
-                   class="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-coral-500 text-white text-xs font-extrabold hover:bg-coral-600 transition">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
-                        <polygon points="3 11 22 2 13 21 11 13 3 11"/>
-                    </svg>
-                    خد لي الطريق
-                </a>
-                <a href="https://www.openstreetmap.org/?mlat={{ $business->lat }}&mlon={{ $business->lng }}#map=17/{{ $business->lat }}/{{ $business->lng }}"
-                   target="_blank" rel="noopener"
+                <button type="button"
+                        data-route-trigger="biz-map-{{ $business->id }}"
+                        class="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-coral-500 text-white text-xs font-extrabold hover:bg-coral-600 transition disabled:opacity-60">
+                    <span data-route-icon class="inline-flex">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                            <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+                        </svg>
+                    </span>
+                    <span data-route-label>شوف الطريق</span>
+                </button>
+                <a href="{{ route('directory.map') }}?focus={{ $business->id }}&lat={{ $business->lat }}&lng={{ $business->lng }}"
                    class="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-white text-ink-950 ring-1 ring-ink-950/10 text-xs font-extrabold hover:ring-coral-500/50 transition">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
                         <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
                     </svg>
-                    افتح في خريطة كبيرة
+                    افتح خريطة بنها
                 </a>
             </div>
         </div>
@@ -656,6 +692,21 @@
                 integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
         <script>
         (function () {
+            const instances = new Map(); // mapId → { map, lat, lng, color, info, layers }
+
+            function fmtKm(meters) {
+                if (meters < 1000) return Math.round(meters) + ' متر';
+                return (meters / 1000).toFixed(meters < 10000 ? 1 : 0) + ' كم';
+            }
+            function fmtMin(seconds) {
+                const m = Math.round(seconds / 60);
+                if (m < 60) return m + ' دقيقة';
+                const h = Math.floor(m / 60);
+                const rm = m % 60;
+                return h + ' س' + (rm ? ' و ' + rm + ' د' : '');
+            }
+            function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
             function initBizMap(el) {
                 if (el.dataset.inited) return;
                 el.dataset.inited = '1';
@@ -664,6 +715,7 @@
                 if (isNaN(lat) || isNaN(lng)) return;
                 const color = el.dataset.color || '#2D5BFF';
                 const name = el.dataset.name || '';
+                const info = el.querySelector('[data-route-info]');
 
                 const map = L.map(el, {
                     center: [lat, lng],
@@ -686,13 +738,141 @@
                     iconAnchor: [17, 32],
                 });
                 const marker = L.marker([lat, lng], { icon: pinIcon }).addTo(map);
-                if (name) marker.bindPopup('<strong>' + name.replace(/</g,'&lt;') + '</strong>');
+                if (name) marker.bindPopup('<strong>' + escapeHtml(name) + '</strong>');
 
                 map.on('click', () => map.scrollWheelZoom.enable());
                 map.on('mouseout', () => map.scrollWheelZoom.disable());
+
+                instances.set(el.id, {
+                    map, lat, lng, color, info,
+                    userMarker: null, accuracyCircle: null, routeLine: null, fallbackLine: null,
+                });
             }
+
+            function setInfo(info, html, isError) {
+                if (!info) return;
+                info.innerHTML = html;
+                info.hidden = false;
+                info.classList.toggle('is-error', !!isError);
+            }
+
+            async function fetchRoute(fromLat, fromLng, toLat, toLng) {
+                const url = 'https://router.project-osrm.org/route/v1/driving/'
+                    + fromLng + ',' + fromLat + ';' + toLng + ',' + toLat
+                    + '?overview=full&geometries=geojson';
+                const ctrl = new AbortController();
+                const t = setTimeout(() => ctrl.abort(), 8000);
+                try {
+                    const r = await fetch(url, { signal: ctrl.signal });
+                    if (!r.ok) throw new Error('osrm http ' + r.status);
+                    const j = await r.json();
+                    const route = j.routes && j.routes[0];
+                    if (!route) throw new Error('no route');
+                    return {
+                        coords: route.geometry.coordinates.map(([lng, lat]) => [lat, lng]),
+                        distance: route.distance,
+                        duration: route.duration,
+                    };
+                } finally {
+                    clearTimeout(t);
+                }
+            }
+
+            function haversine(lat1, lng1, lat2, lng2) {
+                const R = 6371000;
+                const toRad = (d) => d * Math.PI / 180;
+                const dLat = toRad(lat2 - lat1);
+                const dLng = toRad(lng2 - lng1);
+                const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+                return 2 * R * Math.asin(Math.sqrt(a));
+            }
+
+            async function runRoute(btn) {
+                const targetId = btn.dataset.routeTrigger;
+                const inst = instances.get(targetId);
+                if (!inst) return;
+                if (!navigator.geolocation) {
+                    setInfo(inst.info, 'متصفحك مش بيدعم تحديد الموقع', true);
+                    return;
+                }
+
+                const iconWrap = btn.querySelector('[data-route-icon]');
+                const labelEl  = btn.querySelector('[data-route-label]');
+                const origIcon = iconWrap ? iconWrap.innerHTML : '';
+                const origLabel = labelEl ? labelEl.textContent : '';
+                btn.disabled = true;
+                if (iconWrap) iconWrap.innerHTML = '<span class="biz-route-spinner"></span>';
+                if (labelEl) labelEl.textContent = 'بحدّد موقعك…';
+                setInfo(inst.info, '<span class="biz-route-spinner" style="color:#FF7A4D"></span> بحدّد موقعك…');
+
+                navigator.geolocation.getCurrentPosition(async (pos) => {
+                    const ulat = pos.coords.latitude;
+                    const ulng = pos.coords.longitude;
+                    const accuracy = pos.coords.accuracy || 0;
+
+                    // Clear prior route artefacts
+                    if (inst.userMarker)     { inst.map.removeLayer(inst.userMarker);     inst.userMarker = null; }
+                    if (inst.accuracyCircle) { inst.map.removeLayer(inst.accuracyCircle); inst.accuracyCircle = null; }
+                    if (inst.routeLine)      { inst.map.removeLayer(inst.routeLine);      inst.routeLine = null; }
+                    if (inst.fallbackLine)   { inst.map.removeLayer(inst.fallbackLine);   inst.fallbackLine = null; }
+
+                    // User marker + accuracy halo
+                    inst.accuracyCircle = L.circle([ulat, ulng], {
+                        radius: Math.max(accuracy, 20),
+                        color: '#2D5BFF', weight: 1, opacity: .25,
+                        fillColor: '#2D5BFF', fillOpacity: .08,
+                    }).addTo(inst.map);
+                    const userIcon = L.divIcon({
+                        html: '<div class="biz-user-pin"></div>',
+                        className: '', iconSize: [18, 18], iconAnchor: [9, 9],
+                    });
+                    inst.userMarker = L.marker([ulat, ulng], { icon: userIcon, interactive: false, zIndexOffset: 1000 }).addTo(inst.map);
+
+                    if (labelEl) labelEl.textContent = 'بارسم الطريق…';
+                    setInfo(inst.info, '<span class="biz-route-spinner" style="color:#FF7A4D"></span> بارسم الطريق…');
+
+                    let drewRouted = false;
+                    try {
+                        const r = await fetchRoute(ulat, ulng, inst.lat, inst.lng);
+                        inst.routeLine = L.polyline(r.coords, {
+                            color: '#FF7A4D', weight: 5, opacity: .9,
+                            lineCap: 'round', lineJoin: 'round',
+                        }).addTo(inst.map);
+                        L.polyline(r.coords, { color: '#fff', weight: 8, opacity: .6 }).addTo(inst.map).bringToBack();
+                        setInfo(inst.info, '<span class="dot"></span> ' + fmtKm(r.distance) + ' · ' + fmtMin(r.duration));
+                        drewRouted = true;
+                    } catch (e) {
+                        // Fallback: straight line + haversine distance
+                        inst.fallbackLine = L.polyline([[ulat, ulng], [inst.lat, inst.lng]], {
+                            color: '#FF7A4D', weight: 4, opacity: .85, dashArray: '6 6',
+                        }).addTo(inst.map);
+                        const d = haversine(ulat, ulng, inst.lat, inst.lng);
+                        setInfo(inst.info, '<span class="dot"></span> ' + fmtKm(d) + ' (خط مستقيم)');
+                    }
+
+                    const bounds = L.latLngBounds([[ulat, ulng], [inst.lat, inst.lng]]);
+                    if (inst.routeLine) bounds.extend(inst.routeLine.getBounds());
+                    inst.map.fitBounds(bounds, { padding: [30, 30], maxZoom: 17 });
+
+                    btn.disabled = false;
+                    if (iconWrap) iconWrap.innerHTML = origIcon;
+                    if (labelEl)  labelEl.textContent = drewRouted ? 'حدّث الطريق' : 'حاول تاني';
+                }, (err) => {
+                    btn.disabled = false;
+                    if (iconWrap) iconWrap.innerHTML = origIcon;
+                    if (labelEl)  labelEl.textContent = origLabel;
+                    let msg = 'مش قادر أوصل لموقعك';
+                    if (err.code === 1) msg = 'لازم تسمح بتحديد الموقع';
+                    else if (err.code === 3) msg = 'الموقع طوّل، حاول تاني';
+                    setInfo(inst.info, msg, true);
+                }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+            }
+
             function bootAll() {
                 document.querySelectorAll('[data-biz-map]').forEach(initBizMap);
+                document.querySelectorAll('[data-route-trigger]').forEach((btn) => {
+                    btn.addEventListener('click', () => runRoute(btn));
+                });
             }
             if (typeof L !== 'undefined') bootAll();
             else window.addEventListener('load', bootAll);

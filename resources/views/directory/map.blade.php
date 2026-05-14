@@ -866,6 +866,7 @@
     // Tight clustering: only group pins that are literally on top of each other.
     // maxClusterRadius: 22px → roughly "overlapping pin width". Bigger pins won't cluster.
     // disableClusteringAtZoom: 17 → at street level (zoom 17+) every pin shows alone.
+    const markerById = new Map();
     const layerGroup = L.markerClusterGroup({
         maxClusterRadius: 22,
         disableClusteringAtZoom: 17,
@@ -1015,6 +1016,7 @@
         const myToken = ++renderToken;
         currentCat = cat;
         layerGroup.clearLayers();
+        markerById.clear();
         document.getElementById('biz-count').textContent = '…';
 
         const isEventsView   = cat === '__events__';
@@ -1056,8 +1058,13 @@
                 const lat = parseFloat(b.lat); const lng = parseFloat(b.lng);
                 if (isNaN(lat) || isNaN(lng)) return;
                 bounds.push([lat, lng]);
-                makers.push(() => L.marker([lat, lng], { icon: makePin(b, meta), zIndexOffset: b.is_promoted ? 1000 : 0 })
-                    .bindPopup(buildPopup(b, meta), { closeButton: true, offset: [0, 4] }));
+                makers.push(() => {
+                    const m = L.marker([lat, lng], { icon: makePin(b, meta), zIndexOffset: b.is_promoted ? 1000 : 0 })
+                        .bindPopup(buildPopup(b, meta), { closeButton: true, offset: [0, 4] });
+                    m._bizId = b.id;
+                    markerById.set(b.id, m);
+                    return m;
+                });
             });
 
             if (! cat) {
@@ -1319,7 +1326,48 @@
         );
     });
 
-    render('').then(() => { dataReady = true; maybeHideSkeleton(); });
+    // ── Deep-link: ?focus={id}&lat=&lng=&locate=1 from biz show page ──
+    function focusFromQuery() {
+        const q = new URLSearchParams(window.location.search);
+        const focusId = q.get('focus');
+        const qLat = parseFloat(q.get('lat'));
+        const qLng = parseFloat(q.get('lng'));
+        const wantLocate = q.get('locate') === '1';
+
+        const target = (!isNaN(qLat) && !isNaN(qLng)) ? [qLat, qLng] : null;
+        if (target) {
+            map.flyTo(target, 17, { animate: true, duration: .8 });
+        }
+
+        // Try to open the matching marker's popup once it's added to the cluster.
+        if (focusId) {
+            const tryOpen = (tries = 0) => {
+                const m = markerById.get(parseInt(focusId, 10)) || markerById.get(focusId);
+                if (m) {
+                    // markercluster: zoomToShowLayer expands clusters around the marker
+                    if (typeof layerGroup.zoomToShowLayer === 'function') {
+                        layerGroup.zoomToShowLayer(m, () => m.openPopup());
+                    } else {
+                        m.openPopup();
+                    }
+                    return;
+                }
+                if (tries < 20) setTimeout(() => tryOpen(tries + 1), 150);
+            };
+            tryOpen();
+        }
+
+        if (wantLocate && locateBtn) {
+            // Defer so the focused flyTo completes first; user sees both pins.
+            setTimeout(() => locateBtn.click(), 900);
+        }
+    }
+
+    render('').then(() => {
+        dataReady = true;
+        maybeHideSkeleton();
+        focusFromQuery();
+    });
 })();
 </script>
 @endpush
