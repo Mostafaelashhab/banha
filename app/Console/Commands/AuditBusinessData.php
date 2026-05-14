@@ -34,6 +34,35 @@ class AuditBusinessData extends Command
         '/^01[0125]0123456\d$/',
     ];
 
+    /**
+     * Categories where missing-phone / missing-image / missing-hours are not
+     * really bugs. Transport stops, religious landmarks, tourist places and
+     * emergency services often don't have any of those.
+     */
+    private const NO_PHONE_OK = ['transport', 'religious', 'tourist'];
+    private const NO_IMAGE_OK = ['transport', 'religious', 'emergency', 'government'];
+    private const NO_HOURS_OK = ['transport', 'religious', 'tourist', 'emergency', 'government', 'banks'];
+
+    /**
+     * Token → zone-slug hints for the geo-mismatch check. If the address
+     * contains the key, the row's zone_id probably should be the slug.
+     */
+    private const ADDRESS_ZONE_HINTS = [
+        // Longer / more specific tokens FIRST so they match before short
+        // substrings collide (e.g. "محافظة القليوبية" must NOT be misread
+        // as Qalyub city — we leave "القليوب" out entirely for that reason).
+        'شبرا الخيمة'   => 'shubra-elkheima',
+        'شبين القناطر'  => 'qalyubia-other',  // doesn't have its own zone yet
+        'كفر شكر'        => 'kafr-shoukr',
+        'الخانكة'        => 'el-khanka',
+        'العبور'         => 'el-obour',
+        'طوخ'            => 'toukh',
+        'قها'            => 'qaha',
+    ];
+
+    /** Address values that mean "this business is internet-only — no physical address". */
+    private const ONLINE_ADDRESS_HINTS = ['اونلاين', 'أونلاين', 'online', 'توصيل', 'دليفري'];
+
     public function handle(): int
     {
         $limit = max(1, (int) $this->option('limit'));
@@ -75,8 +104,11 @@ class AuditBusinessData extends Command
         $findings['placeholder_phones'] = $placeholders;
 
         // ─── 3. Missing core fields ──────────────────────────────────
+        // Skip categories where a missing phone is normal (microbus stops,
+        // mosques, parks — these aren't bugs).
         $findings['missing_phone'] = Business::query()
             ->where('is_active', true)
+            ->whereNotIn('category', self::NO_PHONE_OK)
             ->where(function ($q) { $q->whereNull('phone')->orWhere('phone', ''); })
             ->where(function ($q) { $q->whereNull('whatsapp')->orWhere('whatsapp', ''); })
             ->where(function ($q) { $q->whereNull('hotline')->orWhere('hotline', ''); })
@@ -98,24 +130,36 @@ class AuditBusinessData extends Command
             ->limit($limit * 5)
             ->get()->map(fn ($b) => ['id' => $b->id, 'name' => $b->name])->all();
 
+        // Skip the categories where having no image is OK (microbus stops, gov offices, etc.)
         $findings['missing_image'] = Business::query()
             ->where('is_active', true)
+            ->whereNotIn('category', self::NO_IMAGE_OK)
             ->where(function ($q) { $q->whereNull('photo_url')->orWhere('photo_url', ''); })
             ->whereDoesntHave('photos')
             ->select('id', 'name', 'category')
             ->limit($limit * 5)
             ->get()->map(fn ($b) => ['id' => $b->id, 'name' => $b->name, 'category' => $b->category])->all();
 
+        // Missing coords — but only count it as a bug when the business is NOT
+        // an online-only / delivery operation that has no physical address.
         $findings['missing_coords'] = Business::query()
             ->where('is_active', true)
             ->where(function ($q) { $q->whereNull('lat')->orWhereNull('lng'); })
+            ->where(function ($q) {
+                foreach (self::ONLINE_ADDRESS_HINTS as $h) {
+                    $q->where('address', 'not like', "%{$h}%");
+                }
+                $q->orWhereNull('address')->orWhere('address', '');
+            })
             ->select('id', 'name', 'address')
             ->limit($limit * 5)
             ->get()->map(fn ($b) => ['id' => $b->id, 'name' => $b->name, 'address' => $b->address])->all();
 
         // ─── 4. Open-but-no-schedule (would render "open now" by accident) ──
+        // Skip categories where having no schedule is fine (transport stops etc.)
         $findings['no_schedule_but_active'] = Business::query()
             ->where('is_active', true)
+            ->whereNotIn('category', self::NO_HOURS_OK)
             ->where('is_24h', false)
             ->whereNull('hours_schedule')
             ->whereNull('hours')
@@ -123,23 +167,35 @@ class AuditBusinessData extends Command
             ->limit($limit * 5)
             ->get()->map(fn ($b) => ['id' => $b->id, 'name' => $b->name, 'category' => $b->category])->all();
 
-        // ─── 5. Geo mismatch: zone says Banha, address mentions other city ──
+        // ─── 5. Geo mismatch: zoned as Banha but address mentions other city ──
+        // Now includes a `suggested_zone` hint so an admin can bulk-correct.
         $mismatch = [];
         $banhaZoneId = DB::table('zones')->where('slug', 'banha')->value('id');
         if ($banhaZoneId) {
-            $foreignTokens = ['شبرا الخيمة', 'الخانكة', 'طوخ', 'قها', 'كفر شكر', 'القليوب', 'العبور'];
+            $zoneIdBySlug = DB::table('zones')->pluck('id', 'slug')->all();
             $q = Business::query()
                 ->where('is_active', true)
                 ->where('zone_id', $banhaZoneId)
                 ->whereNotNull('address')
-                ->where(function ($w) use ($foreignTokens) {
-                    foreach ($foreignTokens as $t) $w->orWhere('address', 'like', "%{$t}%");
+                ->where(function ($w) {
+                    foreach (array_keys(self::ADDRESS_ZONE_HINTS) as $t) {
+                        $w->orWhere('address', 'like', "%{$t}%");
+                    }
                 })
                 ->select('id', 'name', 'address')
-                ->limit($limit * 3)
+                ->limit($limit * 5)
                 ->get();
             foreach ($q as $b) {
-                $mismatch[] = ['id' => $b->id, 'name' => $b->name, 'address' => $b->address];
+                $hintSlug = null;
+                foreach (self::ADDRESS_ZONE_HINTS as $token => $slug) {
+                    if (mb_strpos($b->address, $token) !== false) { $hintSlug = $slug; break; }
+                }
+                $mismatch[] = [
+                    'id' => $b->id,
+                    'name' => $b->name,
+                    'suggested_zone' => $hintSlug,
+                    'address' => mb_strlen($b->address) > 80 ? mb_substr($b->address, 0, 80).'…' : $b->address,
+                ];
             }
         }
         $findings['banha_label_outside_city'] = $mismatch;
