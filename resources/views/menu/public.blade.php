@@ -388,7 +388,7 @@
         {{-- Sticky bottom bar: hidden when cart empty, shown otherwise --}}
         <button type="button" data-cart-open
                 class="fixed bottom-4 inset-x-4 max-w-md mx-auto z-30 hidden items-center gap-3 py-3 ps-4 pe-3 rounded-full font-extrabold text-white text-sm shadow-2xl transition hover:scale-[1.01]"
-                style="background: linear-gradient(135deg, var(--color-coral-500, #FF7A4D), #DC4A1F)">
+                style="background: var(--color-coral-500, #2D5BFF)">
             <span class="w-9 h-9 rounded-full bg-white/20 grid place-items-center text-base font-black" data-cart-badge>0</span>
             <span class="flex-1 text-start">
                 <span class="block text-[10px] text-white/80 font-bold">طلبك جاهز · اضغط للمراجعة</span>
@@ -449,7 +449,7 @@
                     </div>
                     <button type="button" data-cart-to-checkout
                             class="w-full inline-flex items-center justify-center gap-2 py-3.5 rounded-full font-extrabold text-white text-sm shadow-lg transition hover:scale-[1.01]"
-                            style="background: linear-gradient(135deg, var(--color-coral-500, #FF7A4D), #DC4A1F)">
+                            style="background: var(--color-coral-500, #2D5BFF)">
                         كمّل الطلب
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="w-4 h-4 rtl:rotate-180">
                             <polyline points="9 18 15 12 9 6"/>
@@ -515,7 +515,7 @@
                     </div>
                     <button type="submit" data-cart-submit
                             class="w-full inline-flex items-center justify-center gap-2 py-3.5 rounded-full font-extrabold text-white text-sm shadow-lg transition hover:scale-[1.01] disabled:opacity-60 disabled:hover:scale-100"
-                            style="background: linear-gradient(135deg, var(--color-coral-500, #FF7A4D), #DC4A1F)">
+                            style="background: var(--color-coral-500, #2D5BFF)">
                         <span data-cart-submit-label>أكد الطلب</span>
                         <svg data-cart-spinner class="hidden w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                             <path d="M21 12a9 9 0 1 1-6.219-8.56"/>

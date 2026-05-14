@@ -151,8 +151,8 @@ class FeedController extends Controller
 
     /**
      * Data for the homepage sections rendered at the top of feed.blade.php:
-     * admin promo banners, sponsored/featured/open-now businesses, and the
-     * 6 category tiles.
+     * admin promo banners, sponsored/featured/open-now businesses, category tiles,
+     * utility shortcuts (offers / emergency / university), newest marketplace items.
      */
     private function homepageData(): array
     {
@@ -202,6 +202,34 @@ class FeedController extends Controller
         $homeCats    = collect($homeCatKeys)
             ->map(fn ($k) => ['key' => $k] + (Business::CATEGORIES[$k] ?? []));
 
-        return compact('promoBanners', 'promoted', 'featured', 'openNow', 'homeCats');
+        // Newest active marketplace listings ("جديد في السوق")
+        $newListings = \App\Models\Listing::query()
+            ->where('status', 'active')
+            ->with(['user:id,username,avatar_seed,avatar_url', 'zone:id,name'])
+            ->latest()
+            ->limit(8)
+            ->get();
+
+        // Trending search terms — derived from active hashtags if present.
+        // Hashtag tables may not exist on all envs; tolerate missing table.
+        $popularSearches = [];
+        try {
+            $popularSearches = \App\Models\Hashtag::query()
+                ->orderByDesc('uses_count')
+                ->limit(8)
+                ->pluck('tag')
+                ->all();
+        } catch (\Throwable $e) {
+            $popularSearches = [];
+        }
+        if (empty($popularSearches)) {
+            // Safe fallback so the homepage always shows something useful.
+            $popularSearches = ['كشري', 'دكتور أسنان', 'صيدلية', 'كافيه', 'صنايعي', 'شقة للإيجار', 'كورس', 'عرض'];
+        }
+
+        return compact(
+            'promoBanners', 'promoted', 'featured', 'openNow',
+            'homeCats', 'newListings', 'popularSearches'
+        );
     }
 }

@@ -123,6 +123,19 @@
                 aria-label="شارك">
             <x-icon name="share" class="w-4 h-4"/>
         </button>
+        @php
+            $reportTo = config('services.banhawy.support_whatsapp', '01000000000');
+            $reportMsg = "بلاغ عن بيانات غلط على بنهاوي\nالنشاط: {$business->name}\nرابط: ".route('directory.show', $business)."\nالغلط: ";
+        @endphp
+        <a href="https://wa.me/{{ \App\Services\WaapiService::toIntl($reportTo) }}?text={{ urlencode($reportMsg) }}"
+           target="_blank" rel="noopener"
+           class="w-9 h-9 rounded-full bg-white border border-ink-950/8 grid place-items-center text-ink-500 hover:bg-blush-50 hover:text-blush-600 transition"
+           title="بلّغ عن بيانات غلط" aria-label="بلّغ عن بيانات غلط">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                <line x1="4" y1="22" x2="4" y2="15"/>
+                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
+            </svg>
+        </a>
 
         @if($isOwner)
             <a href="{{ route('menu.manage', $business) }}" class="w-9 h-9 rounded-full bg-honey-100 text-honey-700 grid place-items-center hover:bg-honey-500 hover:text-ink-950 transition" title="منيو">
@@ -449,12 +462,19 @@
 
     {{-- Quick contact CTAs --}}
     @php
-        $callNumber = $business->phone ?: $business->hotline;
-        $callLabel  = $business->phone ? 'اتصل' : 'الخط الساخن';
-        $cols       = (int) (bool) $callNumber + (int) (bool) $business->whatsapp;
+        $callNumber  = $business->phone ?: $business->hotline;
+        $callLabel   = $business->phone ? 'اتصل' : 'الخط الساخن';
+        $hasDir      = $business->lat && $business->lng;
+        $actions     = [];
+        if ($callNumber)         $actions[] = 'call';
+        if ($business->whatsapp) $actions[] = 'whatsapp';
+        if ($hasDir)             $actions[] = 'directions';
+        $cols        = count($actions);
+        // Tailwind needs literal class names so JIT picks them up.
+        $gridCols    = ['', 'grid-cols-1', 'grid-cols-2', 'grid-cols-3'][$cols] ?? 'grid-cols-3';
     @endphp
     @if($cols > 0)
-        <div class="grid grid-cols-{{ $cols === 2 ? '2' : '1' }} gap-2 mb-3">
+        <div class="grid {{ $gridCols }} gap-2 mb-3">
             @if($callNumber)
                 <a href="tel:{{ preg_replace('/[^0-9+]/', '', $callNumber) }}" data-track-click="phone" data-business="{{ $business->id }}" class="btn-dark justify-center !py-3.5 text-sm">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="w-4 h-4">
@@ -466,9 +486,20 @@
             @if($business->whatsapp)
                 <a href="https://wa.me/{{ \App\Services\WaapiService::toIntl($business->whatsapp) }}" target="_blank"
                    data-track-click="whatsapp" data-business="{{ $business->id }}"
-                   class="inline-flex items-center justify-center gap-2 py-3.5 rounded-full font-bold text-white text-sm transition hover:scale-[1.02]"
-                   style="background: linear-gradient(135deg, #25D366, #128C7E)">
+                   class="inline-flex items-center justify-center gap-2 py-3.5 rounded-full font-bold text-white text-sm transition hover:scale-[1.02] bg-mint-600 hover:bg-mint-500">
                     <x-icon name="whatsapp" class="w-4 h-4"/> واتساب
+                </a>
+            @endif
+            @if($hasDir)
+                <a href="https://www.google.com/maps/dir/?api=1&destination={{ $business->lat }},{{ $business->lng }}"
+                   target="_blank" rel="noopener"
+                   data-track-click="directions" data-business="{{ $business->id }}"
+                   class="inline-flex items-center justify-center gap-2 py-3.5 rounded-full font-bold text-coral-600 text-sm transition bg-coral-50 hover:bg-coral-100">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                        <path d="M21.71 11.29 12.71 2.29a1 1 0 0 0-1.42 0l-9 9a1 1 0 0 0 0 1.42l9 9a1 1 0 0 0 1.42 0l9-9a1 1 0 0 0 0-1.42z"/>
+                        <polyline points="9 12 11 14 15 10"/>
+                    </svg>
+                    الاتجاهات
                 </a>
             @endif
         </div>
@@ -1107,5 +1138,54 @@
             @endforeach
         </div>
     @endif
+
+    {{-- Spacer so the sticky CTA bar doesn't hide last content row on mobile --}}
+    <div class="h-24 lg:hidden" aria-hidden="true"></div>
 </div>
+
+{{-- ─── Sticky mobile CTA bar (call · whatsapp · directions) ─── --}}
+@php
+    $hasAny = ($business->phone ?: $business->hotline) || $business->whatsapp || ($business->lat && $business->lng);
+@endphp
+@if($hasAny)
+    @php
+        $callNumberSticky = $business->phone ?: $business->hotline;
+    @endphp
+    <div class="lg:hidden fixed inset-x-0 z-30"
+         style="bottom: calc(4.5rem + env(safe-area-inset-bottom));">
+        <div class="mx-3 bg-white rounded-2xl shadow-2xl ring-1 ring-ink-950/8 p-1.5 flex items-center gap-1.5">
+            @if($callNumberSticky)
+                <a href="tel:{{ preg_replace('/[^0-9+]/', '', $callNumberSticky) }}"
+                   data-track-click="phone" data-business="{{ $business->id }}"
+                   class="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-ink-950 text-white text-xs font-extrabold hover:bg-ink-800 transition">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="w-4 h-4">
+                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                    </svg>
+                    اتصل
+                </a>
+            @endif
+            @if($business->whatsapp)
+                <a href="https://wa.me/{{ \App\Services\WaapiService::toIntl($business->whatsapp) }}"
+                   target="_blank" rel="noopener"
+                   data-track-click="whatsapp" data-business="{{ $business->id }}"
+                   class="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-mint-600 text-white text-xs font-extrabold hover:bg-mint-500 transition">
+                    <x-icon name="whatsapp" class="w-4 h-4"/>
+                    واتساب
+                </a>
+            @endif
+            @if($business->lat && $business->lng)
+                <a href="https://www.google.com/maps/dir/?api=1&destination={{ $business->lat }},{{ $business->lng }}"
+                   target="_blank" rel="noopener"
+                   data-track-click="directions" data-business="{{ $business->id }}"
+                   class="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-coral-50 text-coral-600 text-xs font-extrabold hover:bg-coral-100 transition">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                        <path d="M21.71 11.29 12.71 2.29a1 1 0 0 0-1.42 0l-9 9a1 1 0 0 0 0 1.42l9 9a1 1 0 0 0 1.42 0l9-9a1 1 0 0 0 0-1.42z"/>
+                        <polyline points="9 12 11 14 15 10"/>
+                    </svg>
+                    الاتجاهات
+                </a>
+            @endif
+        </div>
+    </div>
+@endif
 @endsection

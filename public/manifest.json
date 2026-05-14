@@ -1,7 +1,7 @@
 {
-    "name": "بنهاوي · مدينتك على راحة إيدك",
+    "name": "بنهاوي · دليلك الكامل لمدينة بنها",
     "short_name": "بنهاوي",
-    "description": "كل اللي بيحصل في بنها دلوقتي — ترند، أسعار، تنبيهات، اعترافات.",
+    "description": "كل حاجة في بنها — أرقام، منيوهات، عروض، دكاترة، صنايعية، بيع وشراء.",
     "start_url": "/launch.html",
     "scope": "/",
     "id": "/?source=pwa",
@@ -12,23 +12,23 @@
     "theme_color": "#2D5BFF",
     "lang": "ar",
     "dir": "rtl",
-    "categories": ["social", "lifestyle", "news"],
+    "categories": ["lifestyle", "shopping", "social"],
     "prefer_related_applications": false,
     "icons": [
         {
-            "src": "/icons/icon.svg",
+            "src": "/icons/icon.svg?v=2",
             "sizes": "any",
             "type": "image/svg+xml",
             "purpose": "any"
         },
         {
-            "src": "/icons/icon-192.png",
+            "src": "/icons/icon-192.png?v=2",
             "sizes": "192x192",
             "type": "image/png",
             "purpose": "any maskable"
         },
         {
-            "src": "/icons/icon-512.png",
+            "src": "/icons/icon-512.png?v=2",
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "any maskable"
@@ -36,22 +36,22 @@
     ],
     "shortcuts": [
         {
-            "name": "بوست جديد",
-            "short_name": "بوست",
-            "url": "/posts/new",
-            "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+            "name": "عروض بنها النهارده",
+            "short_name": "عروض",
+            "url": "/offers",
+            "icons": [{ "src": "/icons/icon-192.png?v=2", "sizes": "192x192" }]
         },
         {
-            "name": "تنبيهات لحظية",
-            "short_name": "تنبيهات",
-            "url": "/alerts",
-            "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+            "name": "أرقام طوارئ بنها",
+            "short_name": "طوارئ",
+            "url": "/emergency",
+            "icons": [{ "src": "/icons/icon-192.png?v=2", "sizes": "192x192" }]
         },
         {
-            "name": "رادار الأسعار",
-            "short_name": "أسعار",
-            "url": "/prices",
-            "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+            "name": "دليل جامعة بنها",
+            "short_name": "جامعة بنها",
+            "url": "/benha-university",
+            "icons": [{ "src": "/icons/icon-192.png?v=2", "sizes": "192x192" }]
         }
     ]
 }

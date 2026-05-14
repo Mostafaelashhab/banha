@@ -89,6 +89,15 @@ Route::get('/u/{username}',            [ProfileController::class, 'show'])->name
 // Support (live chat for users; fallback page for guests)
 Route::get('/support', [\App\Http\Controllers\SupportController::class, 'open'])->name('support');
 
+// ─── Public utility hubs (no auth) ─────────────────────────────
+Route::get('/offers',           [\App\Http\Controllers\OffersController::class,     'index'])->name('offers.index');
+Route::get('/emergency',        [\App\Http\Controllers\EmergencyController::class,  'index'])->name('emergency.index');
+Route::get('/benha-university', [\App\Http\Controllers\UniversityController::class, 'index'])->name('university.index');
+
+// ─── Marketing landings (own-business pitch + QR menu pitch) ───
+Route::get('/own-business',     [\App\Http\Controllers\MarketingController::class,  'claim'])->name('marketing.claim');
+Route::get('/qr-menu',          [\App\Http\Controllers\MarketingController::class,  'qrMenu'])->name('marketing.qr-menu');
+
 // Authenticated app routes
 Route::middleware('auth')->group(function () {
     // Activation (after signup)

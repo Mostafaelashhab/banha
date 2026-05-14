@@ -5,13 +5,14 @@
 
     {{-- ───── Top row: Greeting + notification bell ─────── --}}
     <div class="flex items-center justify-between gap-3 mb-4 rise rise-1">
-        <h1 class="text-xl font-black text-ink-950 leading-tight truncate">
+        <div class="min-w-0">
             @auth
-                أهلاً {{ auth()->user()->username }}
-            @else
-                بنهاوي
+                <div class="text-[11px] font-bold text-ink-500">أهلاً {{ auth()->user()->username }}</div>
             @endauth
-        </h1>
+            <h1 class="text-xl font-black text-ink-950 leading-tight truncate">
+                بتدور على إيه في بنها؟
+            </h1>
+        </div>
 
         @auth
             @php $unread = \App\Models\Notification::where('user_id', auth()->id())->whereNull('read_at')->count(); @endphp
@@ -27,14 +28,15 @@
             </a>
         @endauth
     </div>
+
     {{-- Live search — debounced suggest dropdown --}}
-    <div class="relative mb-6 rise rise-1" id="home-search" data-suggest-url="{{ route('search.suggest') }}">
-        <form action="{{ route('search') }}" method="GET" class="flex items-center gap-2 bg-cream-200 rounded-full ps-5 pe-1.5 py-1.5 ring-1 ring-ink-950/5 focus-within:ring-coral-500/40 transition">
+    <div class="relative mb-4 rise rise-1" id="home-search" data-suggest-url="{{ route('search.suggest') }}">
+        <form action="{{ route('search') }}" method="GET" class="flex items-center gap-2 bg-cream-200 rounded-full ps-5 pe-1.5 py-2 ring-1 ring-ink-950/5 focus-within:ring-coral-500/40 transition">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="w-4 h-4 text-ink-400 shrink-0">
                 <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
             <input type="search" name="q" autocomplete="off"
-                   placeholder="ابحث في بنهاوي…"
+                   placeholder="مطعم، دكتور، صيدلية، صنايعي، شقة، عرض، وظيفة…"
                    class="flex-1 bg-transparent text-sm text-ink-950 placeholder-ink-400 outline-none border-0"
                    data-suggest-input>
             <button type="button" class="hidden text-ink-400 hover:text-ink-950 transition text-lg leading-none" data-suggest-clear aria-label="مسح">×</button>
@@ -56,6 +58,46 @@
             </a>
         </div>
     </div>
+
+    {{-- ───── Utility shortcuts — the 4 high-intent destinations ─────── --}}
+    <div class="grid grid-cols-4 gap-2 mb-6 rise rise-1">
+        @php
+            $utilityShortcuts = [
+                ['route' => route('offers.index'),           'label' => 'عروض',         'icon' => 'tag',          'pill' => 'bg-coral-50 text-coral-600'],
+                ['route' => route('directory.index', ['open_now' => 1]), 'label' => 'مفتوح دلوقتي', 'icon' => 'bell',         'pill' => 'bg-mint-100 text-mint-700'],
+                ['route' => route('emergency.index'),        'label' => 'طوارئ',         'icon' => 'bolt',         'pill' => 'bg-blush-100 text-blush-600'],
+                ['route' => route('university.index'),       'label' => 'جامعة بنها',   'icon' => 'graduation',   'pill' => 'bg-honey-100 text-honey-700'],
+            ];
+        @endphp
+        @foreach($utilityShortcuts as $s)
+            <a href="{{ $s['route'] }}" class="flex flex-col items-center gap-1.5 py-2.5 rounded-2xl hover:bg-cream-100 transition">
+                <span class="w-11 h-11 rounded-full {{ $s['pill'] }} grid place-items-center">
+                    <x-icon :name="$s['icon']" class="w-5 h-5"/>
+                </span>
+                <span class="text-[10px] font-extrabold text-ink-950 text-center leading-tight">{{ $s['label'] }}</span>
+            </a>
+        @endforeach
+    </div>
+
+    {{-- ───── Popular searches — single-tap intents ─────── --}}
+    @if(! empty($popularSearches))
+        <div class="mb-6 rise rise-2">
+            <div class="text-[11px] font-bold text-ink-500 mb-2 px-1">الأكثر بحثًا</div>
+            <div class="overflow-x-auto scrollbar-hide -mx-4 px-4">
+                <div class="flex items-center gap-2 min-w-max">
+                    @foreach($popularSearches as $term)
+                        <a href="{{ route('search', ['q' => $term]) }}"
+                           class="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white ring-1 ring-ink-950/8 text-[12px] font-extrabold text-ink-950 hover:ring-coral-500/40 hover:text-coral-600 transition">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="w-3 h-3 text-ink-400">
+                                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                            </svg>
+                            {{ $term }}
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+    @endif
 
     {{-- ───── Promo banners — 4-card slider (map, QR menu, add biz, post ad) ──── --}}
       @if($promoBanners->isNotEmpty())
@@ -267,6 +309,116 @@
             </div>
         </section>
     @endif
+
+    {{-- ───── جديد في السوق — newest marketplace listings ─────── --}}
+    @if($newListings->isNotEmpty())
+        <section class="rise rise-4 mt-10">
+            <div class="flex items-center justify-between mb-4 px-1">
+                <h2 class="text-xl font-black text-ink-950">جديد في السوق</h2>
+                <a href="{{ route('marketplace.index') }}"
+                   class="inline-flex items-center gap-2 text-sm font-extrabold text-ink-950 hover:text-coral-600 transition">
+                    شوف الكل
+                    <span class="w-9 h-9 rounded-full bg-coral-50 text-coral-600 grid place-items-center hover:bg-coral-100 transition">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="w-4 h-4">
+                            <polyline points="15 18 9 12 15 6"/>
+                        </svg>
+                    </span>
+                </a>
+            </div>
+
+            <div class="overflow-x-auto scrollbar-hide -mx-4 px-4">
+                <div class="flex items-stretch gap-3 min-w-max">
+                    @foreach($newListings as $l)
+                        @php
+                            $cm = $l->categoryMeta();
+                            $km = $l->kindMeta();
+                            $priceText = $l->priceLabel();
+                            // Only force LTR when the price is numeric — Arabic phrases
+                            // like "بسعر مفاوض" would otherwise render misaligned.
+                            $priceIsNumeric = $priceText !== '' && preg_match('/\d/', $priceText);
+                        @endphp
+                        <a href="{{ route('marketplace.show', $l) }}"
+                           class="shrink-0 w-44 bg-white rounded-2xl ring-1 ring-ink-950/8 overflow-hidden hover:ring-coral-500/40 transition flex flex-col">
+                            <div class="aspect-square bg-coral-50 relative">
+                                {{-- Fallback first so the <img> overlays it when loaded. --}}
+                                <div class="absolute inset-0 grid place-items-center text-coral-600/40">
+                                    <x-icon :name="$cm['icon'] ?? 'bag'" class="w-12 h-12"/>
+                                </div>
+                                @if($l->photo_url)
+                                    <img src="{{ $l->photo_url }}" alt="{{ $l->title }}" loading="lazy"
+                                         class="absolute inset-0 w-full h-full object-cover"
+                                         onerror="this.style.display='none'">
+                                @endif
+                                @if($l->kind && $l->kind !== 'sale')
+                                    <span class="absolute top-1.5 start-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/95 text-[9px] font-extrabold text-{{ $km['tone'] ?? 'coral' }}-600 backdrop-blur">
+                                        {{ $km['label'] }}
+                                    </span>
+                                @endif
+                            </div>
+                            <div class="p-2.5 flex-1 flex flex-col">
+                                <div class="text-[12px] font-extrabold text-ink-950 line-clamp-2 leading-snug">{{ $l->title }}</div>
+                                @if($priceText !== '')
+                                    <div class="text-[13px] font-black text-coral-600 mt-1" @if($priceIsNumeric) dir="ltr" @endif>
+                                        {{ $priceText }}
+                                    </div>
+                                @endif
+                                @if($l->zone)
+                                    <div class="text-[10px] text-ink-500 mt-auto pt-1 truncate inline-flex items-center gap-1">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-2.5 h-2.5 shrink-0">
+                                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                                        </svg>
+                                        {{ $l->zone->name }}
+                                    </div>
+                                @endif
+                            </div>
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+        </section>
+    @endif
+
+    {{-- ───── دليل طلاب جامعة بنها — student hub promo ─────── --}}
+    <a href="{{ route('university.index') }}" class="block mt-6 rounded-3xl p-4 relative overflow-hidden ring-1 ring-honey-500/20 hover:ring-honey-500/40 transition rise rise-4"
+       style="background: #FFF6E6;">
+        <div class="absolute -top-12 -end-12 w-48 h-48 rounded-full bg-honey-400/30 blur-3xl pointer-events-none"></div>
+        <div class="relative flex items-center gap-3">
+            <span class="w-12 h-12 rounded-2xl bg-white grid place-items-center text-2xl shrink-0">🎓</span>
+            <div class="flex-1 min-w-0">
+                <div class="text-[10px] font-extrabold text-honey-700 mb-0.5">للطلاب</div>
+                <div class="text-sm font-black text-ink-950 leading-tight">دليل طلاب جامعة بنها</div>
+                <div class="text-[11px] text-ink-500 mt-0.5 leading-snug truncate">أكل، سكن، مكتبات، كورسات، Part-time.</div>
+            </div>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="w-4 h-4 text-honey-700 shrink-0">
+                <polyline points="15 18 9 12 15 6"/>
+            </svg>
+        </div>
+    </a>
+
+    {{-- ───── Business owner CTA — claim your page ─────── --}}
+    <a href="{{ route('marketing.claim') }}" class="block mt-3 rounded-3xl p-4 relative overflow-hidden rise rise-4"
+       style="background: #1F46DB;">
+        <div class="absolute -bottom-16 -start-16 w-56 h-56 rounded-full bg-white/10 blur-3xl pointer-events-none"></div>
+        <div class="absolute -top-10 -end-10 w-40 h-40 rounded-full bg-white/10 blur-2xl pointer-events-none"></div>
+        <div class="relative flex items-center gap-3">
+            <span class="w-12 h-12 rounded-2xl bg-white/15 grid place-items-center text-white shrink-0">
+                {{-- Storefront icon (not a house) — speaks to shop owners --}}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6">
+                    <path d="M3 9h18l-1.5-5h-15z"/>
+                    <path d="M4 9v11a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/>
+                    <path d="M8 14h8"/>
+                </svg>
+            </span>
+            <div class="flex-1 min-w-0 text-white">
+                <div class="text-[10px] font-extrabold text-white/80 mb-0.5">لأصحاب النشاطات</div>
+                <div class="text-sm font-black leading-tight">عندك محل أو مطعم؟ امتلك صفحتك</div>
+                <div class="text-[11px] text-white/85 mt-0.5 leading-snug font-bold truncate">واتساب، صور، منيو، عروض — كله من مكان واحد.</div>
+            </div>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="w-4 h-4 text-white shrink-0">
+                <polyline points="15 18 9 12 15 6"/>
+            </svg>
+        </div>
+    </a>
 
 </div>
 
