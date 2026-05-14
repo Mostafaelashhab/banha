@@ -103,8 +103,9 @@
         ? 'حابب أتواصل بخصوص ' . $L['title'] . ' بتاعت ' . $business->name . ' — شفت ' . $L['item_label'] . ' على ' . route('menu.public', $business)
         : null;
 
-    // Cart only makes sense for food-category businesses with a WhatsApp number
-    $cartEnabled = $business->category === 'food' && $business->whatsapp;
+    // Ordering is allowed for food + shops (anything in ORDER_CATEGORIES) with a WhatsApp number.
+    // The actual stepper still requires the item to have a price (handled in public-item.blade).
+    $cartEnabled = $business->supportsOrdering();
     $authUser    = auth()->user();
 @endphp
 

@@ -329,7 +329,8 @@
                 <x-business-extras :sub-type="$oldSub" :values="$business->extra ?? []"/>
             </div>
 
-            {{-- Booking settings --}}
+            {{-- Booking settings — only for non-food categories (food uses ordering instead) --}}
+            @if($business->bookingApplicable())
             <div class="card-light p-5">
                 <div class="flex items-center gap-3 mb-3">
                     <span class="step-num" style="--cat-color: {{ $cm['color'] }};">٦</span>
@@ -399,6 +400,31 @@
                     </a>
                 @endif
             </div>
+            @else
+            {{-- Food category: ordering replaces booking. Show a note + link to orders/menu. --}}
+            <div class="card-light p-5 bg-coral-50 border border-coral-500/20">
+                <div class="flex items-center gap-3 mb-2">
+                    <span class="step-num" style="--cat-color: {{ $cm['color'] }};">٦</span>
+                    <div>
+                        <h2 class="text-sm font-extrabold text-ink-950">الأوردرات بدل الحجز</h2>
+                        <p class="text-[11px] text-ink-500">للمطاعم والكافيهات بنشغّل الأوردر من المنيو على واتساب — مفيش حجز مواعيد.</p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-2 mt-3">
+                    <a href="{{ route('menu.manage', $business) }}" class="text-[11px] font-extrabold px-3 py-1.5 rounded-full bg-coral-500 text-white hover:bg-coral-600 transition">
+                        إدارة المنيو ←
+                    </a>
+                    @if($business->has_menu && $business->whatsapp)
+                        <a href="{{ route('order.owner.index', $business) }}" class="text-[11px] font-extrabold px-3 py-1.5 rounded-full bg-white text-coral-600 ring-1 ring-coral-500/30 hover:bg-coral-50 transition">
+                            شوف الأوردرات ←
+                        </a>
+                    @endif
+                </div>
+                @unless($business->whatsapp)
+                    <p class="text-[11px] font-bold text-blush-600 mt-2">⚠ محتاج تضيف رقم واتساب من فوق عشان الأوردرات تشتغل.</p>
+                @endunless
+            </div>
+            @endif
 
             {{-- Sticky submit --}}
             <div class="sticky-submit">

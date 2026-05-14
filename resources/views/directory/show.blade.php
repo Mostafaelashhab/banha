@@ -406,8 +406,20 @@
         </div>
     </div>
 
-    {{-- Booking CTA (visible only when owner enabled bookings) --}}
-    @if($business->booking_enabled)
+    {{-- Order CTA (food/shops with menu + WhatsApp) — replaces booking for these categories --}}
+    @if($business->supportsOrdering() && $business->has_menu)
+        <a href="{{ route('menu.public', $business) }}" class="block mb-3 p-4 rounded-2xl bg-coral-500 text-white text-center hover:scale-[1.01] transition shadow-lg">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 mx-auto">
+                <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                <path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/>
+            </svg>
+            <div class="text-base font-extrabold mt-2">{{ $business->category === 'food' ? 'اطلب أوردر' : 'اطلب منتجاتك' }}</div>
+            <div class="text-xs text-white/85 mt-0.5">اختار اللي عاوزه — هنبعت الأوردر للنشاط مباشرة</div>
+        </a>
+    @endif
+
+    {{-- Booking CTA (only for non-food categories where owner enabled bookings) --}}
+    @if($business->booking_enabled && $business->bookingApplicable())
         <a href="{{ route('booking.show', $business) }}" class="block mb-3 p-4 rounded-2xl bg-mint-500 text-white text-center hover:scale-[1.01] transition shadow-lg">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 mx-auto">
                 <rect x="3" y="4" width="18" height="18" rx="2"/>

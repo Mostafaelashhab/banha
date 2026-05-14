@@ -805,6 +805,21 @@ class Business extends Model
         return self::CATEGORIES[$this->category] ?? self::CATEGORIES['services'];
     }
 
+    /** Categories where "اطلب أوردر" makes sense (cart → WhatsApp via WAAPI). */
+    public const ORDER_CATEGORIES = ['food', 'shops'];
+
+    /** Cart/ordering is offered for businesses in ORDER_CATEGORIES that also have a WhatsApp number. */
+    public function supportsOrdering(): bool
+    {
+        return in_array($this->category, self::ORDER_CATEGORIES, true) && ! empty($this->whatsapp);
+    }
+
+    /** Booking is offered for non-food categories (food uses ordering instead). */
+    public function bookingApplicable(): bool
+    {
+        return $this->category !== 'food';
+    }
+
     public function subTypeMeta(): array
     {
         return self::SUB_TYPES[$this->sub_type] ?? ['label' => $this->sub_type, 'category' => $this->category, 'emoji' => '📍', 'icon' => 'briefcase'];
