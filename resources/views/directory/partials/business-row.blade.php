@@ -28,15 +28,6 @@
                  onerror="this.style.display='none'">
         @endif
 
-        @if($business->is_24h)
-            <div class="biz-card__photo-chips">
-                <span class="biz-card__chip biz-card__chip--live">
-                    <span class="biz-card__chip-dot"></span>
-                    ٢٤ ساعة
-                </span>
-            </div>
-        @endif
-
         @if($isPromoted)
             <button type="button" class="biz-card__promoted-tag"
                     data-promoted-info
@@ -96,6 +87,17 @@
                             <x-icon name="map-pin"/>
                         </span>
                         {{ $business->zone->name }}
+                    </span>
+                @endif
+                @if($business->is_24h)
+                    <span class="biz-card__stat biz-card__stat--live" aria-label="٢٤ ساعة">
+                        <span class="biz-card__stat-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="9"/>
+                                <polyline points="12 7 12 12 15 14"/>
+                            </svg>
+                        </span>
+                        ٢٤ ساعة
                     </span>
                 @endif
             </div>
