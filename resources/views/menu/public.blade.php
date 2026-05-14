@@ -102,6 +102,9 @@
     $waOrderMsg = $business->whatsapp
         ? 'حابب أتواصل بخصوص ' . $L['title'] . ' بتاعت ' . $business->name . ' — شفت ' . $L['item_label'] . ' على ' . route('menu.public', $business)
         : null;
+
+    // Cart only makes sense for food-category businesses with a WhatsApp number
+    $cartEnabled = $business->category === 'food' && $business->whatsapp;
 @endphp
 
 @section('content')
@@ -238,7 +241,7 @@
                     </div>
                     <div class="card-light p-3 divide-y divide-ink-950/5">
                         @foreach($cat->items as $it)
-                            @include('menu.partials.public-item', ['item' => $it, 'currency' => $business->menu_currency ?? 'EGP'])
+                            @include('menu.partials.public-item', ['item' => $it, 'currency' => $business->menu_currency ?? 'EGP', 'cartEnabled' => $cartEnabled])
                         @endforeach
                     </div>
                 </section>
@@ -256,7 +259,7 @@
                 </div>
                 <div class="card-light p-3 divide-y divide-ink-950/5">
                     @foreach($looseItems as $it)
-                        @include('menu.partials.public-item', ['item' => $it, 'currency' => $business->menu_currency ?? 'EGP'])
+                        @include('menu.partials.public-item', ['item' => $it, 'currency' => $business->menu_currency ?? 'EGP', 'cartEnabled' => $cartEnabled])
                     @endforeach
                 </div>
             </section>
@@ -351,8 +354,8 @@
     </div>
 </div>
 
-{{-- Sticky bottom WhatsApp CTA on long menus --}}
-@if($business->whatsapp && $itemsCount > 5)
+{{-- Sticky bottom WhatsApp CTA on long menus (non-cart fallback) --}}
+@if($business->whatsapp && $itemsCount > 5 && ! $cartEnabled)
     <a href="https://wa.me/{{ \App\Services\WaapiService::toIntl($business->whatsapp) }}?text={{ urlencode($waOrderMsg) }}"
        target="_blank"
        data-track-click="whatsapp" data-business="{{ $business->id }}"
@@ -361,6 +364,98 @@
         <x-icon name="whatsapp" class="w-5 h-5"/>
         اطلب الآن على واتساب
     </a>
+@endif
+
+{{-- ──── Cart: sticky button + bottom sheet (food category only) ──── --}}
+@if($cartEnabled)
+    @php
+        $waPhone = \App\Services\WaapiService::toIntl($business->whatsapp);
+        $currency = $business->menu_currency ?? 'EGP';
+    @endphp
+    <div data-cart-root
+         data-biz-id="{{ $business->id }}"
+         data-biz-name="{{ $business->name }}"
+         data-wa-phone="{{ $waPhone }}"
+         data-currency="{{ $currency }}"
+         data-menu-url="{{ route('menu.public', $business) }}">
+
+        {{-- Sticky bottom bar: hidden when cart empty, shown otherwise --}}
+        <button type="button" data-cart-open
+                class="fixed bottom-4 inset-x-4 max-w-md mx-auto z-30 hidden items-center gap-3 py-3 ps-4 pe-3 rounded-full font-extrabold text-white text-sm shadow-2xl transition hover:scale-[1.01]"
+                style="background: linear-gradient(135deg, #25D366, #128C7E)">
+            <span class="w-9 h-9 rounded-full bg-white/20 grid place-items-center text-base font-black" data-cart-badge>0</span>
+            <span class="flex-1 text-start">
+                <span class="block text-[10px] text-white/80 font-bold">طلبك جاهز · اضغط للمراجعة</span>
+                <span class="block text-sm" data-cart-summary>0 صنف</span>
+            </span>
+            <span class="font-black text-sm shrink-0" dir="ltr" data-cart-total>0 {{ $currency }}</span>
+        </button>
+
+        {{-- Backdrop --}}
+        <div data-cart-backdrop class="fixed inset-0 bg-black/55 z-40 hidden" aria-hidden="true"></div>
+
+        {{-- Bottom sheet --}}
+        <div data-cart-sheet
+             class="fixed bottom-0 inset-x-0 z-50 hidden bg-cream-50 rounded-t-3xl shadow-2xl translate-y-full transition-transform duration-300 max-h-[85vh] flex flex-col"
+             role="dialog" aria-modal="true" aria-labelledby="cart-sheet-title">
+
+            <div class="px-4 pt-3 pb-2 border-b border-ink-950/8 shrink-0">
+                <div class="w-12 h-1.5 bg-ink-950/15 rounded-full mx-auto mb-3" data-cart-drag></div>
+                <div class="flex items-center justify-between">
+                    <h3 id="cart-sheet-title" class="text-base font-black text-ink-950 inline-flex items-center gap-2">
+                        <span class="w-7 h-7 rounded-lg bg-coral-100 text-coral-600 grid place-items-center">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                                <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                                <path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/>
+                            </svg>
+                        </span>
+                        طلبي
+                    </h3>
+                    <button type="button" data-cart-close
+                            class="w-8 h-8 rounded-full bg-white border border-ink-950/8 grid place-items-center text-ink-500 hover:text-ink-950 transition"
+                            aria-label="إغلاق">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="w-4 h-4">
+                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div data-cart-list class="overflow-y-auto px-4 py-2 flex-1"></div>
+
+            <div data-cart-empty class="p-10 text-center hidden">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-14 h-14 mx-auto text-ink-300 mb-2">
+                    <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                    <path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/>
+                </svg>
+                <p class="text-sm text-ink-500">السلة فاضية — ضيف أصناف من القايمة</p>
+            </div>
+
+            <div class="border-t border-ink-950/8 p-4 space-y-3 shrink-0 bg-white" data-cart-footer>
+                <textarea data-cart-notes rows="2" maxlength="300"
+                          placeholder="ملاحظات للطلب (اختياري) — مثلاً: من غير بصل، عنواني هو..."
+                          class="w-full bg-cream-100 rounded-2xl px-4 py-2.5 text-sm text-ink-950 placeholder-ink-400 outline-0 border border-ink-950/8 focus:border-coral-500 transition resize-none"></textarea>
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-ink-500">الإجمالي</span>
+                    <span class="text-xl font-black text-ink-950" dir="ltr">
+                        <span data-cart-total-big>0</span>
+                        <span class="text-xs text-ink-400 font-bold">{{ $currency }}</span>
+                    </span>
+                </div>
+                <button type="button" data-cart-send
+                        data-track-click="whatsapp" data-business="{{ $business->id }}"
+                        class="w-full inline-flex items-center justify-center gap-2 py-3.5 rounded-full font-extrabold text-white text-sm shadow-lg transition hover:scale-[1.01] disabled:opacity-60"
+                        style="background: linear-gradient(135deg, #25D366, #128C7E)">
+                    <x-icon name="whatsapp" class="w-5 h-5"/>
+                    أرسل الطلب على واتساب
+                </button>
+                <button type="button" data-cart-clear
+                        class="w-full text-xs font-bold text-blush-500 hover:underline">
+                    امسح السلة
+                </button>
+            </div>
+        </div>
+    </div>
 @endif
 
 @push('scripts')
@@ -386,6 +481,212 @@
     }, { rootMargin: '-30% 0px -50% 0px', threshold: 0 });
 
     document.querySelectorAll('section[id^="cat-"]').forEach(s => io.observe(s));
+})();
+
+// ── Cart: localStorage per-business + WhatsApp send ─────────────
+(function () {
+    const root = document.querySelector('[data-cart-root]');
+    if (!root) return;
+
+    const bizId    = root.dataset.bizId;
+    const bizName  = root.dataset.bizName;
+    const waPhone  = root.dataset.waPhone;
+    const currency = root.dataset.currency || 'EGP';
+    const menuUrl  = root.dataset.menuUrl;
+    const STORAGE_KEY = 'banhawy:cart:' + bizId;
+    const NOTES_KEY   = 'banhawy:cart-notes:' + bizId;
+
+    const bar       = root.querySelector('[data-cart-open]');
+    const sheet     = root.querySelector('[data-cart-sheet]');
+    const backdrop  = root.querySelector('[data-cart-backdrop]');
+    const list      = root.querySelector('[data-cart-list]');
+    const emptyEl   = root.querySelector('[data-cart-empty]');
+    const footerEl  = root.querySelector('[data-cart-footer]');
+    const sendBtn   = root.querySelector('[data-cart-send]');
+    const clearBtn  = root.querySelector('[data-cart-clear]');
+    const closeBtn  = root.querySelector('[data-cart-close]');
+    const notesEl   = root.querySelector('[data-cart-notes]');
+    const totalBig  = root.querySelector('[data-cart-total-big]');
+    const badge     = root.querySelector('[data-cart-badge]');
+    const summary   = root.querySelector('[data-cart-summary]');
+    const totalSm   = root.querySelector('[data-cart-total]');
+
+    /** @type {Object<string,{id:string,name:string,price:number,qty:number}>} */
+    let cart = {};
+    try { cart = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}') || {}; } catch (e) { cart = {}; }
+    try { notesEl.value = localStorage.getItem(NOTES_KEY) || ''; } catch (e) {}
+
+    function save() {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(cart)); } catch (e) {}
+    }
+    function saveNotes() {
+        try { localStorage.setItem(NOTES_KEY, notesEl.value || ''); } catch (e) {}
+    }
+    function totalItems() {
+        return Object.values(cart).reduce((s, x) => s + x.qty, 0);
+    }
+    function totalPrice() {
+        return Object.values(cart).reduce((s, x) => s + (x.qty * x.price), 0);
+    }
+    function fmt(n) {
+        const v = Math.round(n * 100) / 100;
+        return (v % 1 === 0 ? String(v) : v.toFixed(2));
+    }
+    function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    // ── In-list steppers ──
+    function updateItemUI(itemId) {
+        const wrap = document.querySelector('[data-cart-item][data-item-id="' + itemId + '"]');
+        if (!wrap) return;
+        const addBtn  = wrap.querySelector('[data-cart-add]');
+        const stepper = wrap.querySelector('[data-cart-stepper]');
+        const qtyEl   = wrap.querySelector('[data-cart-qty]');
+        const qty = cart[itemId]?.qty || 0;
+        if (qty > 0) {
+            addBtn.classList.add('hidden');
+            stepper.classList.remove('hidden');
+            stepper.classList.add('inline-flex');
+            qtyEl.textContent = qty;
+        } else {
+            stepper.classList.add('hidden');
+            stepper.classList.remove('inline-flex');
+            addBtn.classList.remove('hidden');
+        }
+    }
+    function updateAllItemUI() {
+        document.querySelectorAll('[data-cart-item]').forEach(w => updateItemUI(w.dataset.itemId));
+    }
+
+    // ── Sticky bar + sheet rendering ──
+    function refresh() {
+        const n = totalItems();
+        const t = totalPrice();
+        if (n > 0) {
+            bar.classList.remove('hidden');
+            bar.classList.add('inline-flex');
+            badge.textContent = n;
+            summary.textContent = n + ' صنف' + (n > 10 ? '' : '');
+            totalSm.textContent = fmt(t) + ' ' + currency;
+        } else {
+            bar.classList.add('hidden');
+            bar.classList.remove('inline-flex');
+        }
+
+        // Sheet list
+        const ids = Object.keys(cart);
+        if (ids.length === 0) {
+            list.innerHTML = '';
+            emptyEl.classList.remove('hidden');
+            footerEl.classList.add('hidden');
+        } else {
+            emptyEl.classList.add('hidden');
+            footerEl.classList.remove('hidden');
+            list.innerHTML = ids.map(id => {
+                const it = cart[id];
+                const line = it.qty * it.price;
+                return ''
+                  + '<div class="flex items-center gap-3 py-3 border-b border-ink-950/5 last:border-0" data-sheet-row data-id="' + escapeHtml(id) + '">'
+                  +   '<div class="flex-1 min-w-0">'
+                  +     '<div class="text-sm font-extrabold text-ink-950 truncate">' + escapeHtml(it.name) + '</div>'
+                  +     '<div class="text-[11px] text-ink-500" dir="ltr">' + fmt(it.price) + ' ' + currency + ' × ' + it.qty + '</div>'
+                  +   '</div>'
+                  +   '<div class="inline-flex items-center gap-1 bg-coral-500 rounded-full p-1 shrink-0">'
+                  +     '<button type="button" data-sheet-dec class="w-7 h-7 rounded-full bg-white text-coral-600 grid place-items-center font-black">−</button>'
+                  +     '<span class="min-w-[26px] text-center text-white text-sm font-extrabold">' + it.qty + '</span>'
+                  +     '<button type="button" data-sheet-inc class="w-7 h-7 rounded-full bg-white text-coral-600 grid place-items-center font-black">+</button>'
+                  +   '</div>'
+                  +   '<div class="text-sm font-black text-coral-600 shrink-0 min-w-[60px] text-end" dir="ltr">' + fmt(line) + '</div>'
+                  + '</div>';
+            }).join('');
+        }
+        totalBig.textContent = fmt(t);
+    }
+
+    // ── Mutators ──
+    function add(id, name, price) {
+        if (!cart[id]) cart[id] = { id, name, price: Number(price) || 0, qty: 0 };
+        cart[id].qty += 1;
+        save(); updateItemUI(id); refresh();
+    }
+    function inc(id) { if (cart[id]) { cart[id].qty += 1; save(); updateItemUI(id); refresh(); } }
+    function dec(id) {
+        if (!cart[id]) return;
+        cart[id].qty -= 1;
+        if (cart[id].qty <= 0) delete cart[id];
+        save(); updateItemUI(id); refresh();
+    }
+    function clear() {
+        cart = {}; save();
+        try { localStorage.removeItem(NOTES_KEY); } catch (e) {}
+        notesEl.value = '';
+        updateAllItemUI(); refresh(); closeSheet();
+    }
+
+    // ── Wire in-list buttons ──
+    document.querySelectorAll('[data-cart-item]').forEach(wrap => {
+        const id = wrap.dataset.itemId;
+        const name = wrap.dataset.itemName;
+        const price = wrap.dataset.itemPrice;
+        wrap.querySelector('[data-cart-add]')?.addEventListener('click', () => add(id, name, price));
+        wrap.querySelector('[data-cart-inc]')?.addEventListener('click', () => inc(id));
+        wrap.querySelector('[data-cart-dec]')?.addEventListener('click', () => dec(id));
+    });
+
+    // ── Wire in-sheet buttons (delegated) ──
+    list.addEventListener('click', (e) => {
+        const row = e.target.closest('[data-sheet-row]');
+        if (!row) return;
+        const id = row.dataset.id;
+        if (e.target.closest('[data-sheet-inc]')) inc(id);
+        else if (e.target.closest('[data-sheet-dec]')) dec(id);
+    });
+
+    // ── Sheet open/close ──
+    function openSheet() {
+        sheet.classList.remove('hidden');
+        sheet.classList.add('flex');
+        backdrop.classList.remove('hidden');
+        requestAnimationFrame(() => sheet.style.transform = 'translateY(0)');
+        document.body.style.overflow = 'hidden';
+    }
+    function closeSheet() {
+        sheet.style.transform = '';
+        backdrop.classList.add('hidden');
+        document.body.style.overflow = '';
+        setTimeout(() => { sheet.classList.add('hidden'); sheet.classList.remove('flex'); }, 280);
+    }
+    bar.addEventListener('click', openSheet);
+    backdrop.addEventListener('click', closeSheet);
+    closeBtn.addEventListener('click', closeSheet);
+    clearBtn.addEventListener('click', () => {
+        if (confirm('تمسح السلة كلها؟')) clear();
+    });
+    notesEl.addEventListener('input', saveNotes);
+
+    // ── WhatsApp send ──
+    sendBtn.addEventListener('click', () => {
+        const ids = Object.keys(cart);
+        if (ids.length === 0) return;
+        const lines = ids.map(id => {
+            const it = cart[id];
+            return '• ' + it.name + ' × ' + it.qty + ' = ' + fmt(it.qty * it.price) + ' ' + currency;
+        }).join('\n');
+        const notes = (notesEl.value || '').trim();
+        const msg = 'السلام عليكم 👋\n'
+                  + 'حابب أطلب من ' + bizName + ':\n\n'
+                  + lines + '\n\n'
+                  + 'الإجمالي: ' + fmt(totalPrice()) + ' ' + currency
+                  + (notes ? '\n\nملاحظات: ' + notes : '')
+                  + '\n\n(الطلب من بنهاوي · ' + menuUrl + ')';
+        const url = 'https://wa.me/' + waPhone + '?text=' + encodeURIComponent(msg);
+        window.open(url, '_blank', 'noopener');
+    });
+
+    // ── Initial render ──
+    updateAllItemUI();
+    refresh();
 })();
 </script>
 @endpush

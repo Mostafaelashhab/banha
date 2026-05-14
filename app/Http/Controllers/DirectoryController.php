@@ -369,6 +369,10 @@ class DirectoryController extends Controller
             'extra'       => $data['extra'] ?? null,
             'emoji'       => $sm['emoji'],
             'photo_url'   => $newPhoto ?: $business->photo_url,
+            'booking_enabled'      => (bool) ($data['booking_enabled'] ?? false),
+            'booking_slot_minutes' => $data['booking_slot_minutes'] ?? ($business->booking_slot_minutes ?: 30),
+            'booking_lead_hours'   => $data['booking_lead_hours']   ?? ($business->booking_lead_hours ?? 2),
+            'booking_capacity'     => $data['booking_capacity']     ?? ($business->booking_capacity ?: 1),
         ]);
 
         // Bust map cache so location changes show up immediately on /map
@@ -572,6 +576,10 @@ class DirectoryController extends Controller
             'lat'             => ['nullable', 'numeric', 'between:-90,90', 'required_with:lng'],
             'lng'             => ['nullable', 'numeric', 'between:-180,180', 'required_with:lat'],
             'photo'           => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:3072'],
+            'booking_enabled'      => ['nullable', 'boolean'],
+            'booking_slot_minutes' => ['nullable', 'integer', 'in:15,20,30,45,60,90,120'],
+            'booking_lead_hours'   => ['nullable', 'integer', 'in:0,1,2,4,12,24'],
+            'booking_capacity'     => ['nullable', 'integer', 'min:1', 'max:50'],
         ], [
             'phone.regex'    => 'لازم رقم موبايل مصري صحيح.',
             'whatsapp.regex' => 'لازم رقم واتساب مصري صحيح.',

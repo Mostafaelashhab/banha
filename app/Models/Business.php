@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'hours', 'hours_schedule', 'is_24h', 'is_verified', 'promoted_until', 'is_active',
     'rating_avg', 'ratings_count', 'views_count', 'phone_clicks', 'whatsapp_clicks',
     'emoji', 'photo_url', 'has_menu', 'menu_currency', 'external_id', 'extra',
+    'booking_enabled', 'booking_slot_minutes', 'booking_lead_hours', 'booking_capacity',
 ])]
 class Business extends Model
 {
@@ -568,6 +569,10 @@ class Business extends Model
             'rating_avg'     => 'decimal:1',
             'extra'          => 'array',
             'hours_schedule' => 'array',
+            'booking_enabled'      => 'boolean',
+            'booking_slot_minutes' => 'integer',
+            'booking_lead_hours'   => 'integer',
+            'booking_capacity'     => 'integer',
         ];
     }
 
@@ -717,6 +722,77 @@ class Business extends Model
     public function menuItems(): HasMany
     {
         return $this->hasMany(MenuItem::class)->orderBy('sort')->orderBy('id');
+    }
+
+    public function bookings(): HasMany
+    {
+        return $this->hasMany(Booking::class)->orderBy('starts_at');
+    }
+
+    /**
+     * Compute bookable slots for a given date, gated by hours_schedule + existing bookings.
+     *
+     * @return array<array{
+     *   starts_at: \Carbon\Carbon,
+     *   label: string,
+     *   capacity: int,
+     *   taken: int,
+     *   available: int,
+     *   bookable: bool,
+     *   reason: ?string,
+     * }>
+     */
+    public function availableSlots(\Carbon\Carbon $date): array
+    {
+        if (! $this->booking_enabled) return [];
+
+        $tz = 'Africa/Cairo';
+        $day = $date->copy()->setTimezone($tz)->startOfDay();
+        $dayKey = ['sun','mon','tue','wed','thu','fri','sat'][(int) $day->format('w')];
+
+        // Closed today?
+        $shift = $this->parseShift(($this->hours_schedule ?? [])[$dayKey] ?? null);
+        if (! $shift && ! $this->is_24h) return [];
+
+        // 24/7 = 06:00 → 22:00 (we don't book through the night even when "open")
+        [$startMin, $endMin, $overnight] = $shift ?? [6 * 60, 22 * 60, false];
+        if ($overnight) $endMin += 24 * 60;
+
+        $slotMin = max(5, (int) ($this->booking_slot_minutes ?: 30));
+        $capacity = max(1, (int) ($this->booking_capacity ?: 1));
+        $leadHours = max(0, (int) ($this->booking_lead_hours ?? 2));
+        $minBookableAt = now($tz)->addHours($leadHours);
+
+        // Pre-load taken counts in [day, day+1) bucketed by start time
+        $bookedCounts = $this->bookings()
+            ->blocking()
+            ->whereBetween('starts_at', [$day->copy(), $day->copy()->endOfDay()])
+            ->get()
+            ->groupBy(fn ($b) => $b->starts_at->setTimezone($tz)->format('H:i'))
+            ->map->count();
+
+        $slots = [];
+        for ($m = $startMin; $m + $slotMin <= $endMin; $m += $slotMin) {
+            $slotAt = $day->copy()->addMinutes($m);
+            $key = $slotAt->format('H:i');
+            $taken = (int) ($bookedCounts[$key] ?? 0);
+            $available = max(0, $capacity - $taken);
+            $reason = null;
+            $bookable = true;
+            if ($slotAt->lt($minBookableAt)) { $bookable = false; $reason = 'past'; }
+            elseif ($available <= 0) { $bookable = false; $reason = 'full'; }
+
+            $slots[] = [
+                'starts_at' => $slotAt,
+                'label'     => $this->prettyTime($m % (24 * 60)),
+                'capacity'  => $capacity,
+                'taken'     => $taken,
+                'available' => $available,
+                'bookable'  => $bookable,
+                'reason'    => $reason,
+            ];
+        }
+        return $slots;
     }
 
     public function categoryMeta(): array

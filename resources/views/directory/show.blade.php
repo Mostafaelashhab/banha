@@ -394,6 +394,20 @@
         </div>
     </div>
 
+    {{-- Booking CTA (visible only when owner enabled bookings) --}}
+    @if($business->booking_enabled)
+        <a href="{{ route('booking.show', $business) }}" class="block mb-3 p-4 rounded-2xl bg-mint-500 text-white text-center hover:scale-[1.01] transition shadow-lg">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 mx-auto">
+                <rect x="3" y="4" width="18" height="18" rx="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+                <polyline points="9 16 11 18 15 14"/>
+            </svg>
+            <div class="text-base font-extrabold mt-2">احجز موعد إلكتروني</div>
+            <div class="text-xs text-white/85 mt-0.5">اختار اليوم والساعة المناسبة — تأكيد عبر واتساب</div>
+        </a>
+    @endif
+
     {{-- Menu / Services CTA (adaptive label per business category) --}}
     @if($business->has_menu)
         @php $L = \App\Models\Business::menuLabels($business->category); @endphp

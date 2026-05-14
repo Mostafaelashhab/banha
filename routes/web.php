@@ -43,6 +43,10 @@ Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->n
 // Public directory (browseable without login)
 Route::get('/directory',                     [DirectoryController::class, 'index'])->name('directory.index');
 Route::get('/directory/business/{business}', [DirectoryController::class, 'show'])->name('directory.show');
+
+// ── Public booking (guests allowed) ───────────────────────────
+Route::get('/directory/business/{business}/book',  [\App\Http\Controllers\BookingController::class, 'show'])->name('booking.show');
+Route::post('/directory/business/{business}/book', [\App\Http\Controllers\BookingController::class, 'store'])->name('booking.store');
 Route::get('/directory/c/{category}',        [DirectoryController::class, 'category'])->name('directory.category');
 Route::get('/directory/business/{business}/click', [DirectoryController::class, 'trackClick'])->name('directory.track');
 
@@ -93,6 +97,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/directory/mine',                           [DirectoryController::class, 'myListings'])->name('directory.mine');
     Route::get('/directory/business/{business}/edit',       [DirectoryController::class, 'edit'])->name('directory.edit');
     Route::get('/directory/business/{business}/stats',      [DirectoryController::class, 'stats'])->name('directory.stats');
+    Route::get('/directory/business/{business}/bookings',   [\App\Http\Controllers\BookingController::class, 'ownerIndex'])->name('booking.owner.index');
+    Route::patch('/booking/{booking}/status',               [\App\Http\Controllers\BookingController::class, 'updateStatus'])->name('booking.status.update');
 
     // Menu management (owner)
     Route::get('/directory/business/{business}/menu',       [\App\Http\Controllers\MenuController::class, 'manage'])->name('menu.manage');

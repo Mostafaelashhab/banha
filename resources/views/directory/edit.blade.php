@@ -329,6 +329,77 @@
                 <x-business-extras :sub-type="$oldSub" :values="$business->extra ?? []"/>
             </div>
 
+            {{-- Booking settings --}}
+            <div class="card-light p-5">
+                <div class="flex items-center gap-3 mb-3">
+                    <span class="step-num" style="--cat-color: {{ $cm['color'] }};">٦</span>
+                    <div>
+                        <h2 class="text-sm font-extrabold text-ink-950">حجز المواعيد الإلكتروني</h2>
+                        <p class="text-[11px] text-ink-500">اليوزر يقدر يحجز موعد من على الموبايل — هتشوف الحجوزات في لوحتك.</p>
+                    </div>
+                </div>
+
+                <label class="flex items-start gap-3 bg-cream-100 rounded-2xl p-3 cursor-pointer hover:bg-cream-200 transition mb-3">
+                    <input type="hidden" name="booking_enabled" value="0">
+                    <input type="checkbox" name="booking_enabled" value="1"
+                           {{ old('booking_enabled', $business->booking_enabled) ? 'checked' : '' }}
+                           class="mt-1 w-5 h-5 accent-coral-500">
+                    <div class="flex-1">
+                        <div class="text-sm font-extrabold text-ink-950">فعّل الحجز الإلكتروني</div>
+                        <div class="text-[11px] text-ink-500">اليوزر هيشوف زرّ "احجز موعد" في صفحة نشاطك.</div>
+                    </div>
+                </label>
+
+                <div class="grid grid-cols-3 gap-2">
+                    <div>
+                        <label class="text-[11px] font-bold text-ink-500 mb-1 block">مدة الموعد</label>
+                        <select name="booking_slot_minutes"
+                                class="w-full bg-cream-100 rounded-xl px-3 py-2.5 text-sm text-ink-950 outline-0 border border-ink-950/8 focus:border-coral-500 transition">
+                            @foreach([15, 20, 30, 45, 60, 90, 120] as $min)
+                                <option value="{{ $min }}" @selected(old('booking_slot_minutes', $business->booking_slot_minutes ?? 30) == $min)>
+                                    {{ $min }} دقيقة
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[11px] font-bold text-ink-500 mb-1 block">حجز قبل</label>
+                        <select name="booking_lead_hours"
+                                class="w-full bg-cream-100 rounded-xl px-3 py-2.5 text-sm text-ink-950 outline-0 border border-ink-950/8 focus:border-coral-500 transition">
+                            @foreach([0, 1, 2, 4, 12, 24] as $h)
+                                <option value="{{ $h }}" @selected(old('booking_lead_hours', $business->booking_lead_hours ?? 2) == $h)>
+                                    {{ $h == 0 ? 'بدون' : $h . ' ساعة' }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[11px] font-bold text-ink-500 mb-1 block">سعة الموعد</label>
+                        <select name="booking_capacity"
+                                class="w-full bg-cream-100 rounded-xl px-3 py-2.5 text-sm text-ink-950 outline-0 border border-ink-950/8 focus:border-coral-500 transition">
+                            @foreach([1, 2, 3, 5, 10] as $c)
+                                <option value="{{ $c }}" @selected(old('booking_capacity', $business->booking_capacity ?? 1) == $c)>
+                                    {{ $c }} {{ $c == 1 ? 'حجز' : 'حجوزات' }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <p class="text-[10px] text-ink-400 mt-2 leading-relaxed">
+                    💡 السعة = كام شخص ممكن يحجزوا في نفس الميعاد. لـ دكتور خلّيها 1، لـ صالون فيه كراسي كتير اعملها 2-3.
+                </p>
+
+                @if($business->booking_enabled)
+                    <a href="{{ route('booking.owner.index', $business) }}"
+                       class="mt-3 inline-flex items-center gap-2 text-xs font-bold text-coral-600 hover:underline">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5">
+                            <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                        شوف الحجوزات الحالية ←
+                    </a>
+                @endif
+            </div>
+
             {{-- Sticky submit --}}
             <div class="sticky-submit">
                 <button type="submit" class="btn-primary w-full justify-center !py-3.5 text-sm shadow-xl shadow-coral-500/30">
