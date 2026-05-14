@@ -601,6 +601,106 @@
         </div>
     @endif
 
+    {{-- Location map (read-only) --}}
+    @if($business->lat && $business->lng)
+        @push('head')
+            <link rel="preconnect" href="https://unpkg.com" crossorigin>
+            <link rel="preconnect" href="https://tile.openstreetmap.org" crossorigin>
+            <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+                  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+            <link rel="preload" as="script" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin>
+            <style>
+                .biz-map { height: 240px; border-radius: 18px; background: #FFF7F1; z-index: 0; overflow: hidden; }
+                .biz-map .leaflet-tile { filter: saturate(.75) brightness(1.04) contrast(.95); }
+                .biz-map-card .leaflet-control-attribution { font-size: 9px; opacity: .6; }
+            </style>
+        @endpush
+
+        <div class="card-light p-4 mb-3 biz-map-card">
+            <h3 class="text-sm font-extrabold text-ink-950 inline-flex items-center gap-2 mb-3">
+                <span class="w-7 h-7 rounded-lg pill-coral grid place-items-center shrink-0">
+                    <x-icon name="map-pin" class="w-4 h-4"/>
+                </span>
+                المكان على الخريطة
+            </h3>
+
+            <div id="biz-map-{{ $business->id }}" class="biz-map mb-3"
+                 data-biz-map
+                 data-lat="{{ $business->lat }}"
+                 data-lng="{{ $business->lng }}"
+                 data-color="{{ $cm['color'] ?? '#2D5BFF' }}"
+                 data-name="{{ $business->name }}"></div>
+
+            <div class="grid grid-cols-2 gap-2">
+                <a href="https://www.google.com/maps/dir/?api=1&destination={{ $business->lat }},{{ $business->lng }}"
+                   target="_blank" rel="noopener"
+                   class="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-coral-500 text-white text-xs font-extrabold hover:bg-coral-600 transition">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                        <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+                    </svg>
+                    خد لي الطريق
+                </a>
+                <a href="https://www.openstreetmap.org/?mlat={{ $business->lat }}&mlon={{ $business->lng }}#map=17/{{ $business->lat }}/{{ $business->lng }}"
+                   target="_blank" rel="noopener"
+                   class="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-white text-ink-950 ring-1 ring-ink-950/10 text-xs font-extrabold hover:ring-coral-500/50 transition">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                    </svg>
+                    افتح في خريطة كبيرة
+                </a>
+            </div>
+        </div>
+
+        @push('scripts')
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+                integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+        <script>
+        (function () {
+            function initBizMap(el) {
+                if (el.dataset.inited) return;
+                el.dataset.inited = '1';
+                const lat = parseFloat(el.dataset.lat);
+                const lng = parseFloat(el.dataset.lng);
+                if (isNaN(lat) || isNaN(lng)) return;
+                const color = el.dataset.color || '#2D5BFF';
+                const name = el.dataset.name || '';
+
+                const map = L.map(el, {
+                    center: [lat, lng],
+                    zoom: 16,
+                    scrollWheelZoom: false,
+                    attributionControl: true,
+                });
+                L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    crossOrigin: true,
+                    keepBuffer: 4,
+                    updateWhenIdle: true,
+                    attribution: '&copy; OpenStreetMap',
+                }).addTo(map);
+
+                const pinIcon = L.divIcon({
+                    html: '<div style="width:34px;height:34px;background:' + color + ';border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 4px 12px -2px rgba(0,0,0,.35);border:3px solid #fff;display:grid;place-items:center;"><div style="width:10px;height:10px;background:#fff;border-radius:50%;transform:rotate(45deg);"></div></div>',
+                    className: '',
+                    iconSize: [34, 34],
+                    iconAnchor: [17, 32],
+                });
+                const marker = L.marker([lat, lng], { icon: pinIcon }).addTo(map);
+                if (name) marker.bindPopup('<strong>' + name.replace(/</g,'&lt;') + '</strong>');
+
+                map.on('click', () => map.scrollWheelZoom.enable());
+                map.on('mouseout', () => map.scrollWheelZoom.disable());
+            }
+            function bootAll() {
+                document.querySelectorAll('[data-biz-map]').forEach(initBizMap);
+            }
+            if (typeof L !== 'undefined') bootAll();
+            else window.addEventListener('load', bootAll);
+        })();
+        </script>
+        @endpush
+    @endif
+
     {{-- Gallery --}}
     @if($business->photos->isNotEmpty() || $isOwner)
         <div class="card-light p-4 mb-3">
