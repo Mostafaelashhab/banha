@@ -159,7 +159,46 @@ html[dir="rtl"] body {
     overflow: visible;
 }
 
-/* Promoted business card — no special photo treatment; the inline badge does the signaling */
+/* Promoted business card — bold blue tint + glow + accent bar */
+.biz-card--promoted {
+    background:
+        linear-gradient(180deg, rgba(45, 91, 255, .10), rgba(45, 91, 255, .02) 60%),
+        #fff;
+    border-color: rgba(45, 91, 255, .35);
+    box-shadow:
+        0 14px 36px -12px rgba(45, 91, 255, .45),
+        0 0 0 1px rgba(45, 91, 255, .08);
+}
+.biz-card--promoted::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    inset-inline-start: 0;
+    width: 100%;
+    height: 5px;
+    background: linear-gradient(90deg, #2D5BFF, #6B8EFF, #2D5BFF);
+    z-index: 4;
+    pointer-events: none;
+}
+.biz-card--promoted::after {
+    content: '';
+    position: absolute;
+    top: 5px;
+    inset-inline-end: 16px;
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(45, 91, 255, .25), transparent 70%);
+    filter: blur(8px);
+    pointer-events: none;
+    z-index: 1;
+}
+.biz-card--promoted .biz-card__avatar {
+    box-shadow:
+        0 4px 14px -4px rgba(45, 91, 255, .5),
+        0 0 0 2px #fff,
+        0 0 0 4px rgba(45, 91, 255, .35);
+}
 
 /* Photo chips row — bottom of the photo */
 .biz-card__photo-chips {

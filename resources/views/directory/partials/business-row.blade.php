@@ -58,9 +58,6 @@
                         @if($isVerified)
                             <x-verified-badge tier="gold" class="biz-card__title-badge"/>
                         @endif
-                        @if($isPromoted)
-                            <x-promoted-badge class="biz-card__title-badge"/>
-                        @endif
                     </div>
                     <div class="biz-card__subtitle">
                         <x-icon :name="$sm['icon'] ?? $icon" class="biz-card__subtitle-icon"/>
