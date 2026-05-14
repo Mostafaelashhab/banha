@@ -406,7 +406,7 @@ class DirectoryController extends Controller
                 ->whereNotNull('lat')->whereNotNull('lng')
                 ->select('id', 'name', 'category', 'sub_type', 'lat', 'lng', 'is_verified', 'is_24h', 'has_menu', 'rating_avg', 'phone', 'hotline', 'promoted_until', 'hours_schedule', 'extra');
             if ($cat) $q->where('category', $cat);
-            return $q->limit(500)->get()->map(fn ($b) => [
+            return $q->limit(2000)->get()->map(fn ($b) => [
                 'id'          => (int) $b->id,
                 'name'        => (string) $b->name,
                 'category'    => (string) $b->category,

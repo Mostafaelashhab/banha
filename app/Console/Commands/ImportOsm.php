@@ -24,6 +24,7 @@ class ImportOsm extends Command
         {--lng=31.1797 : Center longitude (default Banha)}
         {--area=القليوبية : Arabic name of an OSM admin area (governorate). Empty = use radius mode}
         {--admin-level=4 : OSM admin_level for the area (4=governorate, 6=district)}
+        {--zone= : Zone slug, id, or Arabic name — overrides center to zone lat/lng and assigns new rows to it}
         {--dry : Preview only, no DB writes}
         {--no-images : Skip image downloads (faster)}
         {--limit= : Stop after N entries (debug)}';
@@ -200,6 +201,26 @@ class ImportOsm extends Command
         $dry        = (bool) $this->option('dry');
         $skipImages = (bool) $this->option('no-images');
         $limit      = $this->option('limit') !== null ? (int) $this->option('limit') : null;
+        $zoneOpt    = trim((string) $this->option('zone'));
+
+        // Resolve --zone, override center to zone lat/lng, and force radius mode for
+        // single-city scrapes (otherwise the area=القليوبية default sweeps the whole governorate).
+        $selectedZone = null;
+        if ($zoneOpt !== '') {
+            $selectedZone = ctype_digit($zoneOpt)
+                ? Zone::find((int) $zoneOpt)
+                : Zone::where('slug', $zoneOpt)->orWhere('name', $zoneOpt)->first();
+            if (! $selectedZone) {
+                $this->error("Zone '{$zoneOpt}' not found — pick from: ".Zone::pluck('name')->implode(', '));
+                return self::FAILURE;
+            }
+            if ($selectedZone->lat && $selectedZone->lng) {
+                $lat = (float) $selectedZone->lat;
+                $lng = (float) $selectedZone->lng;
+            }
+            $area = ''; // force radius mode around the zone center
+            $this->info("Targeting zone: {$selectedZone->name} (id={$selectedZone->id}) at [{$lat},{$lng}]");
+        }
 
         if ($area !== '') {
             $this->info("Querying Overpass API for area '{$area}' (admin_level={$adminLevel})...");
@@ -282,7 +303,7 @@ OQL;
         $elements = $res->json('elements') ?? [];
         $this->info('Got '.count($elements).' OSM elements. Mapping…');
 
-        $defaultZone = Zone::orderBy('sort')->first();
+        $defaultZone = $selectedZone ?? Zone::orderBy('sort')->first();
         if (! $defaultZone) {
             $this->error('No zones in DB — create at least one zone first.');
             return self::FAILURE;
@@ -374,6 +395,9 @@ OQL;
                     // Never blank an existing photo with null — keep what's there if we got nothing new
                     $update = $payload;
                     if (! $update['photo_url']) unset($update['photo_url']);
+                    // Preserve original zone assignment — multi-city radii can overlap and
+                    // we don't want a Touch run to drag a Banha business across the boundary.
+                    unset($update['zone_id']);
                     $existing->update($update);
                     $stats['updated']++;
                 } else {
