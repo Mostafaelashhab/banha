@@ -23,6 +23,20 @@
             <h1 class="text-base font-extrabold text-ink-950 truncate">{{ $L['title'] }} · {{ $business->name }}</h1>
             <p class="text-[11px] text-ink-500">{{ $catCount }} {{ $L['category_label'] }} · {{ $itemCount }} {{ $L['item_label'] }} · {{ $availableCount }} متوفر</p>
         </div>
+        @if($business->whatsapp && $business->category === 'food')
+            @php $pendingOrders = $business->orders()->where('status', 'pending')->count(); @endphp
+            <a href="{{ route('order.owner.index', $business) }}"
+               class="relative text-[11px] font-bold px-2.5 py-1.5 rounded-full bg-coral-100 text-coral-600 hover:bg-coral-500 hover:text-white transition inline-flex items-center gap-1">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3">
+                    <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                    <path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/>
+                </svg>
+                الطلبات
+                @if($pendingOrders > 0)
+                    <span class="min-w-[18px] h-[18px] px-1 rounded-full bg-blush-500 text-white text-[10px] font-black grid place-items-center">{{ $pendingOrders }}</span>
+                @endif
+            </a>
+        @endif
         <a href="{{ $menuUrl }}" target="_blank" class="text-[11px] font-bold px-2.5 py-1.5 rounded-full bg-mint-100 text-mint-700 hover:bg-mint-500 hover:text-white transition inline-flex items-center gap-1">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
             معاينة

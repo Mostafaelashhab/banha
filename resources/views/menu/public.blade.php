@@ -98,13 +98,14 @@
     $heroColor   = ($business->categoryMeta()['color'] ?? '#2D5BFF');
     $itemsCount = $business->menuItems()->where('is_available', true)->count();
 
-    // Build a pre-filled WhatsApp order message
+    // Build a pre-filled WhatsApp order message (used as a fallback CTA, non-cart case)
     $waOrderMsg = $business->whatsapp
         ? 'حابب أتواصل بخصوص ' . $L['title'] . ' بتاعت ' . $business->name . ' — شفت ' . $L['item_label'] . ' على ' . route('menu.public', $business)
         : null;
 
     // Cart only makes sense for food-category businesses with a WhatsApp number
     $cartEnabled = $business->category === 'food' && $business->whatsapp;
+    $authUser    = auth()->user();
 @endphp
 
 @section('content')
@@ -369,20 +370,24 @@
 {{-- ──── Cart: sticky button + bottom sheet (food category only) ──── --}}
 @if($cartEnabled)
     @php
-        $waPhone = \App\Services\WaapiService::toIntl($business->whatsapp);
         $currency = $business->menu_currency ?? 'EGP';
     @endphp
     <div data-cart-root
          data-biz-id="{{ $business->id }}"
          data-biz-name="{{ $business->name }}"
-         data-wa-phone="{{ $waPhone }}"
          data-currency="{{ $currency }}"
-         data-menu-url="{{ route('menu.public', $business) }}">
+         data-order-url="{{ route('order.store', $business) }}"
+         data-csrf="{{ csrf_token() }}"
+         @if($authUser)
+            data-user-name="{{ $authUser->name }}"
+            data-user-phone="{{ $authUser->phone ?? '' }}"
+         @endif
+    >
 
         {{-- Sticky bottom bar: hidden when cart empty, shown otherwise --}}
         <button type="button" data-cart-open
                 class="fixed bottom-4 inset-x-4 max-w-md mx-auto z-30 hidden items-center gap-3 py-3 ps-4 pe-3 rounded-full font-extrabold text-white text-sm shadow-2xl transition hover:scale-[1.01]"
-                style="background: linear-gradient(135deg, #25D366, #128C7E)">
+                style="background: linear-gradient(135deg, var(--color-coral-500, #FF7A4D), #DC4A1F)">
             <span class="w-9 h-9 rounded-full bg-white/20 grid place-items-center text-base font-black" data-cart-badge>0</span>
             <span class="flex-1 text-start">
                 <span class="block text-[10px] text-white/80 font-bold">طلبك جاهز · اضغط للمراجعة</span>
@@ -396,7 +401,7 @@
 
         {{-- Bottom sheet --}}
         <div data-cart-sheet
-             class="fixed bottom-0 inset-x-0 z-50 hidden bg-cream-50 rounded-t-3xl shadow-2xl translate-y-full transition-transform duration-300 max-h-[85vh] flex flex-col"
+             class="fixed bottom-0 inset-x-0 z-50 hidden bg-cream-50 rounded-t-3xl shadow-2xl translate-y-full transition-transform duration-300 max-h-[90vh] flex flex-col"
              role="dialog" aria-modal="true" aria-labelledby="cart-sheet-title">
 
             <div class="px-4 pt-3 pb-2 border-b border-ink-950/8 shrink-0">
@@ -409,7 +414,7 @@
                                 <path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/>
                             </svg>
                         </span>
-                        طلبي
+                        <span data-cart-title>طلبي</span>
                     </h3>
                     <button type="button" data-cart-close
                             class="w-8 h-8 rounded-full bg-white border border-ink-950/8 grid place-items-center text-ink-500 hover:text-ink-950 transition"
@@ -421,37 +426,117 @@
                 </div>
             </div>
 
-            <div data-cart-list class="overflow-y-auto px-4 py-2 flex-1"></div>
+            {{-- STEP 1: review items --}}
+            <div data-cart-step="review" class="flex-1 flex flex-col overflow-hidden">
+                <div data-cart-list class="overflow-y-auto px-4 py-2 flex-1"></div>
 
-            <div data-cart-empty class="p-10 text-center hidden">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-14 h-14 mx-auto text-ink-300 mb-2">
-                    <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
-                    <path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/>
-                </svg>
-                <p class="text-sm text-ink-500">السلة فاضية — ضيف أصناف من القايمة</p>
+                <div data-cart-empty class="p-10 text-center hidden">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-14 h-14 mx-auto text-ink-300 mb-2">
+                        <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                        <path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/>
+                    </svg>
+                    <p class="text-sm text-ink-500">السلة فاضية — ضيف أصناف من القايمة</p>
+                </div>
+
+                <div class="border-t border-ink-950/8 p-4 space-y-3 shrink-0 bg-white" data-cart-footer>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-ink-500">الإجمالي</span>
+                        <span class="text-xl font-black text-ink-950" dir="ltr">
+                            <span data-cart-total-big>0</span>
+                            <span class="text-xs text-ink-400 font-bold">{{ $currency }}</span>
+                        </span>
+                    </div>
+                    <button type="button" data-cart-to-checkout
+                            class="w-full inline-flex items-center justify-center gap-2 py-3.5 rounded-full font-extrabold text-white text-sm shadow-lg transition hover:scale-[1.01]"
+                            style="background: linear-gradient(135deg, var(--color-coral-500, #FF7A4D), #DC4A1F)">
+                        كمّل الطلب
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="w-4 h-4 rtl:rotate-180">
+                            <polyline points="9 18 15 12 9 6"/>
+                        </svg>
+                    </button>
+                    <button type="button" data-cart-clear
+                            class="w-full text-xs font-bold text-blush-500 hover:underline">
+                        امسح السلة
+                    </button>
+                </div>
             </div>
 
-            <div class="border-t border-ink-950/8 p-4 space-y-3 shrink-0 bg-white" data-cart-footer>
-                <textarea data-cart-notes rows="2" maxlength="300"
-                          placeholder="ملاحظات للطلب (اختياري) — مثلاً: من غير بصل، عنواني هو..."
-                          class="w-full bg-cream-100 rounded-2xl px-4 py-2.5 text-sm text-ink-950 placeholder-ink-400 outline-0 border border-ink-950/8 focus:border-coral-500 transition resize-none"></textarea>
-                <div class="flex items-center justify-between">
-                    <span class="text-xs font-bold text-ink-500">الإجمالي</span>
-                    <span class="text-xl font-black text-ink-950" dir="ltr">
-                        <span data-cart-total-big>0</span>
-                        <span class="text-xs text-ink-400 font-bold">{{ $currency }}</span>
-                    </span>
+            {{-- STEP 2: checkout form --}}
+            <form data-cart-step="checkout" data-cart-form
+                  class="flex-1 hidden flex-col overflow-hidden">
+                <div class="overflow-y-auto px-4 py-3 flex-1 space-y-3">
+                    <button type="button" data-cart-back
+                            class="inline-flex items-center gap-1 text-xs font-bold text-ink-500 hover:text-ink-950">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="w-3 h-3 rtl:-rotate-180">
+                            <polyline points="15 18 9 12 15 6"/>
+                        </svg>
+                        رجوع للسلة
+                    </button>
+                    <div>
+                        <label class="block text-[11px] font-bold text-ink-700 mb-1">اسمك *</label>
+                        <input type="text" name="customer_name" required maxlength="80"
+                               value="{{ $authUser->name ?? '' }}"
+                               class="w-full bg-cream-100 rounded-2xl px-4 py-2.5 text-sm text-ink-950 placeholder-ink-400 outline-0 border border-ink-950/8 focus:border-coral-500 transition"
+                               placeholder="مثلاً: أحمد محمد">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-ink-700 mb-1">موبايلك *</label>
+                        <input type="tel" name="customer_phone" required dir="ltr" inputmode="numeric"
+                               pattern="01[0125][0-9]{8}" maxlength="11"
+                               value="{{ $authUser->phone ?? '' }}"
+                               class="w-full bg-cream-100 rounded-2xl px-4 py-2.5 text-sm text-ink-950 placeholder-ink-400 outline-0 border border-ink-950/8 focus:border-coral-500 transition"
+                               placeholder="01XXXXXXXXX">
+                        <p class="text-[10px] text-ink-400 mt-1">المطعم هيكلّمك على الرقم ده لتأكيد الطلب.</p>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-ink-700 mb-1">العنوان (للدليفري)</label>
+                        <input type="text" name="customer_address" maxlength="255"
+                               class="w-full bg-cream-100 rounded-2xl px-4 py-2.5 text-sm text-ink-950 placeholder-ink-400 outline-0 border border-ink-950/8 focus:border-coral-500 transition"
+                               placeholder="مثلاً: شارع طه حسين، عمارة 12، الدور 3">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-ink-700 mb-1">ملاحظات (اختياري)</label>
+                        <textarea name="notes" rows="2" maxlength="300"
+                                  class="w-full bg-cream-100 rounded-2xl px-4 py-2.5 text-sm text-ink-950 placeholder-ink-400 outline-0 border border-ink-950/8 focus:border-coral-500 transition resize-none"
+                                  placeholder="مثلاً: من غير بصل، فلفل حار زيادة..."></textarea>
+                    </div>
+
+                    <div data-cart-error class="hidden rounded-2xl bg-blush-100 border border-blush-500/30 p-3 text-xs font-bold text-blush-700"></div>
                 </div>
-                <button type="button" data-cart-send
-                        data-track-click="whatsapp" data-business="{{ $business->id }}"
-                        class="w-full inline-flex items-center justify-center gap-2 py-3.5 rounded-full font-extrabold text-white text-sm shadow-lg transition hover:scale-[1.01] disabled:opacity-60"
-                        style="background: linear-gradient(135deg, #25D366, #128C7E)">
-                    <x-icon name="whatsapp" class="w-5 h-5"/>
-                    أرسل الطلب على واتساب
-                </button>
-                <button type="button" data-cart-clear
-                        class="w-full text-xs font-bold text-blush-500 hover:underline">
-                    امسح السلة
+
+                <div class="border-t border-ink-950/8 p-4 space-y-2 shrink-0 bg-white">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-ink-500">الإجمالي</span>
+                        <span class="text-lg font-black text-ink-950" dir="ltr">
+                            <span data-cart-total-big-2>0</span>
+                            <span class="text-xs text-ink-400 font-bold">{{ $currency }}</span>
+                        </span>
+                    </div>
+                    <button type="submit" data-cart-submit
+                            class="w-full inline-flex items-center justify-center gap-2 py-3.5 rounded-full font-extrabold text-white text-sm shadow-lg transition hover:scale-[1.01] disabled:opacity-60 disabled:hover:scale-100"
+                            style="background: linear-gradient(135deg, var(--color-coral-500, #FF7A4D), #DC4A1F)">
+                        <span data-cart-submit-label>أكد الطلب</span>
+                        <svg data-cart-spinner class="hidden w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                        </svg>
+                    </button>
+                    <p class="text-[10px] text-ink-400 text-center">باضغطك على الزرار، طلبك بيتبعت للمطعم على واتساب من بنهاوي.</p>
+                </div>
+            </form>
+
+            {{-- STEP 3: success --}}
+            <div data-cart-step="success" class="flex-1 hidden flex-col items-center justify-center text-center p-6">
+                <div class="w-16 h-16 rounded-full bg-mint-100 grid place-items-center mb-3">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 text-mint-700">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-black text-ink-950 mb-1">تمام، طلبك وصلهم!</h3>
+                <p class="text-sm text-ink-500 mb-1" data-cart-success-msg>المطعم هيتواصل معاك قريب.</p>
+                <p class="text-[11px] text-ink-400 mb-5">رقم طلبك: <span dir="ltr" data-cart-order-id class="font-mono font-bold"></span></p>
+                <button type="button" data-cart-close-final
+                        class="px-6 py-2.5 rounded-full bg-ink-950 text-white text-sm font-extrabold">
+                    تمام
                 </button>
             </div>
         </div>
@@ -483,44 +568,53 @@
     document.querySelectorAll('section[id^="cat-"]').forEach(s => io.observe(s));
 })();
 
-// ── Cart: localStorage per-business + WhatsApp send ─────────────
+// ── Cart: localStorage per-business + server-side order via WAAPI ──
 (function () {
     const root = document.querySelector('[data-cart-root]');
     if (!root) return;
 
     const bizId    = root.dataset.bizId;
-    const bizName  = root.dataset.bizName;
-    const waPhone  = root.dataset.waPhone;
     const currency = root.dataset.currency || 'EGP';
-    const menuUrl  = root.dataset.menuUrl;
+    const orderUrl = root.dataset.orderUrl;
+    const csrf     = root.dataset.csrf;
     const STORAGE_KEY = 'banhawy:cart:' + bizId;
-    const NOTES_KEY   = 'banhawy:cart-notes:' + bizId;
 
-    const bar       = root.querySelector('[data-cart-open]');
-    const sheet     = root.querySelector('[data-cart-sheet]');
-    const backdrop  = root.querySelector('[data-cart-backdrop]');
-    const list      = root.querySelector('[data-cart-list]');
-    const emptyEl   = root.querySelector('[data-cart-empty]');
-    const footerEl  = root.querySelector('[data-cart-footer]');
-    const sendBtn   = root.querySelector('[data-cart-send]');
-    const clearBtn  = root.querySelector('[data-cart-clear]');
-    const closeBtn  = root.querySelector('[data-cart-close]');
-    const notesEl   = root.querySelector('[data-cart-notes]');
-    const totalBig  = root.querySelector('[data-cart-total-big]');
-    const badge     = root.querySelector('[data-cart-badge]');
-    const summary   = root.querySelector('[data-cart-summary]');
-    const totalSm   = root.querySelector('[data-cart-total]');
+    const bar         = root.querySelector('[data-cart-open]');
+    const sheet       = root.querySelector('[data-cart-sheet]');
+    const backdrop    = root.querySelector('[data-cart-backdrop]');
+    const list        = root.querySelector('[data-cart-list]');
+    const emptyEl     = root.querySelector('[data-cart-empty]');
+    const footerEl    = root.querySelector('[data-cart-footer]');
+    const toCheckout  = root.querySelector('[data-cart-to-checkout]');
+    const backBtn     = root.querySelector('[data-cart-back]');
+    const clearBtn    = root.querySelector('[data-cart-clear]');
+    const closeBtn    = root.querySelector('[data-cart-close]');
+    const closeFinal  = root.querySelector('[data-cart-close-final]');
+    const totalBig    = root.querySelector('[data-cart-total-big]');
+    const totalBig2   = root.querySelector('[data-cart-total-big-2]');
+    const badge       = root.querySelector('[data-cart-badge]');
+    const summary     = root.querySelector('[data-cart-summary]');
+    const totalSm     = root.querySelector('[data-cart-total]');
+    const form        = root.querySelector('[data-cart-form]');
+    const submitBtn   = root.querySelector('[data-cart-submit]');
+    const submitLabel = root.querySelector('[data-cart-submit-label]');
+    const spinner     = root.querySelector('[data-cart-spinner]');
+    const errBox      = root.querySelector('[data-cart-error]');
+    const successMsg  = root.querySelector('[data-cart-success-msg]');
+    const orderIdEl   = root.querySelector('[data-cart-order-id]');
+
+    const steps = {
+        review:   root.querySelector('[data-cart-step="review"]'),
+        checkout: root.querySelector('[data-cart-step="checkout"]'),
+        success:  root.querySelector('[data-cart-step="success"]'),
+    };
 
     /** @type {Object<string,{id:string,name:string,price:number,qty:number}>} */
     let cart = {};
     try { cart = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}') || {}; } catch (e) { cart = {}; }
-    try { notesEl.value = localStorage.getItem(NOTES_KEY) || ''; } catch (e) {}
 
     function save() {
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(cart)); } catch (e) {}
-    }
-    function saveNotes() {
-        try { localStorage.setItem(NOTES_KEY, notesEl.value || ''); } catch (e) {}
     }
     function totalItems() {
         return Object.values(cart).reduce((s, x) => s + x.qty, 0);
@@ -534,6 +628,19 @@
     }
     function escapeHtml(s) {
         return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    function setStep(name) {
+        Object.entries(steps).forEach(([k, el]) => {
+            if (!el) return;
+            if (k === name) {
+                el.classList.remove('hidden');
+                el.classList.add('flex');
+            } else {
+                el.classList.add('hidden');
+                el.classList.remove('flex');
+            }
+        });
     }
 
     // ── In-list steppers ──
@@ -559,7 +666,6 @@
         document.querySelectorAll('[data-cart-item]').forEach(w => updateItemUI(w.dataset.itemId));
     }
 
-    // ── Sticky bar + sheet rendering ──
     function refresh() {
         const n = totalItems();
         const t = totalPrice();
@@ -567,14 +673,13 @@
             bar.classList.remove('hidden');
             bar.classList.add('inline-flex');
             badge.textContent = n;
-            summary.textContent = n + ' صنف' + (n > 10 ? '' : '');
+            summary.textContent = n + ' صنف';
             totalSm.textContent = fmt(t) + ' ' + currency;
         } else {
             bar.classList.add('hidden');
             bar.classList.remove('inline-flex');
         }
 
-        // Sheet list
         const ids = Object.keys(cart);
         if (ids.length === 0) {
             list.innerHTML = '';
@@ -602,9 +707,9 @@
             }).join('');
         }
         totalBig.textContent = fmt(t);
+        if (totalBig2) totalBig2.textContent = fmt(t);
     }
 
-    // ── Mutators ──
     function add(id, name, price) {
         if (!cart[id]) cart[id] = { id, name, price: Number(price) || 0, qty: 0 };
         cart[id].qty += 1;
@@ -619,12 +724,9 @@
     }
     function clear() {
         cart = {}; save();
-        try { localStorage.removeItem(NOTES_KEY); } catch (e) {}
-        notesEl.value = '';
         updateAllItemUI(); refresh(); closeSheet();
     }
 
-    // ── Wire in-list buttons ──
     document.querySelectorAll('[data-cart-item]').forEach(wrap => {
         const id = wrap.dataset.itemId;
         const name = wrap.dataset.itemName;
@@ -634,7 +736,6 @@
         wrap.querySelector('[data-cart-dec]')?.addEventListener('click', () => dec(id));
     });
 
-    // ── Wire in-sheet buttons (delegated) ──
     list.addEventListener('click', (e) => {
         const row = e.target.closest('[data-sheet-row]');
         if (!row) return;
@@ -643,10 +744,9 @@
         else if (e.target.closest('[data-sheet-dec]')) dec(id);
     });
 
-    // ── Sheet open/close ──
     function openSheet() {
+        setStep('review');
         sheet.classList.remove('hidden');
-        sheet.classList.add('flex');
         backdrop.classList.remove('hidden');
         requestAnimationFrame(() => sheet.style.transform = 'translateY(0)');
         document.body.style.overflow = 'hidden';
@@ -655,38 +755,80 @@
         sheet.style.transform = '';
         backdrop.classList.add('hidden');
         document.body.style.overflow = '';
-        setTimeout(() => { sheet.classList.add('hidden'); sheet.classList.remove('flex'); }, 280);
+        setTimeout(() => { sheet.classList.add('hidden'); }, 280);
     }
     bar.addEventListener('click', openSheet);
     backdrop.addEventListener('click', closeSheet);
     closeBtn.addEventListener('click', closeSheet);
+    closeFinal?.addEventListener('click', closeSheet);
     clearBtn.addEventListener('click', () => {
         if (confirm('تمسح السلة كلها؟')) clear();
     });
-    notesEl.addEventListener('input', saveNotes);
+    toCheckout.addEventListener('click', () => {
+        if (totalItems() === 0) return;
+        errBox.classList.add('hidden');
+        setStep('checkout');
+    });
+    backBtn?.addEventListener('click', () => setStep('review'));
 
-    // ── WhatsApp send ──
-    sendBtn.addEventListener('click', () => {
-        const ids = Object.keys(cart);
-        if (ids.length === 0) return;
-        const lines = ids.map(id => {
-            const it = cart[id];
-            return '• ' + it.name + ' × ' + it.qty + ' = ' + fmt(it.qty * it.price) + ' ' + currency;
-        }).join('\n');
-        const notes = (notesEl.value || '').trim();
-        const msg = 'السلام عليكم 👋\n'
-                  + 'حابب أطلب من ' + bizName + ':\n\n'
-                  + lines + '\n\n'
-                  + 'الإجمالي: ' + fmt(totalPrice()) + ' ' + currency
-                  + (notes ? '\n\nملاحظات: ' + notes : '')
-                  + '\n\n(الطلب من بنهاوي · ' + menuUrl + ')';
-        const url = 'https://wa.me/' + waPhone + '?text=' + encodeURIComponent(msg);
-        window.open(url, '_blank', 'noopener');
+    // ── Submit order to server (server sends WAAPI message to restaurant) ──
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (totalItems() === 0) return;
+
+        errBox.classList.add('hidden');
+        submitBtn.disabled = true;
+        submitLabel.textContent = 'جارٍ الإرسال...';
+        spinner.classList.remove('hidden');
+
+        const fd = new FormData(form);
+        const payload = {
+            customer_name:    fd.get('customer_name') || '',
+            customer_phone:   fd.get('customer_phone') || '',
+            customer_address: fd.get('customer_address') || '',
+            notes:            fd.get('notes') || '',
+            items: Object.values(cart).map(it => ({ id: Number(it.id), qty: it.qty })),
+        };
+
+        try {
+            const resp = await fetch(orderUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type':     'application/json',
+                    'Accept':           'application/json',
+                    'X-CSRF-TOKEN':     csrf,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify(payload),
+            });
+            const body = await resp.json().catch(() => ({}));
+
+            if (!resp.ok || !body.ok) {
+                const msg = body?.error
+                    || (body?.errors && Object.values(body.errors).flat().join(' · '))
+                    || 'حصل خطأ، حاول تاني.';
+                errBox.textContent = msg;
+                errBox.classList.remove('hidden');
+                return;
+            }
+
+            orderIdEl.textContent = '#' + body.order_id;
+            if (body.message) successMsg.textContent = body.message;
+            cart = {}; save(); updateAllItemUI(); refresh();
+            setStep('success');
+        } catch (err) {
+            errBox.textContent = 'الشبكة فيها مشكلة. حاول تاني.';
+            errBox.classList.remove('hidden');
+        } finally {
+            submitBtn.disabled = false;
+            submitLabel.textContent = 'أكد الطلب';
+            spinner.classList.add('hidden');
+        }
     });
 
-    // ── Initial render ──
     updateAllItemUI();
     refresh();
+    setStep('review');
 })();
 </script>
 @endpush

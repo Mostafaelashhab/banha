@@ -57,6 +57,11 @@ Route::get('/map.json',             [DirectoryController::class, 'mapData'])->na
 // Public QR menu (the SEO money page)
 Route::get('/m/{business}', [\App\Http\Controllers\MenuController::class, 'publicMenu'])->name('menu.public');
 
+// Public — place an order from the menu page (guests allowed; sends to restaurant via WAAPI)
+Route::post('/m/{business}/order', [\App\Http\Controllers\OrderController::class, 'store'])
+    ->middleware('throttle:10,1')
+    ->name('order.store');
+
 // Public marketplace + search + hashtag pages
 Route::get('/market',                  [\App\Http\Controllers\ListingController::class, 'index'])->name('marketplace.index');
 Route::get('/market/{listing}',        [\App\Http\Controllers\ListingController::class, 'show'])->name('marketplace.show')->whereNumber('listing');
@@ -99,6 +104,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/directory/business/{business}/stats',      [DirectoryController::class, 'stats'])->name('directory.stats');
     Route::get('/directory/business/{business}/bookings',   [\App\Http\Controllers\BookingController::class, 'ownerIndex'])->name('booking.owner.index');
     Route::patch('/booking/{booking}/status',               [\App\Http\Controllers\BookingController::class, 'updateStatus'])->name('booking.status.update');
+
+    // Owner — incoming orders
+    Route::get('/directory/business/{business}/orders',     [\App\Http\Controllers\OrderController::class, 'ownerIndex'])->name('order.owner.index');
+    Route::patch('/order/{order}/status',                   [\App\Http\Controllers\OrderController::class, 'updateStatus'])->name('order.status.update');
 
     // Menu management (owner)
     Route::get('/directory/business/{business}/menu',       [\App\Http\Controllers\MenuController::class, 'manage'])->name('menu.manage');

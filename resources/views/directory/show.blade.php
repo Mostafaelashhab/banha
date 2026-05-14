@@ -133,6 +133,18 @@
                     <line x1="9" y1="16" x2="13" y2="16"/>
                 </svg>
             </a>
+            @if($business->has_menu && $business->whatsapp)
+                @php $pendingOrders = $business->orders()->where('status', 'pending')->count(); @endphp
+                <a href="{{ route('order.owner.index', $business) }}" class="relative w-9 h-9 rounded-full bg-coral-100 text-coral-600 grid place-items-center hover:bg-coral-500 hover:text-white transition" title="الطلبات">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                        <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                        <path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/>
+                    </svg>
+                    @if($pendingOrders > 0)
+                        <span class="absolute -top-1 -end-1 min-w-[18px] h-[18px] px-1 rounded-full bg-blush-500 text-white text-[10px] font-black grid place-items-center">{{ $pendingOrders }}</span>
+                    @endif
+                </a>
+            @endif
             <a href="{{ route('directory.stats', $business) }}" class="w-9 h-9 rounded-full bg-mint-100 text-mint-700 grid place-items-center hover:bg-mint-500 hover:text-white transition" title="إحصائيات">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
                     <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>

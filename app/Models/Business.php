@@ -729,6 +729,11 @@ class Business extends Model
         return $this->hasMany(Booking::class)->orderBy('starts_at');
     }
 
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class)->latest();
+    }
+
     /**
      * Compute bookable slots for a given date, gated by hours_schedule + existing bookings.
      *
