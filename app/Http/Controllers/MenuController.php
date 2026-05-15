@@ -143,8 +143,10 @@ class MenuController extends Controller
         $userDefaultAreaId = optional(Auth::user())->default_area_id;
         if ($business->offersDelivery()) {
             $coveredIds = array_map('intval', array_keys((array) $business->delivery_fees));
+            // Hide any stale non-Banha fees the owner may have set before coverage was paused.
             $rows = \App\Models\Area::whereIn('id', $coveredIds)
-                ->orderBy('parent')->orderBy('sort')->orderBy('name')
+                ->banha()
+                ->orderBy('sort')->orderBy('name')
                 ->get();
             $fees = (array) $business->delivery_fees;
             $deliveryAreas = $rows->map(fn ($a) => [
@@ -157,8 +159,14 @@ class MenuController extends Controller
             ])->values();
         }
 
+        // "اطلب تاني" flash from MyOrdersController::reorder — list of
+        // {id, qty} pairs. Items get matched against the rendered menu's
+        // data-item-id attributes so we always use current prices.
+        $reorderRequest = session('reorder_request');
+
         return view('menu.public', compact(
-            'business', 'looseItems', 'deliveryAreas', 'userDefaultAreaId'
+            'business', 'looseItems', 'deliveryAreas', 'userDefaultAreaId',
+            'reorderRequest'
         ));
     }
 

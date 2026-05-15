@@ -49,4 +49,15 @@ return [
         'private_key' => env('VAPID_PRIVATE_KEY'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Banhawy support contact
+    |--------------------------------------------------------------------------
+    | WhatsApp number that surfaces on landing pages, business-report buttons,
+    | and QR-menu sales CTAs. Override via .env (BANHAWY_SUPPORT_WHATSAPP=…).
+    */
+    'banhawy' => [
+        'support_whatsapp' => env('BANHAWY_SUPPORT_WHATSAPP', '01550047838'),
+    ],
+
 ];

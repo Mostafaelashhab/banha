@@ -23,10 +23,31 @@ class Area extends Model
     }
 
     /**
-     * Find the nearest area to a given lat/lng using a cheap Haversine.
-     * Returns null when no area has coordinates set.
+     * Only Banha-proper areas. The seeder also ships other Qalyubia
+     * markaz centers (Tukh, Qalyub, Qaha, …) but they're hidden across
+     * the app until coverage expands.
      */
-    public static function nearest(float $lat, float $lng, ?string $parent = null): ?self
+    public function scopeBanha(Builder $q): Builder
+    {
+        return $q->where('parent', 'بنها');
+    }
+
+    /** Max distance (km) to allow auto-snap. Beyond this we return null
+     *  with the actual distance so the caller can decide. */
+    public const NEAREST_SNAP_KM = 5.0;
+
+    /**
+     * Find the nearest area to a given lat/lng using a cheap Haversine.
+     *
+     * `area` is null when:
+     *  - no area in the parent has coords set
+     *  - the closest match is farther than NEAREST_SNAP_KM (likely the user
+     *    isn't in Banha at all). `distance_km` still reflects what we found
+     *    so the UI can say "أقرب منطقة بعيدة بـ N كم".
+     *
+     * @return array{area: ?self, distance_km: ?float}
+     */
+    public static function nearest(float $lat, float $lng, ?string $parent = null): array
     {
         $q = self::query()
             ->whereNotNull('lat')
@@ -40,16 +61,20 @@ class Area extends Model
           ->whereBetween('lng', [$lng - 0.5, $lng + 0.5]);
 
         $candidates = $q->limit(200)->get();
-        if ($candidates->isEmpty()) return null;
+        if ($candidates->isEmpty()) {
+            return ['area' => null, 'distance_km' => null];
+        }
 
         $best = null; $bestDist = INF;
         foreach ($candidates as $a) {
             $d = self::haversineKm($lat, $lng, (float) $a->lat, (float) $a->lng);
             if ($d < $bestDist) { $bestDist = $d; $best = $a; }
         }
-        // Don't snap to something obviously wrong — > 30km from any known
-        // area means the user is somewhere we don't cover.
-        return $bestDist <= 30 ? $best : null;
+
+        return [
+            'area'        => $bestDist <= self::NEAREST_SNAP_KM ? $best : null,
+            'distance_km' => round($bestDist, 1),
+        ];
     }
 
     private static function haversineKm(float $lat1, float $lng1, float $lat2, float $lng2): float

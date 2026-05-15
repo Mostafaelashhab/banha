@@ -382,6 +382,9 @@
          data-min-order="{{ (int) ($business->delivery_min_order ?? 0) }}"
          data-default-area-id="{{ $userDefaultAreaId ?? '' }}"
          data-areas='@json($deliveryAreas)'
+         @if(! empty($reorderRequest))
+            data-reorder='@json($reorderRequest)'
+         @endif
          data-csrf="{{ csrf_token() }}"
          @if($authUser)
             data-user-name="{{ $authUser->name }}"
@@ -434,6 +437,17 @@
 
             {{-- STEP 1: review items --}}
             <div data-cart-step="review" class="flex-1 flex flex-col overflow-hidden">
+                {{-- Reorder banner — appears when the cart was filled from a past order. --}}
+                <div data-reorder-banner class="hidden mx-4 mt-3 mb-1 px-3 py-2 rounded-2xl bg-coral-50 ring-1 ring-coral-500/20 flex items-start gap-2">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mt-0.5 text-coral-600 shrink-0">
+                        <polyline points="23 4 23 10 17 10"/>
+                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                    </svg>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-[12px] font-extrabold text-ink-950">جهزنالك سلتك من أوردرك السابق</div>
+                        <div class="text-[10px] text-ink-500 mt-0.5" data-reorder-banner-detail>الأسعار اللي هتدفعها هي أسعار المنيو الحالي.</div>
+                    </div>
+                </div>
                 <div data-cart-list class="overflow-y-auto px-4 py-2 flex-1"></div>
 
                 <div data-cart-empty class="p-10 text-center hidden">
@@ -500,17 +514,23 @@
                     </div>
                     @if($business->offersDelivery())
                         <div data-area-block>
-                            <div class="flex items-center justify-between mb-1">
-                                <label class="block text-[11px] font-bold text-ink-700">منطقتك (للتوصيل) *</label>
-                                <button type="button" data-area-detect
-                                        class="inline-flex items-center gap-1 text-[10px] font-extrabold text-coral-600 hover:underline">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3">
-                                        <circle cx="12" cy="12" r="3"/>
-                                        <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
-                                    </svg>
-                                    حدّد مكاني تلقائي
-                                </button>
-                            </div>
+                            <label class="block text-[11px] font-bold text-ink-700 mb-1">منطقتك (للتوصيل) *</label>
+
+                            {{-- Prominent "use my location" button — full-width so users actually see it. --}}
+                            <button type="button" data-area-detect
+                                    class="w-full mb-1.5 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-coral-50 ring-1 ring-coral-500/20 text-coral-600 text-[11px] font-extrabold hover:bg-coral-100 hover:ring-coral-500/40 transition">
+                                <svg data-area-detect-icon viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                                    <circle cx="12" cy="12" r="3"/>
+                                    <line x1="12" y1="2" x2="12" y2="5"/>
+                                    <line x1="12" y1="19" x2="12" y2="22"/>
+                                    <line x1="2" y1="12" x2="5" y2="12"/>
+                                    <line x1="19" y1="12" x2="22" y2="12"/>
+                                </svg>
+                                <svg data-area-detect-spinner viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="w-4 h-4 animate-spin hidden">
+                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                                </svg>
+                                <span data-area-detect-label>حدّد مكاني تلقائي من GPS</span>
+                            </button>
                             <select name="area_id" required data-area-select
                                     class="w-full bg-cream-100 rounded-2xl px-4 py-2.5 text-sm text-ink-950 outline-0 border border-ink-950/8 focus:border-coral-500 transition appearance-none">
                                 <option value="">— اختار منطقتك —</option>
@@ -527,7 +547,7 @@
                                     </optgroup>
                                 @endforeach
                             </select>
-                            <p data-area-detect-msg class="hidden text-[10px] text-ink-500 mt-1"></p>
+                            <p data-area-detect-msg class="hidden text-[10px] font-bold mt-1.5 flex items-center gap-1.5"></p>
                         </div>
                     @endif
                     <div>
@@ -553,7 +573,14 @@
                         <span dir="ltr"><span data-cart-subtotal>0</span> {{ $currency }}</span>
                     </div>
                     <div class="flex items-center justify-between text-[11px] text-ink-500" data-cart-fee-row>
-                        <span>🛵 الشحن <span data-cart-fee-zone class="text-ink-400"></span></span>
+                        <span class="inline-flex items-center gap-1.5">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3">
+                                <rect x="1" y="3" width="15" height="13" rx="1"/>
+                                <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+                                <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+                            </svg>
+                            الشحن <span data-cart-fee-zone class="text-ink-400"></span>
+                        </span>
                         <span dir="ltr"><span data-cart-fee>{{ $business->offersDelivery() ? '— اختار منطقة' : 'بدون شحن' }}</span></span>
                     </div>
                     @if((int) ($business->delivery_min_order ?? 0) > 0)
@@ -596,7 +623,12 @@
                 {{-- Order summary breakdown (filled in by JS after submit) --}}
                 <div class="bg-cream-100/70 rounded-2xl p-3 space-y-1.5 mb-3" data-cart-success-summary>
                     <div class="flex items-center justify-between text-[11px] text-ink-500" data-success-area-row>
-                        <span>🗺 المنطقة</span>
+                        <span class="inline-flex items-center gap-1.5">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                            </svg>
+                            المنطقة
+                        </span>
                         <span data-success-area class="font-bold text-ink-950">—</span>
                     </div>
                     <div class="flex items-center justify-between text-[11px] text-ink-500">
@@ -604,7 +636,14 @@
                         <span dir="ltr"><span data-success-subtotal>0</span> {{ $currency }}</span>
                     </div>
                     <div class="flex items-center justify-between text-[11px] text-ink-500" data-success-fee-row>
-                        <span>🛵 الشحن</span>
+                        <span class="inline-flex items-center gap-1.5">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3">
+                                <rect x="1" y="3" width="15" height="13" rx="1"/>
+                                <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+                                <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+                            </svg>
+                            الشحن
+                        </span>
                         <span data-success-fee dir="ltr">—</span>
                     </div>
                     <div class="flex items-center justify-between pt-1.5 border-t border-ink-950/8">
@@ -966,66 +1005,116 @@
         }
     }
 
-    // ── Geolocation auto-detect: try once, on first checkout open ──
-    let geoTried = false;
+    // ── Geolocation auto-detect ──
+    // Two entry points:
+    //   silent=true  → fired the first time checkout opens; respects existing
+    //                  preference (user.default / cookie) and stays quiet.
+    //   silent=false → fired when user taps "حدّد مكاني تلقائي" — ALWAYS runs
+    //                  a fresh getCurrentPosition (maximumAge=0), overrides
+    //                  any preselected area, and shows visible status.
+    const detectIcon    = root.querySelector('[data-area-detect-icon]');
+    const detectSpinner = root.querySelector('[data-area-detect-spinner]');
+    const detectLabel   = root.querySelector('[data-area-detect-label]');
+
+    function svgPrefix(name) {
+        // Inline SVG markup for the message-line icon (success / warn / error).
+        if (name === 'check') return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3"><polyline points="20 6 9 17 4 12"/></svg>';
+        if (name === 'warn')  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+        if (name === 'x')     return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" class="w-3 h-3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+        return '';
+    }
+    function showDetectMsg(tone, text) {
+        if (!areaDetectMsg) return;
+        const colors = {
+            mint:  'text-mint-700',
+            honey: 'text-honey-700',
+            blush: 'text-blush-600',
+        };
+        areaDetectMsg.className = 'text-[10px] font-bold mt-1.5 inline-flex items-center gap-1.5 ' + (colors[tone] || 'text-ink-500');
+        areaDetectMsg.innerHTML = svgPrefix(tone === 'mint' ? 'check' : tone === 'honey' ? 'warn' : 'x') + '<span>' + text + '</span>';
+        areaDetectMsg.classList.remove('hidden');
+    }
+    function setDetectLoading(loading) {
+        if (detectIcon)    detectIcon.classList.toggle('hidden', loading);
+        if (detectSpinner) detectSpinner.classList.toggle('hidden', !loading);
+        if (detectLabel)   detectLabel.textContent = loading ? 'بنحدد مكانك دلوقتي…' : 'حدّد مكاني تلقائي من GPS';
+        areaDetectBtn?.toggleAttribute('disabled', loading);
+    }
+
     function tryAutoDetect(silent) {
-        if (geoTried || !areaSelect || !areaNearestUrl) return;
-        geoTried = true;
+        if (!areaSelect || !areaNearestUrl) return;
         if (!navigator.geolocation) {
-            if (!silent && areaDetectMsg) {
-                areaDetectMsg.classList.remove('hidden');
-                areaDetectMsg.textContent = 'متصفحك مش بيدعم تحديد الموقع.';
-            }
+            if (!silent) showDetectMsg('blush', 'متصفحك مش بيدعم تحديد الموقع — اختار يدوي.');
             return;
         }
-        // Skip auto-detect if user already picked an area (don't override their choice)
+        // Silent run respects an existing selection so we don't surprise the user.
         if (areaSelect.value && silent) return;
 
-        if (!silent && areaDetectMsg) {
-            areaDetectMsg.classList.remove('hidden');
-            areaDetectMsg.textContent = '⏳ بنحدد مكانك...';
+        if (!silent) {
+            setDetectLoading(true);
+            if (areaDetectMsg) areaDetectMsg.classList.add('hidden');
         }
+
+        // Manual clicks force a fresh fix (maximumAge: 0); silent runs may
+        // accept a recent cached position to skip the permission prompt.
+        const opts = silent
+            ? { timeout: 8000, maximumAge: 5 * 60 * 1000, enableHighAccuracy: false }
+            : { timeout: 12000, maximumAge: 0, enableHighAccuracy: true };
+
         navigator.geolocation.getCurrentPosition(async (pos) => {
             try {
                 const u = areaNearestUrl + '?lat=' + pos.coords.latitude + '&lng=' + pos.coords.longitude;
                 const r = await fetch(u, { headers: {'Accept':'application/json'} });
                 const body = await r.json();
-                if (body.ok && body.area && areaSelect) {
-                    // Only auto-fill if user hasn't picked yet
-                    if (!areaSelect.value || !silent) {
-                        const opt = areaSelect.querySelector('option[value="' + body.area.id + '"]');
-                        if (opt) {
-                            areaSelect.value = String(body.area.id);
-                            areaSelect.dispatchEvent(new Event('change'));
-                            if (areaDetectMsg) {
-                                areaDetectMsg.classList.remove('hidden');
-                                areaDetectMsg.textContent = '✓ تم اختيار ' + body.area.name + ' أوتوماتيك.';
-                                setTimeout(() => areaDetectMsg.classList.add('hidden'), 4000);
-                            }
-                            return;
+                if (body.ok && body.area) {
+                    const opt = areaSelect.querySelector('option[value="' + body.area.id + '"]');
+                    if (opt) {
+                        areaSelect.value = String(body.area.id);
+                        areaSelect.dispatchEvent(new Event('change'));
+                        if (!silent) {
+                            const distMsg = body.distance_km ? ' (' + body.distance_km + ' كم منك)' : '';
+                            showDetectMsg('mint', 'تم اختيار ' + body.area.name + distMsg + ' — لو غلط غيّرها يدوي.');
                         }
+                        return;
+                    }
+                    // Server returned an area but it's not in this restaurant's coverage
+                    if (!silent) showDetectMsg('honey', 'أقرب منطقة (' + body.area.name + ') مش ضمن مناطق التوصيل للمطعم ده. اختار يدوي.');
+                    return;
+                }
+                // Out of range — show distance so user knows GPS is too far
+                if (!silent) {
+                    if (body.reason === 'out_of_range' && body.distance_km) {
+                        showDetectMsg('honey', 'مكانك بعيد عن أقرب منطقة بنها بـ ' + body.distance_km + ' كم — اختار يدوي.');
+                    } else {
+                        showDetectMsg('honey', 'مكانك مش ضمن تغطية بنهاوي — اختار منطقتك يدوي.');
                     }
                 }
-                if (!silent && areaDetectMsg) {
-                    areaDetectMsg.classList.remove('hidden');
-                    areaDetectMsg.textContent = 'مكانك مش ضمن مناطق التوصيل — اختار يدوي.';
-                }
             } catch (err) {
-                if (!silent && areaDetectMsg) {
-                    areaDetectMsg.classList.remove('hidden');
-                    areaDetectMsg.textContent = 'فشل تحديد المكان — اختار يدوي.';
-                }
+                if (!silent) showDetectMsg('blush', 'فشل الاتصال بالخادم. حاول تاني.');
+            } finally {
+                if (!silent) setDetectLoading(false);
             }
-        }, () => {
-            if (!silent && areaDetectMsg) {
-                areaDetectMsg.classList.remove('hidden');
-                areaDetectMsg.textContent = 'الموقع مرفوض — اختار منطقتك يدوي.';
+        }, (err) => {
+            if (!silent) {
+                setDetectLoading(false);
+                const txt = err && err.code === err.PERMISSION_DENIED
+                    ? 'رفضت إذن الموقع — افتحه من إعدادات المتصفح أو اختار منطقتك يدوي.'
+                    : err && err.code === err.TIMEOUT
+                        ? 'الموقع أخد وقت طويل. حاول تاني وأنت بره أو قرب الشباك.'
+                        : 'مقدرناش نحدد مكانك. اختار منطقتك من القائمة.';
+                showDetectMsg('blush', txt);
             }
-        }, { timeout: 8000, maximumAge: 5 * 60 * 1000 });
+        }, opts);
     }
-    // Fire silent auto-detect on first checkout open (only when no area set yet)
-    toCheckout?.addEventListener('click', () => { if (areaSelect && !areaSelect.value) tryAutoDetect(true); }, { once: false });
-    areaDetectBtn?.addEventListener('click', () => { geoTried = false; tryAutoDetect(false); });
+
+    // Silent run: only on first checkout open AND only when no area set yet
+    let silentTried = false;
+    toCheckout?.addEventListener('click', () => {
+        if (silentTried || !areaSelect || areaSelect.value) return;
+        silentTried = true;
+        tryAutoDetect(true);
+    });
+    areaDetectBtn?.addEventListener('click', () => tryAutoDetect(false));
 
     // ── Submit order to server (server sends WAAPI message to restaurant) ──
     form.addEventListener('submit', async (e) => {
@@ -1159,6 +1248,47 @@
         try { localStorage.setItem(CUST_KEY, JSON.stringify(info)); } catch (e) {}
     }
     loadCustomerInfo();
+
+    // ── Reorder: pre-fill cart from a past order, using CURRENT menu prices ──
+    // Server-side flash on data-cart-root carries {items:[{id,qty}], order_id}.
+    // We look each id up in the live DOM (which has fresh price/name) and
+    // push it into the cart, skipping anything that's no longer available.
+    (function () {
+        let req = null;
+        try { req = JSON.parse(root.dataset.reorder || 'null'); } catch (e) {}
+        if (!req || !Array.isArray(req.items) || req.items.length === 0) return;
+
+        const banner = root.querySelector('[data-reorder-banner]');
+        const bannerDetail = root.querySelector('[data-reorder-banner-detail]');
+        let added = 0, missing = 0;
+
+        for (const line of req.items) {
+            const wrap = document.querySelector('[data-cart-item][data-item-id="' + line.id + '"]');
+            if (!wrap) { missing++; continue; }
+            const name  = wrap.dataset.itemName;
+            const price = Number(wrap.dataset.itemPrice) || 0;
+            const qty   = Math.max(1, Math.min(99, Number(line.qty) || 1));
+            const id    = String(line.id);
+            cart[id] = { id, name, price, qty };
+            added++;
+        }
+        if (added === 0) return;
+
+        save();
+        // Refresh inline steppers + sheet content + open it
+        Object.keys(cart).forEach(updateItemUI);
+        refresh();
+        if (banner) {
+            banner.classList.remove('hidden');
+            if (bannerDetail) {
+                bannerDetail.textContent = missing > 0
+                    ? (added + ' أصناف من ' + (added + missing) + ' · الأسعار من المنيو الحالي.')
+                    : 'الأسعار اللي هتدفعها هي أسعار المنيو الحالي.';
+            }
+        }
+        // Auto-open the sheet so the user lands on the review step
+        openSheet();
+    })();
 
     updateAllItemUI();
     refresh();

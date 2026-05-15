@@ -659,7 +659,10 @@ class DirectoryController extends Controller
         // the business doesn't offer delivery at all (null).
         if (! empty($data['delivery_fees']) && is_array($data['delivery_fees'])) {
             $rawFees = $data['delivery_fees'];
-            $validAreaIds = \App\Models\Area::whereIn('id', array_keys($rawFees))->pluck('id')->all();
+            // Restrict to Banha areas only (coverage outside Banha is paused).
+            $validAreaIds = \App\Models\Area::whereIn('id', array_keys($rawFees))
+                ->banha()
+                ->pluck('id')->all();
             $clean = [];
             foreach ($rawFees as $areaId => $fee) {
                 $areaId = (int) $areaId;

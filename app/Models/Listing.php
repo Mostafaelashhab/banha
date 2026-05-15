@@ -14,6 +14,24 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 class Listing extends Model
 {
+    /**
+     * Coverage gate — only Banha listings surface across the marketplace,
+     * feed, search, university hub, etc. Admin queries can opt out with
+     * `Listing::withoutGlobalScope('banha')->...`.
+     */
+    protected static ?int $banhaZoneId = null;
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope('banha', function (\Illuminate\Database\Eloquent\Builder $q) {
+            $id = self::$banhaZoneId ??= \App\Models\Zone::query()
+                ->where('slug', 'banha')->value('id');
+            if ($id) {
+                $q->where($q->getModel()->getTable() . '.zone_id', $id);
+            }
+        });
+    }
+
     public const KINDS = [
         'sale'  => ['label' => 'بيع',     'tone' => 'coral',  'icon' => 'tag'],
         'buy'   => ['label' => 'مطلوب',   'tone' => 'mint',   'icon' => 'cart'],

@@ -205,7 +205,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/chat/{thread}/report', [\App\Http\Controllers\ChatController::class, 'report'])->name('chat.report')->whereNumber('thread');
 
     // Customer order tracking
-    Route::get('/my-orders',          [\App\Http\Controllers\MyOrdersController::class, 'index'])->name('my-orders.index');
+    Route::get('/my-orders',                        [\App\Http\Controllers\MyOrdersController::class, 'index'])->name('my-orders.index');
+    Route::post('/my-orders/{order}/reorder',       [\App\Http\Controllers\MyOrdersController::class, 'reorder'])->name('my-orders.reorder');
 
     Route::get('/me',                 [ProfileController::class, 'show'])->name('profile.me');
     Route::get('/wallet',             [\App\Http\Controllers\WalletController::class, 'index'])->name('wallet');
@@ -250,6 +251,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/businesses/{business}/verify',  [AdminController::class, 'businessVerify'])->name('businesses.verify');
         Route::post('/businesses/{business}/toggle',  [AdminController::class, 'businessToggleActive'])->name('businesses.toggle');
         Route::post('/businesses/{business}/promote', [AdminController::class, 'businessPromote'])->name('businesses.promote');
+        // Claim-invite via WAAPI — preview (GET, JSON) + send (POST).
+        Route::get('/businesses/{business}/invite',      [AdminController::class, 'businessInvitePreview'])->name('businesses.invite.preview');
+        Route::post('/businesses/{business}/invite',     [AdminController::class, 'businessInviteSend'])->name('businesses.invite.send');
         Route::post('/listings/{listing}/feature',    [AdminController::class, 'listingFeature'])->name('listings.feature');
 
         Route::get('/broadcast',                     [AdminController::class, 'broadcastForm'])->name('broadcast');

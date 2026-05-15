@@ -15,6 +15,7 @@ use App\Models\Zone;
 use App\Services\ImageUploader;
 use App\Services\PushService;
 use App\Services\VerificationService;
+use App\Services\WaapiService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -364,7 +365,8 @@ class AdminController extends Controller
     public function businesses(Request $request)
     {
         $filter = $request->query('filter');
-        $businesses = Business::query()
+        // Admins manage all businesses across zones — opt out of the Banha-only global scope.
+        $businesses = Business::withoutGlobalScope('banha')
             ->when($filter === 'pending',   fn ($q) => $q->where('is_verified', false)->where('is_active', true)->whereNotNull('owner_user_id'))
             ->when($filter === 'verified',  fn ($q) => $q->where('is_verified', true))
             ->when($filter === 'inactive',  fn ($q) => $q->where('is_active', false))
@@ -450,6 +452,79 @@ class AdminController extends Controller
         $business->update(['promoted_until' => $start->copy()->addDays($days)]);
         $this->bustMapCache();
         return back()->with('flash', "تم الترويج لمدة {$days} يوم — لحد ".$business->promoted_until->translatedFormat('d M Y'));
+    }
+
+    /**
+     * Admin: send a "claim your page" invite to an unowned business via WAAPI.
+     * Shows a JSON preview (GET) before the actual send (POST), so the admin
+     * can review the templated message inside a modal in /admin/businesses.
+     */
+    public function businessInvitePreview(Business $business)
+    {
+        $this->guardCanInvite($business);
+        return response()->json([
+            'ok'       => true,
+            'phone'    => $business->whatsapp ?: $business->phone,
+            'message'  => $this->buildInviteMessage($business),
+            'sent_at'  => $business->invited_at?->translatedFormat('d M Y · h:i a'),
+            'name'     => $business->name,
+        ]);
+    }
+
+    public function businessInviteSend(Business $business)
+    {
+        $this->guardCanInvite($business);
+
+        $phone = $business->whatsapp ?: $business->phone;
+        $waResult = WaapiService::send($phone, $this->buildInviteMessage($business));
+
+        if (! $waResult['ok']) {
+            return back()->with('flash', '⚠ فشل إرسال الدعوة — راجع لوج WAAPI.');
+        }
+
+        $business->update(['invited_at' => now()]);
+
+        $note = ($waResult['simulated'] ?? false)
+            ? '(وضع تجريبي — مش اتبعت فعلياً)'
+            : '';
+        return back()->with('flash', "تم إرسال الدعوة لـ {$business->name} {$note}");
+    }
+
+    /** Block invites on owned businesses + missing-phone rows. */
+    private function guardCanInvite(Business $business): void
+    {
+        abort_if($business->owner_user_id, 422, 'النشاط ده مملوك بالفعل.');
+        abort_if(! ($business->whatsapp || $business->phone), 422, 'مفيش رقم تواصل للنشاط.');
+    }
+
+    /** Build the templated Arabic invite. Phone validity is checked upstream. */
+    private function buildInviteMessage(Business $business): string
+    {
+        $cat   = ($business->categoryMeta()['label'] ?? '') ?: 'نشاطك';
+        $sub   = $business->displayType() ?: $cat;
+        $area  = $business->zone->name ?? 'بنها';
+        $claim = url('/directory/business/' . $business->id . '/claim');
+
+        $msg  = "السلام عليكم 👋\n\n";
+        $msg .= "إحنا فريق *بنهاوي* — أول منصة محلية لمدينة بنها.\n\n";
+        $msg .= "لاقينا نشاطك *\"{$business->name}\"* في {$area} وحطّيناه على ";
+        $msg .= "دليل بنها عشان أهل المدينة يلاقوكم لما يدوّروا على {$sub}.\n\n";
+        $msg .= "دلوقتي الصفحة موجودة بس مفيهاش صور ولا مواعيد ولا ";
+        $msg .= "تواصل مباشر — لأن لسه محدش استلمها. عاوزينك تستلمها ";
+        $msg .= "وتتحكّم فيها بنفسك.\n\n";
+        $msg .= "*ليه تمتلك صفحتك:*\n";
+        $msg .= "✓ عملاء بنها بيلاقوك أول لما يدوّروا\n";
+        $msg .= "✓ الأوردرات بتوصلك على لوحة تحكمك في الموقع مباشرة\n";
+        $msg .= "✓ ضيف صور المحل + منيو رقمي بأسعار\n";
+        $msg .= "✓ حدّد أسعار الشحن لكل منطقة في بنها\n";
+        $msg .= "✓ زر اتصال + واتساب من الصفحة مباشرة\n";
+        $msg .= "✓ تابع المشاهدات والضغطات\n\n";
+        $msg .= "*السعر:* مجاناً. مفيش اشتراك ولا عمولة على الأوردرات.\n\n";
+        $msg .= "استلم صفحتك من هنا:\n{$claim}\n\n";
+        $msg .= "التحقق بكود واتساب على نفس رقمك ده — دقيقة وخلاص.\n\n";
+        $msg .= "لو محتاج مساعدة، رد على الرسالة دي.\n\n";
+        $msg .= "— فريق *بنهاوي* · بنها والقليوبية";
+        return $msg;
     }
 
     /** Forget all map-data caches so the new promotion shows up immediately. */

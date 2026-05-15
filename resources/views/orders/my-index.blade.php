@@ -2,13 +2,14 @@
 
 @php
     // Visual progression of an order: pending → confirmed → preparing → out → completed
+    // `icon` is an SVG `d`-list rendered via a small inline path block below.
     $statusSteps = [
-        'pending'          => ['label' => 'بانتظار التأكيد', 'icon' => '⏳', 'tone' => 'honey'],
-        'confirmed'        => ['label' => 'اتأكد',            'icon' => '✓',  'tone' => 'mint'],
-        'preparing'        => ['label' => 'بيتجهّز',          'icon' => '🍳', 'tone' => 'coral'],
-        'out_for_delivery' => ['label' => 'في الطريق',         'icon' => '🛵', 'tone' => 'coral'],
-        'completed'        => ['label' => 'اتسلّم',            'icon' => '✓',  'tone' => 'mint'],
-        'cancelled'        => ['label' => 'اتلغى',             'icon' => '✗',  'tone' => 'blush'],
+        'pending'          => ['label' => 'بانتظار التأكيد', 'svg' => 'clock',    'tone' => 'honey'],
+        'confirmed'        => ['label' => 'اتأكد',            'svg' => 'check',    'tone' => 'mint'],
+        'preparing'        => ['label' => 'بيتجهّز',          'svg' => 'chef',     'tone' => 'coral'],
+        'out_for_delivery' => ['label' => 'في الطريق',         'svg' => 'truck',    'tone' => 'coral'],
+        'completed'        => ['label' => 'اتسلّم',            'svg' => 'check',    'tone' => 'mint'],
+        'cancelled'        => ['label' => 'اتلغى',             'svg' => 'x',        'tone' => 'blush'],
     ];
     // Linear flow used for the step indicator (cancelled is a separate branch)
     $linearFlow = ['pending', 'confirmed', 'preparing', 'out_for_delivery', 'completed'];
@@ -48,7 +49,13 @@
     {{-- Empty state --}}
     @if($orders->isEmpty())
         <div class="card-light p-10 text-center rise rise-2">
-            <div class="text-5xl mb-3">🛍</div>
+            <span class="w-14 h-14 rounded-2xl bg-coral-50 text-coral-600 grid place-items-center mx-auto mb-3">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
+                    <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+                    <line x1="3" y1="6" x2="21" y2="6"/>
+                    <path d="M16 10a4 4 0 0 1-8 0"/>
+                </svg>
+            </span>
             <h3 class="text-base font-extrabold text-ink-950 mb-1">
                 @if($filter === 'active') مفيش أوردرات شغّالة دلوقتي
                 @elseif($filter === 'completed') لسه ماخلصتش أوردر
@@ -80,7 +87,12 @@
                     @if($o->business->photo_url)
                         <img src="{{ $o->business->photo_url }}" alt="" class="w-11 h-11 rounded-xl object-cover shrink-0">
                     @else
-                        <span class="w-11 h-11 rounded-xl bg-cream-100 grid place-items-center text-xl shrink-0">🏪</span>
+                        <span class="w-11 h-11 rounded-xl bg-cream-100 text-ink-500 grid place-items-center shrink-0">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                                <path d="M3 9h18l-1.5-5h-15z"/>
+                                <path d="M4 9v11a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/>
+                            </svg>
+                        </span>
                     @endif
                     <div class="flex-1 min-w-0">
                         <a href="{{ route('directory.show', $o->business) }}" class="text-sm font-extrabold text-ink-950 truncate block hover:text-coral-600 transition">
@@ -92,12 +104,45 @@
                             <span>{{ $o->created_at->diffForHumans() }}</span>
                             @if($o->area)
                                 <span>·</span>
-                                <span>🗺 {{ $o->area->name }}</span>
+                                <span class="inline-flex items-center gap-1">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-2.5 h-2.5">
+                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                                    </svg>
+                                    {{ $o->area->name }}
+                                </span>
                             @endif
                         </div>
                     </div>
                     <span class="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full {{ $tone }} ring-1 shrink-0">
-                        <span>{{ $statusMeta['icon'] }}</span>
+                        @switch($statusMeta['svg'])
+                            @case('clock')
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-2.5 h-2.5">
+                                    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                                </svg>
+                                @break
+                            @case('check')
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-2.5 h-2.5">
+                                    <polyline points="20 6 9 17 4 12"/>
+                                </svg>
+                                @break
+                            @case('chef')
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-2.5 h-2.5">
+                                    <path d="M6 14h12v6H6z"/><path d="M6 14c-2 0-3-1.5-3-3.5S4.5 7 7 7c.5-2 2-3 4-3s3.5 1 4 3c2.5 0 4 1.5 4 3.5S18 14 16 14"/>
+                                </svg>
+                                @break
+                            @case('truck')
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3">
+                                    <rect x="1" y="3" width="15" height="13" rx="1"/>
+                                    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+                                    <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+                                </svg>
+                                @break
+                            @case('x')
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" class="w-2.5 h-2.5">
+                                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                                </svg>
+                                @break
+                        @endswitch
                         <span>{{ $statusMeta['label'] }}</span>
                     </span>
                 </div>
@@ -116,8 +161,11 @@
                         @endforeach
                     </div>
                 @else
-                    <div class="bg-blush-50 ring-1 ring-blush-500/20 rounded-xl p-2 text-[11px] font-bold text-blush-600 mb-3 text-center">
-                        ✗ الأوردر اتلغى
+                    <div class="bg-blush-50 ring-1 ring-blush-500/20 rounded-xl p-2 text-[11px] font-bold text-blush-600 mb-3 text-center inline-flex items-center justify-center gap-1.5 w-full">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" class="w-3 h-3">
+                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                        الأوردر اتلغى
                     </div>
                 @endunless
 
@@ -136,14 +184,17 @@
                             <span>الأصناف</span>
                             <span dir="ltr">{{ $fmt((float) $o->subtotal) }} {{ $o->currency }}</span>
                         </div>
+                        @php
+                            $truckSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3"><rect x="1" y="3" width="15" height="13" rx="1"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>';
+                        @endphp
                         @if((float) $o->delivery_fee > 0)
                             <div class="flex items-center justify-between text-[11px] text-ink-500">
-                                <span>🛵 الشحن</span>
+                                <span class="inline-flex items-center gap-1.5">{!! $truckSvg !!} الشحن</span>
                                 <span dir="ltr">{{ $fmt((float) $o->delivery_fee) }} {{ $o->currency }}</span>
                             </div>
                         @elseif($o->area_id)
                             <div class="flex items-center justify-between text-[11px] text-mint-700 font-bold">
-                                <span>🛵 الشحن</span>
+                                <span class="inline-flex items-center gap-1.5">{!! $truckSvg !!} الشحن</span>
                                 <span>مجاناً</span>
                             </div>
                         @endif
@@ -176,15 +227,28 @@
                         </a>
                     @endif
                     @if($o->status === 'completed')
-                        <a href="{{ route('menu.public', $o->business) }}"
-                           class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-coral-500 text-white text-[11px] font-extrabold hover:bg-coral-600 transition ms-auto">
-                            اطلب تاني
-                        </a>
+                        <form method="POST" action="{{ route('my-orders.reorder', $o) }}" class="ms-auto">
+                            @csrf
+                            <button type="submit"
+                                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-coral-500 text-white text-[11px] font-extrabold hover:bg-coral-600 transition">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3">
+                                    <polyline points="23 4 23 10 17 10"/>
+                                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                                </svg>
+                                اطلب تاني
+                            </button>
+                        </form>
                     @endif
                 </div>
 
                 @if($o->notes)
-                    <p class="text-[11px] text-ink-500 mt-2 bg-cream-100/60 rounded-lg p-2 leading-relaxed">📝 {{ $o->notes }}</p>
+                    <div class="flex items-start gap-1.5 mt-2 bg-cream-100/60 rounded-lg p-2 text-[11px] text-ink-500 leading-relaxed">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3 mt-0.5 shrink-0">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4z"/>
+                        </svg>
+                        <span class="flex-1">{{ $o->notes }}</span>
+                    </div>
                 @endif
             </div>
         @endforeach

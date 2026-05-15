@@ -430,7 +430,8 @@
             @if(in_array($business->category, \App\Models\Business::ORDER_CATEGORIES, true))
                 @php
                     $deliveryMap = (array) ($business->delivery_fees ?? []);
-                    $areasByParent = \App\Models\Area::ordered()->get()->groupBy('parent');
+                    // Only Banha areas for now — coverage outside Banha is paused.
+                    $areasByParent = \App\Models\Area::banha()->ordered()->get()->groupBy('parent');
                 @endphp
                 <div class="card-light p-5" data-delivery-editor>
                     <div class="flex items-center gap-3 mb-3">

@@ -22,15 +22,23 @@ class AreaController extends Controller
             'lng' => ['required', 'numeric', 'between:-180,180'],
         ]);
 
-        $area = Area::nearest((float) $data['lat'], (float) $data['lng']);
+        // Only match Banha areas — non-Banha coverage is paused.
+        $result = Area::nearest((float) $data['lat'], (float) $data['lng'], 'بنها');
+        $area     = $result['area'];
+        $distance = $result['distance_km'];
 
         if (! $area) {
-            return response()->json(['ok' => false, 'reason' => 'out_of_range']);
+            return response()->json([
+                'ok'          => false,
+                'reason'      => $distance === null ? 'no_coverage' : 'out_of_range',
+                'distance_km' => $distance,
+            ]);
         }
 
         return response()->json([
-            'ok'   => true,
-            'area' => [
+            'ok'          => true,
+            'distance_km' => $distance,
+            'area'        => [
                 'id'     => $area->id,
                 'name'   => $area->name,
                 'parent' => $area->parent,

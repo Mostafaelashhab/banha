@@ -15,9 +15,42 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'emoji', 'photo_url', 'has_menu', 'menu_currency', 'external_id', 'extra',
     'booking_enabled', 'booking_slot_minutes', 'booking_lead_hours', 'booking_capacity',
     'delivery_fees', 'delivery_min_order',
+    'invited_at',
 ])]
 class Business extends Model
 {
+    /**
+     * Coverage gate — Banhawy currently only surfaces Banha zone businesses.
+     * Applied as a global scope so directory/feed/search/map/nearby all
+     * respect it automatically. Admin queries can opt out with:
+     *   Business::withoutGlobalScope('banha')->...
+     */
+    protected static ?int $banhaZoneId = null;
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope('banha', function (\Illuminate\Database\Eloquent\Builder $q) {
+            $id = self::$banhaZoneId ??= \App\Models\Zone::query()
+                ->where('slug', 'banha')->value('id');
+            if ($id) {
+                $q->where($q->getModel()->getTable() . '.zone_id', $id);
+            }
+        });
+    }
+
+    /**
+     * Route-model binding override: admin URLs need to resolve businesses
+     * across all zones (verify / promote / photo edit work on any business),
+     * so we skip the Banha scope when the request is under /admin.
+     */
+    public function resolveRouteBindingQuery($query, $value, $field = null)
+    {
+        if (request()->is('admin/*')) {
+            $query->withoutGlobalScope('banha');
+        }
+        return parent::resolveRouteBindingQuery($query, $value, $field);
+    }
+
     public const CATEGORIES = [
         'food'        => ['label' => 'مطاعم وكافيهات',   'emoji' => '🍽️', 'icon' => 'utensils',    'color' => '#FF7A4D'],
         'hotels'      => ['label' => 'فنادق ومنتجعات',    'emoji' => '🏨', 'icon' => 'briefcase',   'color' => '#9333EA'],
@@ -576,6 +609,7 @@ class Business extends Model
             'booking_capacity'     => 'integer',
             'delivery_fees'        => 'array',
             'delivery_min_order'   => 'integer',
+            'invited_at'           => 'datetime',
         ];
     }
 

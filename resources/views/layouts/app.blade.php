@@ -202,16 +202,7 @@
         </div>
     </nav>
 
-    {{-- Floating support button (chat with admin / fallback for guests) --}}
-    @if($route !== 'support' && ! str_starts_with($route, 'chat'))
-        <a href="{{ route('support') }}" aria-label="الدعم"
-           class="fixed bottom-[6.5rem] start-3 z-30 w-11 h-11 rounded-full bg-white border border-ink-950/8 shadow-lg grid place-items-center text-ink-500 hover:text-coral-600 hover:scale-105 transition"
-           style="bottom: calc(7rem + env(safe-area-inset-bottom));">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
-                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z"/>
-            </svg>
-        </a>
-    @endif
+ 
 
     @endunless
 

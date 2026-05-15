@@ -4,13 +4,13 @@
 <div class="max-w-3xl mx-auto">
     <h1 class="text-xl font-extrabold text-ink-950 mb-4">محفوظاتي</h1>
 
-    @if($posts->isEmpty() && $businesses->isEmpty() && $listings->isEmpty())
+    @if($businesses->isEmpty() && $listings->isEmpty())
         <div class="card-light p-10 text-center">
             <div class="icon-tile mx-auto mb-4 text-coral-600 w-16 h-16">
                 <x-icon name="heart" class="w-7 h-7"/>
             </div>
             <h3 class="text-xl font-extrabold text-ink-950 mb-1">مفيش حاجة محفوظة</h3>
-            <p class="text-ink-500 text-sm">اضغط ❤ على أي بوست/نشاط/إعلان عشان يتحفظ هنا.</p>
+            <p class="text-ink-500 text-sm">اضغط  على أي نشاط او إعلان عشان يتحفظ هنا.</p>
         </div>
     @else
         @if($listings->isNotEmpty())
@@ -36,14 +36,7 @@
             </div>
         @endif
 
-        @if($posts->isNotEmpty())
-            <h3 class="text-sm font-extrabold text-ink-950 mb-2">بوستات</h3>
-            <div class="space-y-2">
-                @foreach($posts as $p)
-                    @include('partials.post-card', ['post' => $p, 'userVotes' => []])
-                @endforeach
-            </div>
-        @endif
+    
     @endif
 </div>
 @endsection

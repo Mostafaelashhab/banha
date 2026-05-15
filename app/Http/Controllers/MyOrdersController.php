@@ -15,6 +15,40 @@ use Illuminate\Support\Facades\Auth;
  */
 class MyOrdersController extends Controller
 {
+    /**
+     * "اطلب تاني" — replay a past order. We stash {menu_item_id, qty} pairs
+     * in the session and redirect to the restaurant's menu page; the page's
+     * cart JS picks them up and pre-fills the cart using the **current**
+     * menu prices (snapshot from the live DOM, not the old order's price).
+     *
+     * Items that are no longer on the menu / no longer available are
+     * silently dropped — the UI banner tells the user.
+     */
+    public function reorder(Order $order, Request $request)
+    {
+        abort_unless($order->user_id && $order->user_id === Auth::id(), 403);
+
+        $items = $order->items()
+            ->whereNotNull('menu_item_id')
+            ->get(['menu_item_id', 'qty'])
+            ->map(fn ($it) => ['id' => (int) $it->menu_item_id, 'qty' => (int) $it->qty])
+            ->values()
+            ->all();
+
+        if (empty($items)) {
+            return redirect()
+                ->route('menu.public', $order->business)
+                ->with('flash', 'مفيش أصناف من الأوردر القديم لسه متاحة.');
+        }
+
+        session()->flash('reorder_request', [
+            'items'    => $items,
+            'order_id' => $order->id,
+        ]);
+
+        return redirect()->route('menu.public', $order->business);
+    }
+
     public function index(Request $request)
     {
         $filter = $request->query('filter', 'active');
