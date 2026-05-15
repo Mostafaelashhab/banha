@@ -95,6 +95,47 @@
         </div>
     @endif
 
+    {{-- ─── My Orders + Saved (two-column quick access — visible only on own profile) ───── --}}
+    @if($isMe)
+        @php
+            $activeOrders = \App\Models\Order::where('user_id', auth()->id())
+                ->whereNotIn('status', ['cancelled', 'completed'])
+                ->count();
+        @endphp
+        <div class="grid grid-cols-2 gap-2 mb-7">
+            <a href="{{ route('my-orders.index') }}"
+               class="bg-white rounded-2xl p-3 hover:bg-cream-100 transition relative">
+                @if($activeOrders > 0)
+                    <span class="absolute top-2 end-2 min-w-[18px] h-[18px] px-1 rounded-full bg-coral-500 text-white text-[10px] font-extrabold grid place-items-center">{{ $activeOrders }}</span>
+                @endif
+                <span class="w-10 h-10 rounded-xl bg-coral-50 text-coral-600 grid place-items-center mb-2">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                        <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                        <path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/>
+                    </svg>
+                </span>
+                <div class="text-sm font-extrabold text-ink-950">أوردراتي</div>
+                <div class="text-[10px] text-ink-500 mt-0.5">
+                    @if($activeOrders > 0)
+                        {{ $activeOrders }} أوردر شغّال
+                    @else
+                        تابع حالة طلباتك
+                    @endif
+                </div>
+            </a>
+            <a href="{{ route('bookmark.index') }}"
+               class="bg-white rounded-2xl p-3 hover:bg-cream-100 transition">
+                <span class="w-10 h-10 rounded-xl bg-honey-100 text-honey-700 grid place-items-center mb-2">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+                    </svg>
+                </span>
+                <div class="text-sm font-extrabold text-ink-950">المحفوظات</div>
+                <div class="text-[10px] text-ink-500 mt-0.5">الأماكن اللي حفظتها</div>
+            </a>
+        </div>
+    @endif
+
     {{-- ─── Badges row (circular thumbnails) ────────────────── --}}
     @if($circles->isNotEmpty())
         <section class="mb-7">

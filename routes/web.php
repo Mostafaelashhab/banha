@@ -204,6 +204,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/chat/{thread}/poll',    [\App\Http\Controllers\ChatController::class, 'poll'])->name('chat.poll')->whereNumber('thread');
     Route::post('/chat/{thread}/report', [\App\Http\Controllers\ChatController::class, 'report'])->name('chat.report')->whereNumber('thread');
 
+    // Customer order tracking
+    Route::get('/my-orders',          [\App\Http\Controllers\MyOrdersController::class, 'index'])->name('my-orders.index');
+
     Route::get('/me',                 [ProfileController::class, 'show'])->name('profile.me');
     Route::get('/wallet',             [\App\Http\Controllers\WalletController::class, 'index'])->name('wallet');
 

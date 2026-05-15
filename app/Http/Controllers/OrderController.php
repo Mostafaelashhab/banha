@@ -7,6 +7,7 @@ use App\Models\Business;
 use App\Models\MenuItem;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Services\PushService;
 use App\Services\WaapiService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -153,6 +154,9 @@ class OrderController extends Controller
             'wa_sent_at'     => $waResult['ok'] ? now() : null,
         ]);
 
+        // ── PWA push: notify business owner + customer (if logged in) ──
+        $this->sendOrderPushNotifications($business, $order);
+
         return response()->json([
             'ok'           => true,
             'order_id'     => $order->id,
@@ -201,7 +205,13 @@ class OrderController extends Controller
             'status' => ['required', Rule::in(array_keys(Order::STATUSES))],
         ]);
 
+        $previousStatus = $order->status;
         $order->update(['status' => $data['status']]);
+
+        // Push the customer (only logged-in users) on every status change.
+        if ($previousStatus !== $data['status']) {
+            $this->sendStatusChangePush($order, $data['status']);
+        }
 
         return back()->with('flash', 'تم تحديث حالة الطلب.');
     }
@@ -261,5 +271,77 @@ class OrderController extends Controller
     {
         $v = round($n, 2);
         return $v == (int) $v ? (string) (int) $v : number_format($v, 2, '.', '');
+    }
+
+    /**
+     * Fire PWA push notifications when a new order is placed:
+     *  - Business owner: "طلب جديد من X بـ Y ج" with a deep link to the orders page.
+     *  - Logged-in customer: confirmation push linking to their tracking page.
+     *
+     * Push delivery is best-effort; failures are silently logged and never
+     * block the order response.
+     */
+    private function sendOrderPushNotifications(Business $business, Order $order): void
+    {
+        try {
+            // ── Owner push ──
+            if ($business->owner_user_id) {
+                PushService::sendToUser($business->owner_user_id, [
+                    'title' => '🔔 طلب جديد · ' . $business->name,
+                    'body'  => 'من ' . $order->customer_name . ' · ' . $this->fmt($order->grandTotal()) . ' ' . $order->currency,
+                    'url'   => route('order.owner.index', $business),
+                    'tag'   => 'order-new-' . $order->id,
+                ]);
+            }
+
+            // ── Customer push (logged-in only) ──
+            if ($order->user_id) {
+                PushService::sendToUser($order->user_id, [
+                    'title' => '✓ طلبك وصل ' . $business->name,
+                    'body'  => 'هنتواصل معاك قريب · إجمالي ' . $this->fmt($order->grandTotal()) . ' ' . $order->currency,
+                    'url'   => route('my-orders.index'),
+                    'tag'   => 'order-confirm-' . $order->id,
+                ]);
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('[order push] failed', [
+                'order_id' => $order->id,
+                'error'    => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Notify the customer when the business updates an order's status.
+     * Skipped for guest orders (no user_id) — they get WhatsApp instead.
+     */
+    private function sendStatusChangePush(Order $order, string $status): void
+    {
+        if (! $order->user_id) return;
+
+        $copy = match ($status) {
+            'confirmed'        => ['🍳', 'طلبك اتأكد', 'النشاط بدأ يجهّز طلبك.'],
+            'preparing'        => ['👨‍🍳', 'طلبك بيتجهّز', 'الأكل في الفرن — قريب يكون جاهز.'],
+            'out_for_delivery' => ['🛵', 'طلبك في الطريق', 'الدليفري طلع لعندك دلوقتي.'],
+            'completed'        => ['✓', 'طلبك اتسلّم', 'يا رب يعجبك — سيب تقييمك.'],
+            'cancelled'        => ['✗', 'الطلب اتلغى', 'كلّم النشاط لو فيه استفسار.'],
+            default            => null,
+        };
+        if (! $copy) return;
+
+        [$icon, $title, $body] = $copy;
+        try {
+            PushService::sendToUser($order->user_id, [
+                'title' => $icon . ' ' . $title . ' · ' . $order->business->name,
+                'body'  => $body,
+                'url'   => route('my-orders.index'),
+                'tag'   => 'order-status-' . $order->id,
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('[order status push] failed', [
+                'order_id' => $order->id,
+                'error'    => $e->getMessage(),
+            ]);
+        }
     }
 }

@@ -562,8 +562,12 @@
         </a>
     @endif
 
-    {{-- Menu / Services CTA (adaptive label per business category) --}}
-    @if($business->has_menu)
+    {{-- Menu / Services CTA (adaptive label per business category).
+         Skip when the Order CTA above already renders — they target the same
+         page and a duplicate big button is visual clutter. Shown only for
+         non-ordering categories (doctors, salons, schools, …) where the menu
+         is a services/prices list, not a cart. --}}
+    @if($business->has_menu && ! $business->supportsOrdering())
         @php $L = \App\Models\Business::menuLabels($business->category); @endphp
         <a href="{{ route('menu.public', $business) }}" class="block mb-3 p-4 rounded-2xl bg-coral-500 text-white text-center hover:scale-[1.01] transition shadow-lg">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 mx-auto">
@@ -590,8 +594,10 @@
         // Tailwind needs literal class names so JIT picks them up.
         $gridCols    = ['', 'grid-cols-1', 'grid-cols-2', 'grid-cols-3'][$cols] ?? 'grid-cols-3';
     @endphp
+    {{-- On mobile we have a fixed bottom action bar (call/whatsapp/directions),
+         so the inline row is desktop-only to avoid duplication. --}}
     @if($cols > 0)
-        <div class="grid {{ $gridCols }} gap-2 mb-3">
+        <div class="hidden lg:grid {{ $gridCols }} gap-2 mb-3">
             @if($callNumber)
                 <a href="tel:{{ preg_replace('/[^0-9+]/', '', $callNumber) }}" data-track-click="phone" data-business="{{ $business->id }}" class="btn-dark justify-center !py-3.5 text-sm">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="w-4 h-4">
@@ -1340,8 +1346,8 @@
     $stickyActions = array_slice($stickyActions, 0, 3);
 @endphp
 @if(! empty($stickyActions))
-    <div class="lg:hidden fixed inset-x-0 z-30"
-         style="bottom: calc(4.5rem + env(safe-area-inset-bottom));">
+    <div class="lg:hidden fixed inset-x-0 z-50"
+         style="bottom: calc(4.75rem + env(safe-area-inset-bottom));">
         <div class="mx-3 bg-white rounded-2xl shadow-2xl ring-1 ring-ink-950/8 p-1.5 flex items-center gap-1.5">
             @foreach($stickyActions as $a)
                 <a href="{{ $a['href'] }}"

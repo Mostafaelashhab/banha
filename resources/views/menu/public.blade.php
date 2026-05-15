@@ -390,10 +390,10 @@
          @endif
     >
 
-        {{-- Sticky bottom bar: hidden when cart empty, shown otherwise --}}
+        {{-- Sticky cart bar: lifted ABOVE the bottom-nav (which is z-40, ~4rem tall + safe-area). --}}
         <button type="button" data-cart-open
-                class="fixed bottom-4 inset-x-4 max-w-md mx-auto z-30 hidden items-center gap-3 py-3 ps-4 pe-3 rounded-full font-extrabold text-white text-sm shadow-2xl transition hover:scale-[1.01]"
-                style="background: var(--color-coral-500, #2D5BFF)">
+                class="fixed inset-x-4 max-w-md mx-auto z-50 hidden items-center gap-3 py-3 ps-4 pe-3 rounded-full font-extrabold text-white text-sm shadow-2xl transition hover:scale-[1.01]"
+                style="background: var(--color-coral-500, #2D5BFF); bottom: calc(4.75rem + env(safe-area-inset-bottom));">
             <span class="w-9 h-9 rounded-full bg-white/20 grid place-items-center text-base font-black" data-cart-badge>0</span>
             <span class="flex-1 text-start">
                 <span class="block text-[10px] text-white/80 font-bold">طلبك جاهز · اضغط للمراجعة</span>
@@ -481,7 +481,9 @@
                     <div>
                         <label class="block text-[11px] font-bold text-ink-700 mb-1">اسمك *</label>
                         <input type="text" name="customer_name" required maxlength="80"
-                               value="{{ $authUser->name ?? '' }}"
+                               value="{{ $authUser->name ?? $authUser->username ?? '' }}"
+                               data-checkout-name
+                               autocomplete="name"
                                class="w-full bg-cream-100 rounded-2xl px-4 py-2.5 text-sm text-ink-950 placeholder-ink-400 outline-0 border border-ink-950/8 focus:border-coral-500 transition"
                                placeholder="مثلاً: أحمد محمد">
                     </div>
@@ -490,6 +492,8 @@
                         <input type="tel" name="customer_phone" required dir="ltr" inputmode="numeric"
                                pattern="01[0125][0-9]{8}" maxlength="11"
                                value="{{ $authUser->phone ?? '' }}"
+                               data-checkout-phone
+                               autocomplete="tel"
                                class="w-full bg-cream-100 rounded-2xl px-4 py-2.5 text-sm text-ink-950 placeholder-ink-400 outline-0 border border-ink-950/8 focus:border-coral-500 transition"
                                placeholder="01XXXXXXXXX">
                         <p class="text-[10px] text-ink-400 mt-1">المطعم هيكلّمك على الرقم ده لتأكيد الطلب.</p>
@@ -543,20 +547,19 @@
                 </div>
 
                 <div class="border-t border-ink-950/8 p-4 space-y-2 shrink-0 bg-white">
-                    @if($business->offersDelivery())
-                        <div class="flex items-center justify-between text-[11px] text-ink-500">
-                            <span>الأصناف</span>
-                            <span dir="ltr"><span data-cart-subtotal>0</span> {{ $currency }}</span>
-                        </div>
-                        <div class="flex items-center justify-between text-[11px] text-ink-500" data-cart-fee-row>
-                            <span>الشحن <span data-cart-fee-zone class="text-ink-400"></span></span>
-                            <span dir="ltr"><span data-cart-fee>—</span></span>
-                        </div>
-                        @if((int) ($business->delivery_min_order ?? 0) > 0)
-                            <p class="hidden text-[10px] font-bold text-blush-600" data-cart-min-warn>
-                                ⚠ الحد الأدنى للأوردر {{ (int) $business->delivery_min_order }} ج.
-                            </p>
-                        @endif
+                    {{-- Always-visible breakdown: items + delivery (even when business doesn't deliver, we show "بدون شحن") --}}
+                    <div class="flex items-center justify-between text-[11px] text-ink-500">
+                        <span>الأصناف</span>
+                        <span dir="ltr"><span data-cart-subtotal>0</span> {{ $currency }}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-[11px] text-ink-500" data-cart-fee-row>
+                        <span>🛵 الشحن <span data-cart-fee-zone class="text-ink-400"></span></span>
+                        <span dir="ltr"><span data-cart-fee>{{ $business->offersDelivery() ? '— اختار منطقة' : 'بدون شحن' }}</span></span>
+                    </div>
+                    @if((int) ($business->delivery_min_order ?? 0) > 0)
+                        <p class="hidden text-[10px] font-bold text-blush-600" data-cart-min-warn>
+                            ⚠ الحد الأدنى للأوردر {{ (int) $business->delivery_min_order }} ج.
+                        </p>
                     @endif
                     <div class="flex items-center justify-between pt-1 border-t border-ink-950/5">
                         <span class="text-xs font-bold text-ink-500">الإجمالي</span>
@@ -834,21 +837,31 @@
         }
         totalBig.textContent = fmt(t);
 
-        // Delivery fee + grand total (only when business offers delivery)
-        const fee = selectedFee();
-        const hasDelivery = !!feeRow;
+        // Delivery fee + grand total
+        // - If the business has no area picker → no delivery, show "بدون شحن"
+        // - If picker exists but no area selected → "— اختار منطقة"
+        // - Otherwise → fee or "مجاناً"
+        const hasDelivery = !!areaSelect;
+        const fee = hasDelivery ? selectedFee() : 0;
         const grand = t + (fee !== null ? fee : 0);
+
         if (subtotalEl) subtotalEl.textContent = fmt(t);
         if (feeEl) {
-            if (fee === null) feeEl.textContent = '— اختار منطقة';
-            else if (fee === 0) feeEl.textContent = 'مجاناً';
-            else feeEl.textContent = fmt(fee) + ' ' + currency;
+            if (!hasDelivery) {
+                feeEl.textContent = 'بدون شحن';
+            } else if (fee === null) {
+                feeEl.textContent = '— اختار منطقة';
+            } else if (fee === 0) {
+                feeEl.textContent = 'مجاناً';
+            } else {
+                feeEl.textContent = fmt(fee) + ' ' + currency;
+            }
         }
         if (feeZoneEl) {
             const opt = areaSelect && areaSelect.value ? areaSelect.options[areaSelect.selectedIndex] : null;
             feeZoneEl.textContent = opt ? '· ' + (opt.text.split(' (')[0]) : '';
         }
-        if (totalBig2) totalBig2.textContent = fmt(hasDelivery ? grand : t);
+        if (totalBig2) totalBig2.textContent = fmt(grand);
 
         // Min-order warning
         if (minWarnEl) {
@@ -894,14 +907,24 @@
         setStep('review');
         sheet.classList.remove('hidden');
         backdrop.classList.remove('hidden');
-        requestAnimationFrame(() => sheet.style.transform = 'translateY(0)');
+        // In Tailwind v4 `translate-y-full` uses the `translate` CSS property,
+        // which isn't overridden by inline `transform`. Toggle the class instead.
+        requestAnimationFrame(() => sheet.classList.remove('translate-y-full'));
+        // Hide the open-bar so it doesn't sit on top of the sheet's content
+        bar.classList.add('hidden');
+        bar.classList.remove('inline-flex');
         document.body.style.overflow = 'hidden';
     }
     function closeSheet() {
-        sheet.style.transform = '';
+        sheet.classList.add('translate-y-full');
         backdrop.classList.add('hidden');
         document.body.style.overflow = '';
         setTimeout(() => { sheet.classList.add('hidden'); }, 280);
+        // Bring the open-bar back if the cart still has items
+        if (totalItems() > 0) {
+            bar.classList.remove('hidden');
+            bar.classList.add('inline-flex');
+        }
     }
     bar.addEventListener('click', openSheet);
     backdrop.addEventListener('click', closeSheet);
@@ -1072,23 +1095,30 @@
             const fee   = Number(body.delivery_fee || 0);
             const grand = Number(body.grand_total != null ? body.grand_total : subT + fee);
             if (sSubtotal) sSubtotal.textContent = fmt(subT);
-            if (sFee) {
+
+            // Always show the delivery row — even when the business doesn't deliver.
+            if (sFee && sFeeRow) {
+                sFeeRow.classList.remove('hidden');
                 if (!body.area) {
-                    sFeeRow?.classList.add('hidden');
+                    sFee.textContent = 'بدون شحن';
+                } else if (fee === 0) {
+                    sFee.textContent = 'مجاناً';
                 } else {
-                    sFeeRow?.classList.remove('hidden');
-                    sFee.textContent = fee === 0 ? 'مجاناً' : (fmt(fee) + ' ' + currency);
+                    sFee.textContent = fmt(fee) + ' ' + currency;
                 }
             }
-            if (sArea) {
+            if (sArea && sAreaRow) {
                 if (body.area) {
-                    sAreaRow?.classList.remove('hidden');
+                    sAreaRow.classList.remove('hidden');
                     sArea.textContent = body.area.name + (body.area.parent && body.area.parent !== body.area.name ? ' · ' + body.area.parent : '');
                 } else {
-                    sAreaRow?.classList.add('hidden');
+                    sAreaRow.classList.add('hidden');
                 }
             }
             if (sTotal) sTotal.textContent = fmt(grand);
+
+            // Remember the customer info for next order (across all restaurants).
+            saveCustomerInfo();
 
             cart = {}; save(); updateAllItemUI(); refresh();
             setStep('success');
@@ -1101,6 +1131,34 @@
             spinner.classList.add('hidden');
         }
     });
+
+    // ── Customer info (name/phone/address) persistence across restaurants ──
+    // Pre-fills the checkout fields from the previous order. If the user is
+    // logged in and Blade already populated the field server-side, we don't
+    // overwrite — server-side data wins so we never undo a manual edit on
+    // their profile.
+    const CUST_KEY = 'banhawy:checkout-info';
+    const nameInput    = form.querySelector('[data-checkout-name]');
+    const phoneInput   = form.querySelector('[data-checkout-phone]');
+    const addressInput = form.querySelector('input[name="customer_address"]');
+    const notesInput   = form.querySelector('textarea[name="notes"]');
+
+    function loadCustomerInfo() {
+        let info = {};
+        try { info = JSON.parse(localStorage.getItem(CUST_KEY) || '{}') || {}; } catch (e) {}
+        if (nameInput && !nameInput.value && info.name)         nameInput.value = info.name;
+        if (phoneInput && !phoneInput.value && info.phone)      phoneInput.value = info.phone;
+        if (addressInput && !addressInput.value && info.address) addressInput.value = info.address;
+    }
+    function saveCustomerInfo() {
+        const info = {
+            name:    nameInput?.value || '',
+            phone:   phoneInput?.value || '',
+            address: addressInput?.value || '',
+        };
+        try { localStorage.setItem(CUST_KEY, JSON.stringify(info)); } catch (e) {}
+    }
+    loadCustomerInfo();
 
     updateAllItemUI();
     refresh();
