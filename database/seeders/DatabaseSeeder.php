@@ -8,9 +8,10 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // Always-needed reference data (zones, products, badges)
+        // Always-needed reference data (zones, areas, products, badges)
         $this->call([
             ZoneSeeder::class,
+            AreaSeeder::class,
             ProductSeeder::class,
             BadgeSeeder::class,
         ]);

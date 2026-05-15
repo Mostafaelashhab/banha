@@ -105,6 +105,10 @@
                                 <span class="text-[10px] text-ink-400 ms-auto">{{ $o->created_at->diffForHumans() }}</span>
                             </div>
                             <a href="tel:{{ $o->customer_phone }}" class="text-[11px] text-coral-600 hover:underline" dir="ltr">{{ $o->customer_phone }}</a>
+                            @php $orderArea = $o->area_id ? \App\Models\Area::find($o->area_id) : null; @endphp
+                            @if($orderArea)
+                                <div class="text-[11px] text-ink-500 mt-0.5">🗺 {{ $orderArea->name }}@if($orderArea->parent && $orderArea->parent !== $orderArea->name) · {{ $orderArea->parent }}@endif</div>
+                            @endif
                             @if($o->customer_address)
                                 <div class="text-[11px] text-ink-500 mt-0.5">📍 {{ $o->customer_address }}</div>
                             @endif
@@ -116,9 +120,24 @@
                                         <span class="text-coral-600 font-black" dir="ltr">{{ rtrim(rtrim(number_format($it->line_total, 2), '0'), '.') }} {{ $o->currency }}</span>
                                     </div>
                                 @endforeach
-                                <div class="flex items-center justify-between pt-1 border-t border-ink-950/8 mt-1">
+                                <div class="flex items-center justify-between text-[11px] text-ink-500 pt-1 border-t border-ink-950/8 mt-1">
+                                    <span>الأصناف</span>
+                                    <span dir="ltr">{{ rtrim(rtrim(number_format($o->subtotal, 2), '0'), '.') }} {{ $o->currency }}</span>
+                                </div>
+                                @if((float) $o->delivery_fee > 0)
+                                    <div class="flex items-center justify-between text-[11px] text-ink-500">
+                                        <span>🛵 الشحن</span>
+                                        <span dir="ltr">{{ rtrim(rtrim(number_format($o->delivery_fee, 2), '0'), '.') }} {{ $o->currency }}</span>
+                                    </div>
+                                @elseif($o->area_id)
+                                    <div class="flex items-center justify-between text-[11px] text-mint-700 font-bold">
+                                        <span>🛵 الشحن</span>
+                                        <span>مجاناً</span>
+                                    </div>
+                                @endif
+                                <div class="flex items-center justify-between pt-1 border-t border-ink-950/8">
                                     <span class="text-[11px] font-bold text-ink-500">الإجمالي</span>
-                                    <span class="text-sm font-black text-ink-950" dir="ltr">{{ rtrim(rtrim(number_format($o->subtotal, 2), '0'), '.') }} {{ $o->currency }}</span>
+                                    <span class="text-sm font-black text-ink-950" dir="ltr">{{ rtrim(rtrim(number_format($o->grandTotal(), 2), '0'), '.') }} {{ $o->currency }}</span>
                                 </div>
                             </div>
 

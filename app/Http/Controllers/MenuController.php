@@ -137,7 +137,29 @@ class MenuController extends Controller
             ->where('is_available', true)
             ->get();
 
-        return view('menu.public', compact('business', 'looseItems'));
+        // Areas this business delivers to (with their per-area fee).
+        // The cart UI uses this for the area picker + auto-detect.
+        $deliveryAreas = collect();
+        $userDefaultAreaId = optional(Auth::user())->default_area_id;
+        if ($business->offersDelivery()) {
+            $coveredIds = array_map('intval', array_keys((array) $business->delivery_fees));
+            $rows = \App\Models\Area::whereIn('id', $coveredIds)
+                ->orderBy('parent')->orderBy('sort')->orderBy('name')
+                ->get();
+            $fees = (array) $business->delivery_fees;
+            $deliveryAreas = $rows->map(fn ($a) => [
+                'id'     => $a->id,
+                'name'   => $a->name,
+                'parent' => $a->parent,
+                'fee'    => (float) ($fees[(string) $a->id] ?? $fees[$a->id] ?? 0),
+                'lat'    => $a->lat ? (float) $a->lat : null,
+                'lng'    => $a->lng ? (float) $a->lng : null,
+            ])->values();
+        }
+
+        return view('menu.public', compact(
+            'business', 'looseItems', 'deliveryAreas', 'userDefaultAreaId'
+        ));
     }
 
     private function authorizeOwner(Business $business): void

@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'rating_avg', 'ratings_count', 'views_count', 'phone_clicks', 'whatsapp_clicks',
     'emoji', 'photo_url', 'has_menu', 'menu_currency', 'external_id', 'extra',
     'booking_enabled', 'booking_slot_minutes', 'booking_lead_hours', 'booking_capacity',
+    'delivery_fees', 'delivery_min_order',
 ])]
 class Business extends Model
 {
@@ -573,7 +574,27 @@ class Business extends Model
             'booking_slot_minutes' => 'integer',
             'booking_lead_hours'   => 'integer',
             'booking_capacity'     => 'integer',
+            'delivery_fees'        => 'array',
+            'delivery_min_order'   => 'integer',
         ];
+    }
+
+    /**
+     * Resolve the delivery fee (EGP) for a given area id, or null if this
+     * area isn't serviced by the business. Returns 0 explicitly when the
+     * business set it to "free delivery here".
+     */
+    public function deliveryFeeFor(int $areaId): ?float
+    {
+        $map = (array) ($this->delivery_fees ?? []);
+        if (! array_key_exists((string) $areaId, $map)) return null;
+        return (float) $map[(string) $areaId];
+    }
+
+    /** Does this business deliver anywhere at all? */
+    public function offersDelivery(): bool
+    {
+        return is_array($this->delivery_fees) && count($this->delivery_fees) > 0;
     }
 
     /** Day codes used by hours_schedule. Saturday-first to match Egyptian week. */

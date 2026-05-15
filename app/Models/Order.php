@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'business_id', 'user_id', 'customer_name', 'customer_phone', 'customer_address',
+    'area_id', 'delivery_fee',
     'notes', 'subtotal', 'currency', 'status', 'wa_send_status', 'wa_sent_at',
 ])]
 class Order extends Model
@@ -17,9 +18,21 @@ class Order extends Model
     protected function casts(): array
     {
         return [
-            'subtotal'    => 'decimal:2',
-            'wa_sent_at'  => 'datetime',
+            'subtotal'     => 'decimal:2',
+            'delivery_fee' => 'decimal:2',
+            'wa_sent_at'   => 'datetime',
         ];
+    }
+
+    public function area(): BelongsTo
+    {
+        return $this->belongsTo(Area::class);
+    }
+
+    /** Items + delivery. Use this when displaying the final total. */
+    public function grandTotal(): float
+    {
+        return (float) $this->subtotal + (float) ($this->delivery_fee ?? 0);
     }
 
     public const STATUSES = [

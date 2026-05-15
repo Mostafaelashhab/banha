@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Area;
 use App\Models\Business;
 use App\Models\MenuItem;
 use App\Models\Order;
@@ -30,6 +31,7 @@ class OrderController extends Controller
             'customer_name'    => ['required', 'string', 'max:80'],
             'customer_phone'   => ['required', 'string', 'regex:/^01[0125]\d{8}$/'],
             'customer_address' => ['nullable', 'string', 'max:255'],
+            'area_id'          => ['nullable', 'integer', 'exists:areas,id'],
             'notes'            => ['nullable', 'string', 'max:500'],
             'items'            => ['required', 'array', 'min:1', 'max:50'],
             'items.*.id'       => ['required', 'integer'],
@@ -38,6 +40,29 @@ class OrderController extends Controller
             'customer_phone.regex' => 'رقم الموبايل لازم يكون مصري صحيح (11 رقم يبدأ بـ 010/011/012/015).',
             'items.required'       => 'مفيش أصناف في الطلب.',
         ]);
+
+        // ── Resolve delivery (area + fee) server-side from the authoritative map. ──
+        // Client may lie about the fee; we always re-derive from $business->delivery_fees.
+        $area = null;
+        $deliveryFee = 0.0;
+        if ($business->offersDelivery()) {
+            // Delivery configured → area is required
+            if (empty($data['area_id'])) {
+                return response()->json([
+                    'ok'    => false,
+                    'error' => 'اختار منطقتك للتوصيل.',
+                ], 422);
+            }
+            $fee = $business->deliveryFeeFor((int) $data['area_id']);
+            if ($fee === null) {
+                return response()->json([
+                    'ok'    => false,
+                    'error' => 'المطعم مش بيوصّل المنطقة دي. اختار منطقة تانية.',
+                ], 422);
+            }
+            $area = Area::find($data['area_id']);
+            $deliveryFee = $fee;
+        }
 
         // Re-fetch items from DB to get authoritative prices (never trust client)
         $ids = collect($data['items'])->pluck('id')->all();
@@ -80,13 +105,25 @@ class OrderController extends Controller
             ], 422);
         }
 
-        $order = DB::transaction(function () use ($business, $data, $rows, $subtotal) {
+        // Enforce minimum-order, if set — server-side guard mirrors the client check.
+        $minOrder = (int) ($business->delivery_min_order ?? 0);
+        if ($business->offersDelivery() && $minOrder > 0 && $subtotal < $minOrder) {
+            return response()->json([
+                'ok'    => false,
+                'error' => 'الحد الأدنى للأوردر ' . $minOrder . ' ج. ضيف أصناف تاني.',
+            ], 422);
+        }
+
+        $areaId = $area?->id;
+        $order = DB::transaction(function () use ($business, $data, $rows, $subtotal, $areaId, $deliveryFee) {
             $order = Order::create([
                 'business_id'      => $business->id,
                 'user_id'          => Auth::id(),
                 'customer_name'    => trim($data['customer_name']),
                 'customer_phone'   => $data['customer_phone'],
                 'customer_address' => $data['customer_address'] ?? null,
+                'area_id'          => $areaId,
+                'delivery_fee'     => round((float) $deliveryFee, 2),
                 'notes'            => $data['notes'] ?? null,
                 'subtotal'         => round($subtotal, 2),
                 'currency'         => $business->menu_currency ?? 'EGP',
@@ -101,8 +138,13 @@ class OrderController extends Controller
             return $order;
         });
 
+        // Remember a logged-in user's chosen area for next visit.
+        if (Auth::check() && $areaId) {
+            Auth::user()->update(['default_area_id' => $areaId]);
+        }
+
         // Send to the restaurant's WhatsApp via WAAPI (server-side)
-        $waResult = WaapiService::send($business->whatsapp, $this->ownerMessage($business, $order, $rows));
+        $waResult = WaapiService::send($business->whatsapp, $this->ownerMessage($business, $order, $rows, $area));
 
         $order->update([
             'wa_send_status' => $waResult['ok']
@@ -166,7 +208,7 @@ class OrderController extends Controller
     }
 
     /** Build the WhatsApp message that gets sent to the restaurant. */
-    private function ownerMessage(Business $business, Order $order, array $rows): string
+    private function ownerMessage(Business $business, Order $order, array $rows, ?Area $area = null): string
     {
         $currency = $order->currency;
         $lines = [];
@@ -175,15 +217,31 @@ class OrderController extends Controller
                      . ' = ' . $this->fmt($r['line_total']) . ' ' . $currency;
         }
 
+        $deliveryFee = (float) ($order->delivery_fee ?? 0);
+        $grand = (float) $order->subtotal + $deliveryFee;
+
         $msg = "🔔 *طلب جديد من بنهاوي* (#{$order->id})\n";
         $msg .= "النشاط: {$business->name}\n\n";
         $msg .= "👤 {$order->customer_name}\n";
         $msg .= "📞 {$order->customer_phone}\n";
+        if ($area) {
+            $msg .= "🗺 المنطقة: {$area->name}";
+            if ($area->parent && $area->parent !== $area->name) {
+                $msg .= " ({$area->parent})";
+            }
+            $msg .= "\n";
+        }
         if ($order->customer_address) {
             $msg .= "📍 {$order->customer_address}\n";
         }
         $msg .= "\n🍽 *الطلب:*\n" . implode("\n", $lines) . "\n";
-        $msg .= "\n💰 *الإجمالي:* " . $this->fmt($order->subtotal) . " {$currency}\n";
+        $msg .= "\n💰 الأصناف: " . $this->fmt($order->subtotal) . " {$currency}\n";
+        if ($deliveryFee > 0) {
+            $msg .= "🛵 الشحن: " . $this->fmt($deliveryFee) . " {$currency}\n";
+        } elseif ($area) {
+            $msg .= "🛵 الشحن: مجاناً\n";
+        }
+        $msg .= "💵 *الإجمالي:* " . $this->fmt($grand) . " {$currency}\n";
         if ($order->notes) {
             $msg .= "\n📝 ملاحظات: {$order->notes}\n";
         }

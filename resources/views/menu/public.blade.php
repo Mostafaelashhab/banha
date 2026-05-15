@@ -378,10 +378,15 @@
          data-biz-name="{{ $business->name }}"
          data-currency="{{ $currency }}"
          data-order-url="{{ route('order.store', $business) }}"
+         data-areas-nearest-url="{{ route('areas.nearest') }}"
+         data-min-order="{{ (int) ($business->delivery_min_order ?? 0) }}"
+         data-default-area-id="{{ $userDefaultAreaId ?? '' }}"
+         data-areas='@json($deliveryAreas)'
          data-csrf="{{ csrf_token() }}"
          @if($authUser)
             data-user-name="{{ $authUser->name }}"
             data-user-phone="{{ $authUser->phone ?? '' }}"
+            data-user-set-area-url="{{ route('profile.area.set') }}"
          @endif
     >
 
@@ -489,8 +494,40 @@
                                placeholder="01XXXXXXXXX">
                         <p class="text-[10px] text-ink-400 mt-1">المطعم هيكلّمك على الرقم ده لتأكيد الطلب.</p>
                     </div>
+                    @if($business->offersDelivery())
+                        <div data-area-block>
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="block text-[11px] font-bold text-ink-700">منطقتك (للتوصيل) *</label>
+                                <button type="button" data-area-detect
+                                        class="inline-flex items-center gap-1 text-[10px] font-extrabold text-coral-600 hover:underline">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3">
+                                        <circle cx="12" cy="12" r="3"/>
+                                        <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+                                    </svg>
+                                    حدّد مكاني تلقائي
+                                </button>
+                            </div>
+                            <select name="area_id" required data-area-select
+                                    class="w-full bg-cream-100 rounded-2xl px-4 py-2.5 text-sm text-ink-950 outline-0 border border-ink-950/8 focus:border-coral-500 transition appearance-none">
+                                <option value="">— اختار منطقتك —</option>
+                                @php
+                                    $grouped = collect($deliveryAreas)->groupBy('parent');
+                                @endphp
+                                @foreach($grouped as $parent => $rows)
+                                    <optgroup label="{{ $parent }}">
+                                        @foreach($rows as $a)
+                                            <option value="{{ $a['id'] }}" data-fee="{{ $a['fee'] }}">
+                                                {{ $a['name'] }} ({{ $a['fee'] == 0 ? 'مجاناً' : $a['fee'].' ج' }})
+                                            </option>
+                                        @endforeach
+                                    </optgroup>
+                                @endforeach
+                            </select>
+                            <p data-area-detect-msg class="hidden text-[10px] text-ink-500 mt-1"></p>
+                        </div>
+                    @endif
                     <div>
-                        <label class="block text-[11px] font-bold text-ink-700 mb-1">العنوان (للدليفري)</label>
+                        <label class="block text-[11px] font-bold text-ink-700 mb-1">العنوان بالظبط (شارع، عمارة، دور)</label>
                         <input type="text" name="customer_address" maxlength="255"
                                class="w-full bg-cream-100 rounded-2xl px-4 py-2.5 text-sm text-ink-950 placeholder-ink-400 outline-0 border border-ink-950/8 focus:border-coral-500 transition"
                                placeholder="مثلاً: شارع طه حسين، عمارة 12، الدور 3">
@@ -506,7 +543,22 @@
                 </div>
 
                 <div class="border-t border-ink-950/8 p-4 space-y-2 shrink-0 bg-white">
-                    <div class="flex items-center justify-between">
+                    @if($business->offersDelivery())
+                        <div class="flex items-center justify-between text-[11px] text-ink-500">
+                            <span>الأصناف</span>
+                            <span dir="ltr"><span data-cart-subtotal>0</span> {{ $currency }}</span>
+                        </div>
+                        <div class="flex items-center justify-between text-[11px] text-ink-500" data-cart-fee-row>
+                            <span>الشحن <span data-cart-fee-zone class="text-ink-400"></span></span>
+                            <span dir="ltr"><span data-cart-fee>—</span></span>
+                        </div>
+                        @if((int) ($business->delivery_min_order ?? 0) > 0)
+                            <p class="hidden text-[10px] font-bold text-blush-600" data-cart-min-warn>
+                                ⚠ الحد الأدنى للأوردر {{ (int) $business->delivery_min_order }} ج.
+                            </p>
+                        @endif
+                    @endif
+                    <div class="flex items-center justify-between pt-1 border-t border-ink-950/5">
                         <span class="text-xs font-bold text-ink-500">الإجمالي</span>
                         <span class="text-lg font-black text-ink-950" dir="ltr">
                             <span data-cart-total-big-2>0</span>
@@ -579,6 +631,43 @@
     const orderUrl = root.dataset.orderUrl;
     const csrf     = root.dataset.csrf;
     const STORAGE_KEY = 'banhawy:cart:' + bizId;
+
+    // ── Delivery wiring ──
+    const areaNearestUrl   = root.dataset.areasNearestUrl || '';
+    const areaSetUserUrl   = root.dataset.userSetAreaUrl || '';
+    const minOrder         = Number(root.dataset.minOrder || 0);
+    const userDefaultAreaId = root.dataset.defaultAreaId || '';
+    let areas = [];
+    try { areas = JSON.parse(root.dataset.areas || '[]') || []; } catch (e) { areas = []; }
+    const areaSelect      = root.querySelector('[data-area-select]');
+    const areaDetectBtn   = root.querySelector('[data-area-detect]');
+    const areaDetectMsg   = root.querySelector('[data-area-detect-msg]');
+    const feeRow          = root.querySelector('[data-cart-fee-row]');
+    const feeEl           = root.querySelector('[data-cart-fee]');
+    const feeZoneEl       = root.querySelector('[data-cart-fee-zone]');
+    const subtotalEl      = root.querySelector('[data-cart-subtotal]');
+    const minWarnEl       = root.querySelector('[data-cart-min-warn]');
+    const COOKIE_AREA     = 'banhawy_area_id';
+
+    function getCookie(name) {
+        return document.cookie.split('; ').reduce((acc, c) => {
+            const [k, v] = c.split('=');
+            return k === name ? decodeURIComponent(v) : acc;
+        }, '');
+    }
+    function setCookie(name, value) {
+        const oneYear = 60 * 60 * 24 * 365;
+        document.cookie = name + '=' + encodeURIComponent(value) + '; max-age=' + oneYear + '; path=/; samesite=lax';
+    }
+    function selectedAreaId() {
+        return areaSelect ? areaSelect.value : '';
+    }
+    function selectedFee() {
+        if (!areaSelect || !areaSelect.value) return null;
+        const opt = areaSelect.options[areaSelect.selectedIndex];
+        const v = opt ? opt.dataset.fee : null;
+        return v === undefined || v === null || v === '' ? null : Number(v);
+    }
 
     const bar         = root.querySelector('[data-cart-open]');
     const sheet       = root.querySelector('[data-cart-sheet]');
@@ -708,7 +797,27 @@
             }).join('');
         }
         totalBig.textContent = fmt(t);
-        if (totalBig2) totalBig2.textContent = fmt(t);
+
+        // Delivery fee + grand total (only when business offers delivery)
+        const fee = selectedFee();
+        const hasDelivery = !!feeRow;
+        const grand = t + (fee !== null ? fee : 0);
+        if (subtotalEl) subtotalEl.textContent = fmt(t);
+        if (feeEl) {
+            if (fee === null) feeEl.textContent = '— اختار منطقة';
+            else if (fee === 0) feeEl.textContent = 'مجاناً';
+            else feeEl.textContent = fmt(fee) + ' ' + currency;
+        }
+        if (feeZoneEl) {
+            const opt = areaSelect && areaSelect.value ? areaSelect.options[areaSelect.selectedIndex] : null;
+            feeZoneEl.textContent = opt ? '· ' + (opt.text.split(' (')[0]) : '';
+        }
+        if (totalBig2) totalBig2.textContent = fmt(hasDelivery ? grand : t);
+
+        // Min-order warning
+        if (minWarnEl) {
+            minWarnEl.classList.toggle('hidden', !(minOrder > 0 && t > 0 && t < minOrder));
+        }
     }
 
     function add(id, name, price) {
@@ -772,6 +881,93 @@
     });
     backBtn?.addEventListener('click', () => setStep('review'));
 
+    // ── Area picker: change → recompute, persist, sync to user ──
+    if (areaSelect) {
+        areaSelect.addEventListener('change', () => {
+            refresh();
+            const aid = areaSelect.value;
+            if (aid) {
+                setCookie(COOKIE_AREA, aid);
+                if (areaSetUserUrl) {
+                    fetch(areaSetUserUrl, {
+                        method: 'POST',
+                        headers: {'Content-Type':'application/json','X-CSRF-TOKEN':csrf,'X-Requested-With':'XMLHttpRequest'},
+                        body: JSON.stringify({ area_id: Number(aid) }),
+                    }).catch(() => {});
+                }
+            }
+        });
+
+        // Pre-select preferred area: user.default → cookie → first option
+        const cookieArea = getCookie(COOKIE_AREA);
+        const preferred = userDefaultAreaId || cookieArea;
+        if (preferred) {
+            const opt = areaSelect.querySelector('option[value="' + preferred + '"]');
+            if (opt) areaSelect.value = preferred;
+        }
+    }
+
+    // ── Geolocation auto-detect: try once, on first checkout open ──
+    let geoTried = false;
+    function tryAutoDetect(silent) {
+        if (geoTried || !areaSelect || !areaNearestUrl) return;
+        geoTried = true;
+        if (!navigator.geolocation) {
+            if (!silent && areaDetectMsg) {
+                areaDetectMsg.classList.remove('hidden');
+                areaDetectMsg.textContent = 'متصفحك مش بيدعم تحديد الموقع.';
+            }
+            return;
+        }
+        // Skip auto-detect if user already picked an area (don't override their choice)
+        if (areaSelect.value && silent) return;
+
+        if (!silent && areaDetectMsg) {
+            areaDetectMsg.classList.remove('hidden');
+            areaDetectMsg.textContent = '⏳ بنحدد مكانك...';
+        }
+        navigator.geolocation.getCurrentPosition(async (pos) => {
+            try {
+                const u = areaNearestUrl + '?lat=' + pos.coords.latitude + '&lng=' + pos.coords.longitude;
+                const r = await fetch(u, { headers: {'Accept':'application/json'} });
+                const body = await r.json();
+                if (body.ok && body.area && areaSelect) {
+                    // Only auto-fill if user hasn't picked yet
+                    if (!areaSelect.value || !silent) {
+                        const opt = areaSelect.querySelector('option[value="' + body.area.id + '"]');
+                        if (opt) {
+                            areaSelect.value = String(body.area.id);
+                            areaSelect.dispatchEvent(new Event('change'));
+                            if (areaDetectMsg) {
+                                areaDetectMsg.classList.remove('hidden');
+                                areaDetectMsg.textContent = '✓ تم اختيار ' + body.area.name + ' أوتوماتيك.';
+                                setTimeout(() => areaDetectMsg.classList.add('hidden'), 4000);
+                            }
+                            return;
+                        }
+                    }
+                }
+                if (!silent && areaDetectMsg) {
+                    areaDetectMsg.classList.remove('hidden');
+                    areaDetectMsg.textContent = 'مكانك مش ضمن مناطق التوصيل — اختار يدوي.';
+                }
+            } catch (err) {
+                if (!silent && areaDetectMsg) {
+                    areaDetectMsg.classList.remove('hidden');
+                    areaDetectMsg.textContent = 'فشل تحديد المكان — اختار يدوي.';
+                }
+            }
+        }, () => {
+            if (!silent && areaDetectMsg) {
+                areaDetectMsg.classList.remove('hidden');
+                areaDetectMsg.textContent = 'الموقع مرفوض — اختار منطقتك يدوي.';
+            }
+        }, { timeout: 8000, maximumAge: 5 * 60 * 1000 });
+    }
+    // Fire silent auto-detect on first checkout open (only when no area set yet)
+    toCheckout?.addEventListener('click', () => { if (areaSelect && !areaSelect.value) tryAutoDetect(true); }, { once: false });
+    areaDetectBtn?.addEventListener('click', () => { geoTried = false; tryAutoDetect(false); });
+
     // ── Submit order to server (server sends WAAPI message to restaurant) ──
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -782,11 +978,30 @@
         submitLabel.textContent = 'جارٍ الإرسال...';
         spinner.classList.remove('hidden');
 
+        // Client-side guards before the network round-trip
+        if (areaSelect && !areaSelect.value) {
+            errBox.textContent = 'اختار منطقتك للتوصيل.';
+            errBox.classList.remove('hidden');
+            submitBtn.disabled = false;
+            submitLabel.textContent = 'أكد الطلب';
+            spinner.classList.add('hidden');
+            return;
+        }
+        if (minOrder > 0 && totalPrice() < minOrder) {
+            errBox.textContent = 'الحد الأدنى للأوردر ' + minOrder + ' ' + currency + '.';
+            errBox.classList.remove('hidden');
+            submitBtn.disabled = false;
+            submitLabel.textContent = 'أكد الطلب';
+            spinner.classList.add('hidden');
+            return;
+        }
+
         const fd = new FormData(form);
         const payload = {
             customer_name:    fd.get('customer_name') || '',
             customer_phone:   fd.get('customer_phone') || '',
             customer_address: fd.get('customer_address') || '',
+            area_id:          fd.get('area_id') ? Number(fd.get('area_id')) : null,
             notes:            fd.get('notes') || '',
             items: Object.values(cart).map(it => ({ id: Number(it.id), qty: it.qty })),
         };

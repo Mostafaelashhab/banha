@@ -426,6 +426,88 @@
             </div>
             @endif
 
+            {{-- ──── Delivery fees per area (food + shops only) ──── --}}
+            @if(in_array($business->category, \App\Models\Business::ORDER_CATEGORIES, true))
+                @php
+                    $deliveryMap = (array) ($business->delivery_fees ?? []);
+                    $areasByParent = \App\Models\Area::ordered()->get()->groupBy('parent');
+                @endphp
+                <div class="card-light p-5" data-delivery-editor>
+                    <div class="flex items-center gap-3 mb-3">
+                        <span class="step-num" style="--cat-color: {{ $cm['color'] }};">٧</span>
+                        <div class="flex-1 min-w-0">
+                            <h2 class="text-sm font-extrabold text-ink-950">أسعار الشحن لكل منطقة</h2>
+                            <p class="text-[11px] text-ink-500">حدّد سعر التوصيل لكل منطقة بتوصّلها. المناطق اللي تسيبها فاضية مش هتظهر للعميل كأنك بتوصّلها.</p>
+                        </div>
+                    </div>
+
+                    <label class="block mb-3">
+                        <span class="text-[11px] font-bold text-ink-500 mb-1 block">الحد الأدنى للأوردر (ج · اختياري)</span>
+                        <input type="number" name="delivery_min_order" min="0" step="1"
+                               value="{{ old('delivery_min_order', (int) $business->delivery_min_order) }}"
+                               placeholder="مثلاً 50"
+                               class="w-full bg-cream-100 rounded-xl px-3 py-2.5 text-sm text-ink-950 outline-0 border border-ink-950/8 focus:border-coral-500 transition">
+                        <span class="text-[10px] text-ink-400">اللي يقلّ عن الرقم ده مش هيتقدر يأكد الأوردر.</span>
+                    </label>
+
+                    {{-- Search filter (client-side) --}}
+                    <label class="relative block mb-3">
+                        <input type="search" placeholder="دور على منطقة (بنها، طوخ، الفلل، ...)"
+                               data-delivery-search
+                               class="w-full bg-cream-100 rounded-xl ps-9 pe-3 py-2 text-xs text-ink-950 outline-0 border border-ink-950/8 focus:border-coral-500 transition">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="w-3.5 h-3.5 text-ink-400 absolute start-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                    </label>
+
+                    {{-- Quick fill: same fee for all visible areas --}}
+                    <div class="flex items-center gap-2 mb-3 flex-wrap">
+                        <span class="text-[10px] font-bold text-ink-500">عبّي سريع:</span>
+                        <input type="number" min="0" step="1" placeholder="السعر"
+                               data-delivery-bulk-value
+                               class="w-20 bg-cream-100 rounded-lg px-2 py-1 text-xs text-ink-950 outline-0 border border-ink-950/8 focus:border-coral-500">
+                        <button type="button" data-delivery-bulk-apply
+                                class="px-2.5 py-1 rounded-lg bg-coral-50 text-coral-600 text-[10px] font-extrabold hover:bg-coral-100 transition">
+                            طبّق على الكل اللي بانيش
+                        </button>
+                        <button type="button" data-delivery-clear-all
+                                class="px-2.5 py-1 rounded-lg bg-blush-50 text-blush-600 text-[10px] font-extrabold hover:bg-blush-100 transition">
+                            امسح الكل
+                        </button>
+                    </div>
+
+                    <div class="border border-ink-950/8 rounded-2xl divide-y divide-ink-950/5 max-h-96 overflow-y-auto" data-delivery-list>
+                        @foreach($areasByParent as $parent => $areas)
+                            <div class="bg-cream-50 px-3 py-1.5 sticky top-0 z-10 text-[10px] font-extrabold text-ink-500"
+                                 data-area-group="{{ $parent }}">
+                                {{ $parent }}
+                                <span class="text-ink-400 font-bold">({{ $areas->count() }})</span>
+                            </div>
+                            @foreach($areas as $a)
+                                @php $existingFee = $deliveryMap[$a->id] ?? null; @endphp
+                                <div class="flex items-center gap-2 px-3 py-2 hover:bg-cream-100/60"
+                                     data-area-row
+                                     data-area-name="{{ $a->name }} {{ $a->parent }}">
+                                    <span class="text-sm font-bold text-ink-950 flex-1 truncate">{{ $a->name }}</span>
+                                    <div class="relative">
+                                        <input type="number" min="0" step="1"
+                                               name="delivery_fees[{{ $a->id }}]"
+                                               value="{{ old('delivery_fees.'.$a->id, $existingFee !== null ? (int) $existingFee : '') }}"
+                                               placeholder="—"
+                                               data-delivery-fee
+                                               class="w-24 bg-white rounded-lg ps-2 pe-7 py-1.5 text-xs font-extrabold text-ink-950 outline-0 border border-ink-950/8 focus:border-coral-500 text-end transition">
+                                        <span class="absolute end-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-ink-400 pointer-events-none">ج</span>
+                                    </div>
+                                </div>
+                            @endforeach
+                        @endforeach
+                    </div>
+                    <p class="text-[10px] text-ink-400 mt-2 leading-relaxed">
+                        💡 سيب الخانة فاضية للمناطق اللي مش بتوصّلها. حط <b>٠</b> للمناطق اللي بتوصّلها مجاناً.
+                    </p>
+                </div>
+            @endif
+
             {{-- Sticky submit --}}
             <div class="sticky-submit">
                 <button type="submit" class="btn-primary w-full justify-center !py-3.5 text-sm shadow-xl shadow-coral-500/30">
@@ -548,6 +630,60 @@
                 stepCategory.classList.add('is-active');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
+        });
+    })();
+
+    // ── Delivery fees editor: search filter + bulk fill ──
+    (function () {
+        const editor = document.querySelector('[data-delivery-editor]');
+        if (!editor) return;
+
+        const search    = editor.querySelector('[data-delivery-search]');
+        const rows      = Array.from(editor.querySelectorAll('[data-area-row]'));
+        const groups    = Array.from(editor.querySelectorAll('[data-area-group]'));
+        const bulkValue = editor.querySelector('[data-delivery-bulk-value]');
+        const bulkApply = editor.querySelector('[data-delivery-bulk-apply]');
+        const clearAll  = editor.querySelector('[data-delivery-clear-all]');
+
+        function applyFilter(term) {
+            const t = (term || '').trim().toLowerCase();
+            rows.forEach(r => {
+                const matches = !t || r.dataset.areaName.toLowerCase().includes(t);
+                r.style.display = matches ? '' : 'none';
+            });
+            // Hide a group if all of its rows are hidden
+            groups.forEach(g => {
+                let n = g.nextElementSibling;
+                let visible = false;
+                while (n && n.hasAttribute('data-area-row')) {
+                    if (n.style.display !== 'none') { visible = true; break; }
+                    n = n.nextElementSibling;
+                }
+                g.style.display = visible || !t ? '' : 'none';
+            });
+        }
+
+        search?.addEventListener('input', () => applyFilter(search.value));
+
+        bulkApply?.addEventListener('click', () => {
+            const v = bulkValue.value.trim();
+            if (v === '' || isNaN(Number(v))) {
+                bulkValue.focus();
+                return;
+            }
+            rows.forEach(r => {
+                if (r.style.display === 'none') return;
+                const input = r.querySelector('[data-delivery-fee]');
+                if (input) input.value = v;
+            });
+        });
+
+        clearAll?.addEventListener('click', () => {
+            if (!confirm('هتمسح كل أسعار الشحن. متأكد؟')) return;
+            rows.forEach(r => {
+                const input = r.querySelector('[data-delivery-fee]');
+                if (input) input.value = '';
+            });
         });
     })();
 </script>

@@ -99,6 +99,11 @@ Route::get('/benha-university', [\App\Http\Controllers\UniversityController::cla
 Route::get('/own-business',     [\App\Http\Controllers\MarketingController::class,  'claim'])->name('marketing.claim');
 Route::get('/qr-menu',          [\App\Http\Controllers\MarketingController::class,  'qrMenu'])->name('marketing.qr-menu');
 
+// ─── Areas lookup (public — used by cart geolocation auto-pick) ───
+Route::get('/areas/nearest',    [\App\Http\Controllers\AreaController::class, 'nearest'])
+    ->middleware('throttle:30,1')
+    ->name('areas.nearest');
+
 // Authenticated app routes
 Route::middleware('auth')->group(function () {
     // Activation (after signup)
@@ -205,6 +210,7 @@ Route::middleware('auth')->group(function () {
     // Withdrawals (user actions)
     Route::post('/withdrawals',                        [\App\Http\Controllers\WithdrawalController::class, 'store'])->name('withdrawals.store');
     Route::post('/withdrawals/{withdrawal}/cancel',    [\App\Http\Controllers\WithdrawalController::class, 'cancel'])->name('withdrawals.cancel');
+    Route::post('/me/area',           [\App\Http\Controllers\AreaController::class, 'setDefault'])->name('profile.area.set');
     Route::post('/me/profile',        [ProfileSettingsController::class, 'updateProfile'])->name('profile.update');
     Route::post('/me/password',       [ProfileSettingsController::class, 'changePassword'])->name('profile.password');
     Route::post('/me/prayer-notify',  [ProfileSettingsController::class, 'togglePrayerNotify'])->name('profile.prayer.notify');

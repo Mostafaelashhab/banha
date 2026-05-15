@@ -316,6 +316,8 @@ class DirectoryController extends Controller
             'is_active'     => true,
             'emoji'         => $sm['emoji'],
             'photo_url'     => $photoUrl,
+            'delivery_fees'      => $data['delivery_fees'] ?? null,
+            'delivery_min_order' => (int) ($data['delivery_min_order'] ?? 0),
         ]);
 
         \App\Services\AdminNotificationService::onBusinessCreated($business->fresh()->load('owner'));
@@ -373,6 +375,8 @@ class DirectoryController extends Controller
             'booking_slot_minutes' => $data['booking_slot_minutes'] ?? ($business->booking_slot_minutes ?: 30),
             'booking_lead_hours'   => $data['booking_lead_hours']   ?? ($business->booking_lead_hours ?? 2),
             'booking_capacity'     => $data['booking_capacity']     ?? ($business->booking_capacity ?: 1),
+            'delivery_fees'        => $data['delivery_fees'] ?? null,
+            'delivery_min_order'   => (int) ($data['delivery_min_order'] ?? 0),
         ]);
 
         // Bust map cache so location changes show up immediately on /map
@@ -580,6 +584,11 @@ class DirectoryController extends Controller
             'booking_slot_minutes' => ['nullable', 'integer', 'in:15,20,30,45,60,90,120'],
             'booking_lead_hours'   => ['nullable', 'integer', 'in:0,1,2,4,12,24'],
             'booking_capacity'     => ['nullable', 'integer', 'min:1', 'max:50'],
+            // Delivery fees: posted as delivery_fees[area_id] = "fee" map.
+            // Empty/blank values mean "don't deliver here" — they get dropped.
+            'delivery_fees'        => ['nullable', 'array'],
+            'delivery_fees.*'      => ['nullable', 'numeric', 'min:0', 'max:1000'],
+            'delivery_min_order'   => ['nullable', 'integer', 'min:0', 'max:10000'],
         ], [
             'phone.regex'    => 'لازم رقم موبايل مصري صحيح.',
             'whatsapp.regex' => 'لازم رقم واتساب مصري صحيح.',
@@ -644,6 +653,24 @@ class DirectoryController extends Controller
             if ($cleaned[$key] === null || $cleaned[$key] === '') unset($cleaned[$key]);
         }
         $data['extra'] = $cleaned ?: null;
+
+        // ── Delivery fees: drop blank entries, validate area_ids exist ──
+        // Stored as { "<area_id>": fee } map. An empty submission means
+        // the business doesn't offer delivery at all (null).
+        if (! empty($data['delivery_fees']) && is_array($data['delivery_fees'])) {
+            $rawFees = $data['delivery_fees'];
+            $validAreaIds = \App\Models\Area::whereIn('id', array_keys($rawFees))->pluck('id')->all();
+            $clean = [];
+            foreach ($rawFees as $areaId => $fee) {
+                $areaId = (int) $areaId;
+                if (! in_array($areaId, $validAreaIds, true)) continue;
+                if ($fee === '' || $fee === null) continue; // blank = not delivered
+                $clean[(string) $areaId] = (float) $fee;
+            }
+            $data['delivery_fees'] = $clean ?: null;
+        } else {
+            $data['delivery_fees'] = null;
+        }
 
         return $data;
     }
