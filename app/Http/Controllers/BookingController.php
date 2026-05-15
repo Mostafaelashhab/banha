@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Booking;
 use App\Models\Business;
+use App\Services\WaapiService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -89,7 +90,26 @@ class BookingController extends Controller
             'duration_minutes' => $business->booking_slot_minutes ?: 30,
             'status'           => 'pending',
             'notes'            => $data['notes'] ?? null,
+            'wa_send_status'   => 'pending',
         ]);
+
+        // Send the booking to the business via WAAPI (server-side) — mirrors
+        // the order flow: customer never leaves the app, message comes from Banhawy.
+        $waResult = ['ok' => false];
+        if ($business->whatsapp) {
+            $waResult = WaapiService::send(
+                $business->whatsapp,
+                $this->ownerMessage($business, $booking, $startsAt)
+            );
+            $booking->update([
+                'wa_send_status' => $waResult['ok']
+                    ? (($waResult['simulated'] ?? false) ? 'simulated' : 'sent')
+                    : 'failed',
+                'wa_sent_at'     => $waResult['ok'] ? now() : null,
+            ]);
+        } else {
+            $booking->update(['wa_send_status' => 'failed']);
+        }
 
         return redirect()
             ->route('booking.show', $business)
@@ -97,7 +117,8 @@ class BookingController extends Controller
                 'id'        => $booking->id,
                 'starts_at' => $startsAt->format('Y-m-d H:i'),
                 'pretty'    => $startsAt->translatedFormat('l d M · h:i a'),
-                'wa_link'   => $this->whatsappLinkFor($business, $booking),
+                'wa_status' => $booking->wa_send_status,
+                'has_whatsapp' => (bool) $business->whatsapp,
             ]);
     }
 
@@ -152,17 +173,23 @@ class BookingController extends Controller
         abort_unless($isOwner || $isAdmin, 403);
     }
 
-    private function whatsappLinkFor(Business $business, Booking $booking): ?string
+    /** Build the WhatsApp message sent to the business announcing a new booking. */
+    private function ownerMessage(Business $business, Booking $booking, Carbon $startsAt): string
     {
-        if (! $business->whatsapp) return null;
-        $intl = \App\Services\WaapiService::toIntl($business->whatsapp);
-        $msg = "السلام عليكم 👋\nحابب أحجز موعد عند {$business->name}:\n\n"
-             . "📅 " . $booking->starts_at->translatedFormat('l d M Y') . "\n"
-             . "🕐 " . $booking->starts_at->translatedFormat('h:i a') . "\n"
-             . "👤 " . $booking->name . "\n"
-             . "📞 " . $booking->phone
-             . ($booking->notes ? "\n📝 " . $booking->notes : '')
-             . "\n\n(الحجز عبر بنهاوي · رقم #{$booking->id})";
-        return 'https://wa.me/' . $intl . '?text=' . urlencode($msg);
+        $msg  = "🗓 *حجز جديد من بنهاوي* (#{$booking->id})\n";
+        $msg .= "النشاط: {$business->name}\n\n";
+        $msg .= "👤 {$booking->name}\n";
+        $msg .= "📞 {$booking->phone}\n\n";
+        $msg .= "📅 " . $startsAt->translatedFormat('l d M Y') . "\n";
+        $msg .= "🕐 " . $startsAt->translatedFormat('h:i a');
+        if ($booking->duration_minutes) {
+            $msg .= " · مدة {$booking->duration_minutes} دقيقة";
+        }
+        $msg .= "\n";
+        if ($booking->notes) {
+            $msg .= "\n📝 ملاحظات: {$booking->notes}\n";
+        }
+        $msg .= "\n— كلّم العميل دلوقتي عشان تأكد الحجز 👌";
+        return $msg;
     }
 }

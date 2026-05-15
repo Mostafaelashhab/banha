@@ -23,32 +23,52 @@
 
     {{-- Success state --}}
     @if($success)
-        <div class="card-light p-5 mb-4 bg-mint-50 ring-1 ring-mint-500/30">
+        @php
+            $waStatus = $success['wa_status'] ?? 'pending';
+            $hasWa    = $success['has_whatsapp'] ?? false;
+            $waCopy = match (true) {
+                in_array($waStatus, ['sent', 'simulated'], true) => [
+                    'tone'  => 'mint',
+                    'icon'  => '✓',
+                    'title' => 'تم إرسال حجزك للنشاط على واتساب',
+                    'desc'  => 'هيتواصلوا معاك على رقمك قريب لتأكيد الحجز.',
+                ],
+                $waStatus === 'failed' => [
+                    'tone'  => 'honey',
+                    'icon'  => '!',
+                    'title' => 'اتسجل حجزك — بس الرسالة على واتساب فشلت',
+                    'desc'  => $hasWa
+                        ? 'هنحاول نبعتها تاني. ممكن كمان تتواصل أنت معاهم على رقم النشاط.'
+                        : 'النشاط ده مفيش رقم واتساب مسجل. هنوصلهم الحجز بطريقة تانية.',
+                ],
+                default => [
+                    'tone'  => 'mint',
+                    'icon'  => '✓',
+                    'title' => 'تم تسجيل حجزك',
+                    'desc'  => 'النشاط هيراجع طلبك ويأكدّه قريب.',
+                ],
+            };
+            $toneRing = ['mint' => 'ring-mint-500/30 bg-mint-50', 'honey' => 'ring-honey-500/30 bg-honey-50'][$waCopy['tone']];
+            $toneDot  = ['mint' => 'bg-mint-500', 'honey' => 'bg-honey-500'][$waCopy['tone']];
+            $toneInner = ['mint' => 'ring-mint-500/20', 'honey' => 'ring-honey-500/20'][$waCopy['tone']];
+        @endphp
+        <div class="card-light p-5 mb-4 ring-1 {{ $toneRing }}">
             <div class="flex items-center gap-3 mb-3">
-                <span class="w-10 h-10 rounded-full bg-mint-500 grid place-items-center text-white">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span class="w-10 h-10 rounded-full {{ $toneDot }} grid place-items-center text-white text-lg font-black">
+                    {{ $waCopy['icon'] }}
                 </span>
                 <div class="flex-1 min-w-0">
-                    <h2 class="text-base font-black text-ink-950">تم تسجيل حجزك ✨</h2>
-                    <p class="text-xs text-ink-500">رقم الحجز #{{ $success['id'] }}</p>
+                    <h2 class="text-base font-black text-ink-950 leading-tight">{{ $waCopy['title'] }}</h2>
+                    <p class="text-[11px] text-ink-500 mt-0.5">رقم الحجز #{{ $success['id'] }}</p>
                 </div>
             </div>
-            <div class="bg-white rounded-2xl p-3 mb-3 ring-1 ring-mint-500/20">
+            <div class="bg-white rounded-2xl p-3 mb-3 ring-1 {{ $toneInner }}">
                 <div class="text-[11px] text-ink-500">موعدك</div>
                 <div class="text-base font-black text-ink-950">{{ $success['pretty'] }}</div>
             </div>
-            <p class="text-xs text-ink-500 mb-3 leading-relaxed">
-                النشاط هيراجع طلبك ويأكدّه قريب. تقدر تبعت رسالة على واتساب دلوقتي عشان تسرّع التأكيد.
+            <p class="text-xs text-ink-500 leading-relaxed">
+                {{ $waCopy['desc'] }}
             </p>
-            @if($success['wa_link'])
-                <a href="{{ $success['wa_link'] }}" target="_blank" rel="noopener"
-                   data-track-click="whatsapp" data-business="{{ $business->id }}"
-                   class="w-full inline-flex items-center justify-center gap-2 py-3 rounded-full font-extrabold text-white text-sm transition hover:scale-[1.01]"
-                   style="background: linear-gradient(135deg, #25D366, #128C7E)">
-                    <x-icon name="whatsapp" class="w-4 h-4"/>
-                    أكد على واتساب
-                </a>
-            @endif
         </div>
     @endif
 

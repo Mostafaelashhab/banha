@@ -14,11 +14,13 @@ class Booking extends Model
     protected $fillable = [
         'business_id', 'user_id', 'name', 'phone',
         'starts_at', 'duration_minutes', 'status', 'notes',
+        'wa_send_status', 'wa_sent_at',
     ];
 
     protected $casts = [
         'starts_at'        => 'datetime',
         'duration_minutes' => 'integer',
+        'wa_sent_at'       => 'datetime',
     ];
 
     public const STATUSES = [

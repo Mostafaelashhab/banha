@@ -102,6 +102,19 @@
                                 <p class="text-[11px] text-ink-500 mt-1 bg-cream-100 rounded-lg p-2 leading-relaxed">{{ $b->notes }}</p>
                             @endif
 
+                            @php
+                                $waLabels = [
+                                    'pending'   => ['label' => 'لسه ما اتبعتش',                    'cls' => 'text-honey-700'],
+                                    'sent'      => ['label' => 'اتبعت على واتساب',                'cls' => 'text-mint-700'],
+                                    'simulated' => ['label' => 'وضع تجريبي (لم يُرسل فعلياً)',    'cls' => 'text-ink-500'],
+                                    'failed'    => ['label' => 'فشل الإرسال — كلّم العميل يدويًا','cls' => 'text-blush-600'],
+                                ];
+                                $wa = $waLabels[$b->wa_send_status ?? 'pending'] ?? null;
+                            @endphp
+                            @if($wa)
+                                <p class="text-[10px] font-bold mt-1.5 {{ $wa['cls'] }}">{{ $wa['label'] }}</p>
+                            @endif
+
                             {{-- Quick actions --}}
                             <div class="flex flex-wrap gap-1.5 mt-2">
                                 @if($b->status === 'pending')
