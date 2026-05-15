@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\LocalSeoController;
 use App\Models\Business;
 use App\Models\Event;
 use App\Models\Hashtag;
@@ -33,21 +34,42 @@ class SeoController extends Controller
             $urls[] = ['/directory/c/'.$cat, '0.8', 'daily'];
         }
 
+        // ── Local-SEO landing pages (the highest-intent organic targets) ──
+        foreach (LocalSeoController::indexableSlugs() as $slug) {
+            $urls[] = ['/'.$slug, '0.9', 'daily'];
+        }
+
+        // ── Programmatic combos: top categories × Banha city areas ──
+        // (Each city neighborhood with coords + an English slug gets a few
+        //  category-in-area pages.)
+        $programmaticCats = ['cafes', 'doctors', 'restaurants', 'dentists', 'pharmacies'];
+        $cityAreas = \App\Models\Area::banha()
+            ->whereNotNull('lat')->whereNotNull('lng')
+            ->whereNotNull('slug_en')
+            ->orderBy('sort')->limit(20)->get(['slug_en']);
+        foreach ($cityAreas as $area) {
+            foreach ($programmaticCats as $cat) {
+                $urls[] = ['/'.$cat.'-in-'.$area->slug_en.'-banha', '0.7', 'weekly'];
+            }
+        }
+
         // Zones — both the dedicated SEO landing page and the localized feed
         foreach (Zone::where('is_active', true)->orderBy('sort')->get() as $zone) {
             $urls[] = ['/zone/'.$zone->slug, '0.85', 'daily'];
             $urls[] = ['/feed?zone='.$zone->id, '0.7', 'hourly'];
         }
 
-        // Active businesses (high-value pages, especially with menus)
+        // Active businesses — use slug URL when available (brand-friendly,
+        // higher CTR), fall back to numeric for any slug-less rows.
         Business::where('is_active', true)
             ->orderByDesc('has_menu')
             ->orderByDesc('is_verified')
             ->orderByDesc('rating_avg')
             ->limit(500)
-            ->get(['id', 'updated_at', 'has_menu'])
+            ->get(['id', 'slug', 'updated_at', 'has_menu'])
             ->each(function ($b) use (&$urls) {
-                $urls[] = ['/directory/business/'.$b->id, '0.8', 'weekly', $b->updated_at?->toAtomString()];
+                $path = $b->slug ? '/biz/'.$b->slug : '/directory/business/'.$b->id;
+                $urls[] = [$path, '0.85', 'weekly', $b->updated_at?->toAtomString()];
                 if ($b->has_menu) {
                     // Menu pages get the highest priority — they're the SEO gold
                     $urls[] = ['/m/'.$b->id, '0.95', 'daily', $b->updated_at?->toAtomString()];

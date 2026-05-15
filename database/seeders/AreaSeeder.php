@@ -121,13 +121,111 @@ class AreaSeeder extends Seeder
             Area::updateOrCreate(
                 ['slug' => Str::slug($parent.'-'.$name, '-', null)],
                 [
-                    'name'   => $name,
-                    'parent' => $parent,
-                    'lat'    => $lat,
-                    'lng'    => $lng,
-                    'sort'   => $sort++,
+                    'name'    => $name,
+                    'slug_en' => self::EN_SLUGS[$name] ?? Str::slug($name) ?: null,
+                    'parent'  => $parent,
+                    'lat'     => $lat,
+                    'lng'     => $lng,
+                    'sort'    => $sort++,
                 ]
             );
         }
     }
+
+    /**
+     * Arabic name → English URL slug.
+     *
+     * Used to power SEO URLs like /cafes-in-el-felal-banha. Choose a
+     * spelling that locals recognize when typed — these end up in CTR
+     * data, not just in the DB.
+     */
+    private const EN_SLUGS = [
+        // ── Banha city neighborhoods ──
+        'وسط البلد'         => 'wast-el-balad',
+        'الفلل'             => 'el-felal',
+        'المنشية الجديدة'   => 'el-monshia-el-gedida',
+        'المنشية القديمة'   => 'el-monshia-el-adima',
+        'أتريب'             => 'atrib',
+        'كفر الجزار'        => 'kafr-el-gazzar',
+        'الاستاد'           => 'el-stad',
+        'كلية تجارة'        => 'koleyet-tegara',
+        'شارع فريد ندا'     => 'shareh-farid-nada',
+        'ميت عاصم'          => 'mit-asem',
+        'كفر فرسيس'         => 'kafr-fersis',
+        'الورديان'          => 'el-wardiyan',
+        'محطة بنها'         => 'mahatet-banha',
+        'شبرا بلولة'        => 'shubra-bolola',
+        'شارع الجمهورية'    => 'shareh-el-gomhoreya',
+        'شارع كومانة'       => 'shareh-komana',
+        'شارع المطافي'      => 'shareh-el-matafy',
+        'شارع المحكمة'      => 'shareh-el-mahkama',
+        'عبد العزيز فهمي'   => 'abdelaziz-fahmy',
+        'الطرعة البلابلية'  => 'el-tar3a-el-balabliya',
+
+        // ── Banha markaz villages ──
+        'ميت يعيش'          => 'mit-yaish',
+        'كفر صوران'         => 'kafr-souran',
+        'شبلنجة'            => 'shibingha',
+        'صفط اللبن'         => 'saft-el-laban',
+        'بهتيم'             => 'behtim',
+        'كفر العزب'         => 'kafr-el-azab',
+        'بطا'               => 'bata',
+        'جزى'               => 'gaza',
+        'النجلاء'           => 'el-nagla',
+        'كفر منصور'         => 'kafr-mansour',
+        'كفر سعد'           => 'kafr-saad',
+        'ميت بدر حلاوة'     => 'mit-badr-helawa',
+        'ميت العامل'        => 'mit-el-amel',
+        'كفر طحلة'          => 'kafr-tahla',
+        'بطنون'             => 'batnoun',
+        'كفر شبرا النخلة'   => 'kafr-shubra-el-nakhla',
+        'كفر شبرا قبالة'    => 'kafr-shubra-qebala',
+        'كفر سقيم'          => 'kafr-soqaim',
+
+        // ── Extra Banha neighborhoods/villages ──
+        'الرملة'            => 'el-ramla',
+        'ميت العطار'        => 'mit-el-atar',
+        'ميت كنانة'         => 'mit-kenana',
+        'ميت أبو خالد'      => 'mit-abu-khaled',
+        'ميت الكرما'        => 'mit-el-karma',
+        'ميت الفرماوي'      => 'mit-el-farmawy',
+        'ميت أبو علي'       => 'mit-abu-ali',
+        'ميت أبو الكوم'     => 'mit-abu-el-koum',
+        'ميت سهيل'          => 'mit-soheil',
+        'شبرا بخوم'         => 'shubra-bekhoum',
+        'شنوان'             => 'shanwan',
+        'نواي'              => 'nawai',
+        'كفر علوان'         => 'kafr-alwan',
+        'كفر صنرس'          => 'kafr-sanros',
+        'كفر فاروق'         => 'kafr-farouk',
+        'كفر سندبسطا'       => 'kafr-sendebesta',
+        'كفر السنابسة'      => 'kafr-el-sanabsa',
+        'جزيرة العوامة'     => 'gazirat-el-awwama',
+
+        // ── Banha streets/squares ──
+        'المعمورة'              => 'el-mamoura',
+        'البنا'                 => 'el-banna',
+        'شارع الجيش'            => 'shareh-el-geish',
+        'شارع الإسماعيلية'      => 'shareh-el-ismailia',
+        'شارع 23 يوليو'         => 'shareh-23-yulyu',
+        'شارع المركز'           => 'shareh-el-markaz',
+        'شارع المستشفى'         => 'shareh-el-mostashfa',
+        'ميدان السكة الحديد'    => 'midan-el-sekka',
+        'ميدان البقر'           => 'midan-el-baqar',
+        'شارع الفنون الجميلة'   => 'shareh-el-fonoun',
+        'كورنيش بنها'           => 'kornish-banha',
+
+        // ── Other Qalyubia centers (hidden via Banha-scope, kept for future) ──
+        'طوخ'               => 'toukh',
+        'القليوب'           => 'qalyub',
+        'قها'               => 'qaha',
+        'شبرا الخيمة'       => 'shubra-elkheima',
+        'كفر شكر'           => 'kafr-shoukr',
+        'الخانكة'           => 'el-khanka',
+        'شبين القناطر'      => 'shebin-el-qanater',
+        'القناطر الخيرية'   => 'el-qanater-el-khairiya',
+        'العبور'            => 'el-obour',
+        'الخصوص'            => 'el-khosous',
+        'مسطرد'             => 'mostorod',
+    ];
 }

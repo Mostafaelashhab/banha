@@ -6,28 +6,40 @@
     $bizCity     = Geo::businessCityLabel($business);
     $inCity      = Geo::inCity($business->zone);   // "في {city}" — honest geography
 
-    // Category-aware SEO title.
-    //  - food: leads with "منيو ورقم" (matches search intent for restaurants)
-    //  - medical: leads with name + "العنوان والمواعيد ورقم التليفون"
-    //  - other: name + city + brand
+    // Category-aware SEO title — matches city-app's "name + منيو - عنوان - أرقام"
+    // pattern but front-loads the high-volume keyword for each category.
+    //  - food:    "منيو {name} في بنها · العنوان والتليفون"
+    //  - medical: "{name} في بنها · العنوان والمواعيد ورقم التليفون"
+    //  - shops:   "{name} في بنها · العنوان والأسعار والتليفون"
+    //  - default: "{name} في بنها · العنوان ورقم التليفون"
     $bizSeoTitle = match (true) {
         in_array($business->category, ['food'], true)
-            => 'منيو ورقم '.$business->name.' '.$inCity.' | بنهاوي',
+            => 'منيو '.$business->name.' '.$inCity.' · العنوان والتليفون والأسعار',
         in_array($business->category, ['medical'], true)
-            => $business->name.' '.$inCity.' | العنوان والمواعيد ورقم التليفون',
+            => $business->name.' '.$inCity.' · العنوان والمواعيد ورقم التليفون',
+        in_array($business->category, ['shops'], true)
+            => $business->name.' '.$inCity.' · العنوان والأسعار ورقم التليفون',
         default
-            => $business->name.' '.$inCity.' | بنهاوي',
+            => $business->name.' '.$inCity.' · العنوان ورقم التليفون والمواعيد',
     };
 
-    // Category-aware SEO description.
+    // Category-aware SEO description — keyword-rich first sentence + value prop.
     $bizSeoDesc = match (true) {
         in_array($business->category, ['food'], true)
-            => 'شوف رقم '.$business->name.'، العنوان، المواعيد، المنيو، العروض، والاتجاهات على بنهاوي.',
+            => 'منيو '.$business->name.'، الأسعار، رقم التليفون، العنوان، المواعيد، الدليفري والعروض — كله في صفحة واحدة على بنهاوي. اطلب أوردر مباشرة من المنيو.',
         in_array($business->category, ['medical'], true)
-            => 'اعرف عنوان '.$business->name.'، مواعيد العمل، رقم التليفون، والاتجاهات على بنهاوي.',
+            => $business->name.' '.$inCity.' — العنوان، رقم التليفون، مواعيد الكشف، الحجز الإلكتروني، والاتجاهات. اعرف كل التفاصيل واحجز موعدك على بنهاوي.',
+        in_array($business->category, ['shops'], true)
+            => $business->name.' '.$inCity.' — رقم التليفون، العنوان، المنتجات والأسعار، الدليفري والاتجاهات. كل اللي تحتاجه قبل ما تنزل.',
         default
-            => 'اعرف رقم وعنوان ومواعيد '.$business->name.'، وشوف الاتجاهات وتواصل بسهولة على بنهاوي.',
+            => 'اعرف رقم '.$business->name.'، العنوان، المواعيد، والاتجاهات على بنهاوي — كل بيانات النشاط محدّثة وموثّقة.',
     };
+
+    // Canonical URL — prefer the slug-based brand URL so backlinks consolidate
+    // onto a single high-CTR address (matches city-app.org's URL pattern).
+    $bizCanonical = $business->slug
+        ? url('/biz/' . $business->slug)
+        : route('directory.show', $business);
 @endphp
 
 @extends('layouts.app', [
@@ -35,26 +47,50 @@
     'description' => $bizSeoDesc,
     'ogImage'     => $business->photo_url,
     'ogType'      => 'business.business',
-    'canonical'   => route('directory.show', $business),
-    'keywords'    => $business->name.', '.$bizCatLabel.', '.$bizCity.', بنها, دليل بنها, '.($business->sub_type ?? ''),
+    'canonical'   => $bizCanonical,
+    'keywords'    => $business->name.', منيو '.$business->name.', رقم '.$business->name.', '.$bizCatLabel.', '.$bizCity.', بنها, دليل بنها, '.($business->sub_type ?? ''),
 ])
 
 @push('json-ld')
 @php
     // LocalBusiness schema — gets us into Google Map Pack & rich results.
-    // Use the most specific Schema.org type we can defensibly claim.
-    $schemaType = match ($business->category) {
-        'food'    => 'Restaurant',
-        'medical' => 'MedicalBusiness',
-        'shops'   => 'Store',
-        default   => 'LocalBusiness',
+    // Use the most specific Schema.org type we can defensibly claim
+    // (sub_type first, then category fallback).
+    $subTypeSchema = match ($business->sub_type) {
+        'pharmacy'                                                  => 'Pharmacy',
+        'doctor', 'pediatrician', 'gynecologist', 'orthopedic',
+        'ent', 'dermatology', 'physio', 'medical_other'             => 'Physician',
+        'dentist'                                                   => 'Dentist',
+        'lab'                                                       => 'MedicalClinic',
+        'vet'                                                       => 'VeterinaryCare',
+        'cafe'                                                      => 'CafeOrCoffeeShop',
+        'bakery'                                                    => 'Bakery',
+        'fast_food'                                                 => 'FastFoodRestaurant',
+        'gym'                                                       => 'ExerciseGym',
+        'hotel_3star', 'hotel_4star', 'hotel_5star',
+        'hotel_resort', 'hotel_apart', 'hotel_guesthouse',
+        'hotel_other'                                               => 'Hotel',
+        'bank_branch'                                               => 'BankOrCreditUnion',
+        'gas_station'                                               => 'GasStation',
+        'tour_park', 'tour_corniche'                                => 'Park',
+        'tour_monument'                                             => 'TouristAttraction',
+        'tour_cinema'                                               => 'MovieTheater',
+        default                                                     => null,
+    };
+    $schemaType = $subTypeSchema ?: match ($business->category) {
+        'food'      => 'Restaurant',
+        'medical'   => 'MedicalBusiness',
+        'shops'     => 'Store',
+        'tourist'   => 'TouristAttraction',
+        'education' => 'EducationalOrganization',
+        default     => 'LocalBusiness',
     };
     $ld = [
         '@context'       => 'https://schema.org',
         '@type'          => $schemaType,
-        '@id'            => route('directory.show', $business),
+        '@id'            => $bizCanonical,
         'name'           => $business->name,
-        'url'            => route('directory.show', $business),
+        'url'            => $bizCanonical,
         'image'          => $business->photo_url ?: asset('icons/icon-512.png'),
         'priceRange'     => '$$',
         'address'        => array_filter([
@@ -88,6 +124,7 @@
             'worstRating' => 1,
         ];
     }
+    // Hours: prefer per-day schedule (richer signal), fall back to is_24h.
     if ($business->is_24h) {
         $ld['openingHoursSpecification'] = [
             '@type'     => 'OpeningHoursSpecification',
@@ -95,7 +132,41 @@
             'opens'     => '00:00',
             'closes'    => '23:59',
         ];
+    } elseif (! empty($business->hours_schedule) && is_array($business->hours_schedule)) {
+        $dowMap = [
+            'sat' => 'Saturday', 'sun' => 'Sunday', 'mon' => 'Monday',
+            'tue' => 'Tuesday',  'wed' => 'Wednesday', 'thu' => 'Thursday', 'fri' => 'Friday',
+        ];
+        $hoursList = [];
+        foreach ($business->hours_schedule as $key => $shift) {
+            if (! isset($dowMap[$key]) || ! $shift) continue;
+            if (preg_match('/^(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})$/', trim($shift), $m)) {
+                $hoursList[] = [
+                    '@type'     => 'OpeningHoursSpecification',
+                    'dayOfWeek' => $dowMap[$key],
+                    'opens'     => str_pad($m[1], 5, '0', STR_PAD_LEFT),
+                    'closes'    => str_pad($m[2], 5, '0', STR_PAD_LEFT),
+                ];
+            }
+        }
+        if (! empty($hoursList)) {
+            $ld['openingHoursSpecification'] = $hoursList;
+        }
     }
+
+    // Cuisine signal — strongly boosts food category in Google food carousels.
+    $extras = (array) ($business->extra ?? []);
+    if ($business->category === 'food' && ! empty($extras['cuisine'])) {
+        $ld['servesCuisine'] = $extras['cuisine'];
+    }
+    // Medical specialty — improves MedicalBusiness rich results.
+    if ($business->category === 'medical' && ! empty($extras['specialty'])) {
+        $ld['medicalSpecialty'] = $extras['specialty'];
+    }
+    // Auto-generated SEO description — also feeds the JSON-LD `description` field.
+    $bizSeoBody = $business->seoDescription();
+    $ld['description'] = mb_substr($bizSeoBody, 0, 400);
+
     // Breadcrumb
     $crumbs = [
         '@context' => 'https://schema.org',
@@ -104,9 +175,24 @@
             ['@type' => 'ListItem', 'position' => 1, 'name' => 'بنهاوي', 'item' => url('/')],
             ['@type' => 'ListItem', 'position' => 2, 'name' => 'الدليل', 'item' => route('directory.index')],
             ['@type' => 'ListItem', 'position' => 3, 'name' => $bizCatLabel, 'item' => route('directory.category', $business->category)],
-            ['@type' => 'ListItem', 'position' => 4, 'name' => $business->name, 'item' => route('directory.show', $business)],
+            ['@type' => 'ListItem', 'position' => 4, 'name' => $business->name, 'item' => $bizCanonical],
         ],
     ];
+
+    // Auto-generated FAQ — shown visually + as FAQPage schema.
+    $bizFaqs = $business->seoFaqs();
+    $faqLd = null;
+    if (! empty($bizFaqs)) {
+        $faqLd = [
+            '@context'   => 'https://schema.org',
+            '@type'      => 'FAQPage',
+            'mainEntity' => array_map(fn ($f) => [
+                '@type'          => 'Question',
+                'name'           => $f[0],
+                'acceptedAnswer' => ['@type' => 'Answer', 'text' => $f[1]],
+            ], $bizFaqs),
+        ];
+    }
 @endphp
 <script type="application/ld+json">
 {!! json_encode($ld, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}
@@ -114,6 +200,11 @@
 <script type="application/ld+json">
 {!! json_encode($crumbs, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}
 </script>
+@if($faqLd)
+<script type="application/ld+json">
+{!! json_encode($faqLd, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}
+</script>
+@endif
 @endpush
 
 @php
@@ -231,6 +322,21 @@
                     </button>
                 </form>
             </div>
+
+            {{-- ── Claim-invite via WAAPI: only for unowned businesses with a phone.
+                 Always shows the default solid CTA — re-sending is allowed by design. --}}
+            @if(! $business->owner_user_id && ($business->whatsapp || $business->phone))
+                <button type="button"
+                        data-invite-open
+                        data-invite-url="{{ route('admin.businesses.invite.preview', $business) }}"
+                        data-invite-send-url="{{ route('admin.businesses.invite.send', $business) }}"
+                        class="w-full mb-2 inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-extrabold transition bg-mint-500 text-white hover:bg-mint-700">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z"/>
+                    </svg>
+                    ابعت دعوة استلام الصفحة على واتساب
+                </button>
+            @endif
 
             {{-- Promotion --}}
             <div class="bg-white rounded-xl p-3 ring-1 ring-honey-500/20">
@@ -628,12 +734,15 @@
         </div>
     @endif
 
-    {{-- About --}}
-    @if($business->description)
-        <div class="card-light p-4 mb-3">
+    {{-- About — prefers owner-written description, falls back to the auto-generated
+         SEO body so every page has unique 150-300 word content for Google. --}}
+    <div class="card-light p-4 mb-3">
+        @if($business->description && mb_strlen(trim($business->description)) >= 80)
             <p class="text-ink-950 text-sm leading-relaxed whitespace-pre-line">{{ $business->description }}</p>
-        </div>
-    @endif
+        @else
+            <p class="text-ink-950 text-sm leading-relaxed">{{ $bizSeoBody }}</p>
+        @endif
+    </div>
 
     {{-- Type-specific extras (hotel stars, cuisine, doctor specialty, etc.) --}}
     @php
@@ -1240,7 +1349,7 @@
              get a "report wrong data" framing instead of an ownership pitch. --}}
         @php
             $claim       = \App\Support\ClaimCta::forBusiness($business);
-            $reportTo    = config('services.banhawy.support_whatsapp', '01000000000');
+            $reportTo    = config('services.banhawy.support_whatsapp', '01550047838');
             $correctMsg  = "تبليغ تحديث بيانات على بنهاوي\nالنشاط: {$business->name}\nرابط: ".route('directory.show', $business)."\nالغلط: ";
             $claimUrl    = auth()->check()
                 ? route('directory.claim.show', $business)
@@ -1275,6 +1384,70 @@
             </div>
             <x-icon name="arrow-left" class="w-4 h-4 {{ $ctaTone['arrow'] }} shrink-0"/>
         </a>
+    @endif
+
+    {{-- ─── Static Google Maps embed (when geo is known) ─── --}}
+    @if($business->lat && $business->lng)
+        <div class="card-light p-4 mb-3">
+            <h3 class="text-sm font-extrabold text-ink-950 mb-2 inline-flex items-center gap-2">
+                <span class="w-6 h-6 rounded-md bg-coral-50 text-coral-600 grid place-items-center">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                    </svg>
+                </span>
+                موقع {{ $business->name }} على الخريطة
+            </h3>
+            <a href="https://www.google.com/maps/dir/?api=1&destination={{ $business->lat }},{{ $business->lng }}"
+               target="_blank" rel="noopener"
+               data-track-click="map_open" data-business="{{ $business->id }}"
+               class="block rounded-2xl overflow-hidden ring-1 ring-ink-950/8 hover:ring-coral-500/40 transition relative aspect-[16/9]">
+                {{-- OpenStreetMap static image — no API key required, indexable, fast --}}
+                <img loading="lazy" decoding="async"
+                     width="800" height="450"
+                     src="https://staticmap.openstreetmap.de/staticmap.php?center={{ $business->lat }},{{ $business->lng }}&zoom=16&size=800x450&markers={{ $business->lat }},{{ $business->lng }},red-pushpin"
+                     alt="موقع {{ $business->name }} على خريطة بنها"
+                     class="absolute inset-0 w-full h-full object-cover bg-cream-100">
+                <span class="absolute bottom-2 end-2 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/95 text-ink-950 text-[11px] font-extrabold backdrop-blur shadow">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3">
+                        <path d="M21.71 11.29 12.71 2.29a1 1 0 0 0-1.42 0l-9 9a1 1 0 0 0 0 1.42l9 9a1 1 0 0 0 1.42 0l9-9a1 1 0 0 0 0-1.42z"/>
+                        <polyline points="9 12 11 14 15 10"/>
+                    </svg>
+                    افتح الاتجاهات
+                </span>
+            </a>
+        </div>
+    @endif
+
+    {{-- ─── FAQ — auto-generated from business data, matches FAQPage JSON-LD ─── --}}
+    @if(! empty($bizFaqs))
+        <section class="card-light p-4 mb-3" itemscope itemtype="https://schema.org/FAQPage">
+            <h3 class="text-sm font-extrabold text-ink-950 mb-3 inline-flex items-center gap-2">
+                <span class="w-6 h-6 rounded-md bg-honey-100 text-honey-700 grid place-items-center">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                </span>
+                أسئلة شائعة عن {{ $business->name }}
+            </h3>
+            <div class="space-y-2">
+                @foreach($bizFaqs as [$q, $a])
+                    <details class="bg-cream-50 rounded-xl ring-1 ring-ink-950/8 p-3 group"
+                             itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+                        <summary class="text-[13px] font-extrabold text-ink-950 cursor-pointer list-none flex items-center gap-2">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" class="w-3.5 h-3.5 text-coral-600 transition group-open:rotate-90 rtl:rotate-180 rtl:group-open:rotate-90">
+                                <polyline points="9 18 15 12 9 6"/>
+                            </svg>
+                            <span class="flex-1" itemprop="name">{{ $q }}</span>
+                        </summary>
+                        <div class="mt-2 ps-6" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+                            <p class="text-[12px] text-ink-500 leading-relaxed" itemprop="text">{{ $a }}</p>
+                        </div>
+                    </details>
+                @endforeach
+            </div>
+        </section>
     @endif
 
     {{-- Similar --}}
@@ -1386,5 +1559,11 @@
             @endforeach
         </div>
     </div>
+@endif
+
+{{-- Shared admin invite-preview modal — rendered once when admin is viewing
+     this page and the business is eligible (unowned + has a phone). --}}
+@if($isAdminUser && ! $business->owner_user_id && ($business->whatsapp || $business->phone))
+    @include('admin.partials.invite-modal')
 @endif
 @endsection

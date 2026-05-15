@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
-#[Fillable(['name', 'slug', 'parent', 'lat', 'lng', 'sort'])]
+#[Fillable(['name', 'slug', 'slug_en', 'parent', 'lat', 'lng', 'sort'])]
 class Area extends Model
 {
     protected function casts(): array

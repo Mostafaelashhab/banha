@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
-    'name', 'category', 'sub_type', 'custom_sub_type', 'zone_id', 'owner_user_id',
+    'name', 'slug', 'category', 'sub_type', 'custom_sub_type', 'zone_id', 'owner_user_id',
     'description', 'phone', 'whatsapp', 'hotline', 'address', 'lat', 'lng',
     'hours', 'hours_schedule', 'is_24h', 'is_verified', 'promoted_until', 'is_active',
     'rating_avg', 'ratings_count', 'views_count', 'phone_clicks', 'whatsapp_clicks',
@@ -49,6 +49,28 @@ class Business extends Model
             $query->withoutGlobalScope('banha');
         }
         return parent::resolveRouteBindingQuery($query, $value, $field);
+    }
+
+    /**
+     * Match brand-friendly URLs like `/biz/armada` to this model. Falls
+     * back to ID lookup so old `/directory/business/19` links keep working
+     * (we don't 301-loop — both routes serve the same page, with `slug`
+     * as the canonical via <link rel="canonical">).
+     */
+    public function resolveRouteBinding($value, $field = null)
+    {
+        if ($field === 'slug' || (is_string($value) && ! ctype_digit($value))) {
+            return static::where('slug', $value)->first();
+        }
+        return static::find($value);
+    }
+
+    /** Canonical URL for this business — slug-based when available. */
+    public function url(): string
+    {
+        return $this->slug
+            ? url('/biz/' . $this->slug)
+            : route('directory.show', $this);
     }
 
     public const CATEGORIES = [
@@ -884,5 +906,198 @@ class Business extends Model
     {
         if ($this->custom_sub_type) return $this->custom_sub_type;
         return $this->subTypeMeta()['label'];
+    }
+
+    /**
+     * Auto-generates a 150-300 word SEO-friendly Arabic description from the
+     * business's structured data. Used when the owner didn't write their own
+     * description — gives every page unique content that Google can index.
+     *
+     * Strategy: stitch together 4-6 sentence fragments that vary based on
+     * what data we actually have (category, area, hours, contact, ratings,
+     * extras). Adjacent businesses with similar data won't generate identical
+     * text because the openings vary by hash of the business id + name.
+     */
+    public function seoDescription(): string
+    {
+        // If the owner wrote their own and it's substantial, prefer that.
+        if ($this->description && mb_strlen(trim($this->description)) >= 80) {
+            return trim($this->description);
+        }
+
+        $cat   = $this->categoryMeta()['label'] ?? 'النشاط';
+        $sub   = $this->displayType() ?: $cat;
+        $area  = $this->zone->name ?? 'بنها';
+        $city  = $this->zone->name && $this->zone->name !== 'بنها' ? "بنها — حي {$this->zone->name}" : 'بنها';
+
+        // Deterministic "random" so the same business always reads the same way,
+        // but neighbors don't all open with identical sentences.
+        $seed = crc32($this->id . '|' . $this->name);
+        $pickIdx = fn (array $opts) => $opts[$seed % count($opts)];
+
+        // ── Opening hook (varies per business) ──
+        $hooks = [
+            "{$this->name} من أعرق {$cat} في {$city}، بيقدّم خدماته لأهل المنطقة منذ سنين.",
+            "{$this->name} واحد من {$cat} المميزة في {$city}، اختياره الأمثل لو كنت بتدوّر على {$sub} في المنطقة.",
+            "لو في {$city} وعاوز {$sub}، {$this->name} من الخيارات اللي بيوصّيها أهل المنطقة.",
+            "{$this->name} بيقدّم خدمة {$sub} في {$city} — مكان مألوف لأهل المنطقة وموقع متميز.",
+        ];
+        $parts = [$pickIdx($hooks)];
+
+        // ── Location ──
+        if ($this->address) {
+            $parts[] = "العنوان: {$this->address} — في قلب {$area}، قريب من كل المعالم الرئيسية.";
+        } else {
+            $parts[] = "بيقع في {$area} ضمن مدينة بنها، ووصوله سهل من معظم أحياء المدينة.";
+        }
+
+        // ── Hours line ──
+        if ($this->is_24h) {
+            $parts[] = "بيشتغل ٢٤ ساعة طول أيام الأسبوع — يعني ممكن تيجي في أي وقت.";
+        } elseif ($status = $this->openStatusLabel()) {
+            $parts[] = "مواعيد العمل: {$status} — تقدر تشوف جدول الأسبوع كامل في صفحة المواعيد.";
+        }
+
+        // ── Contact ──
+        if ($this->phone && $this->whatsapp) {
+            $parts[] = "للتواصل: تقدر تتصل على {$this->phone}، أو تبعت رسالة على واتساب على نفس الرقم لو بتفضّل الكتابة.";
+        } elseif ($this->phone) {
+            $parts[] = "للحجز أو الاستفسار، تقدر تتصل مباشرة على رقم {$this->phone}.";
+        } elseif ($this->whatsapp) {
+            $parts[] = "تقدر تتواصل معاهم على واتساب من زرّ التواصل في الصفحة.";
+        }
+
+        // ── Category-specific extras ──
+        $extras = (array) ($this->extra ?? []);
+
+        if ($this->category === 'food') {
+            $bits = [];
+            if (! empty($extras['cuisine']))           $bits[] = "مطبخهم {$extras['cuisine']}";
+            if (! empty($extras['has_delivery']))      $bits[] = 'بيوصّلوا دليفري للمناطق المجاورة';
+            if (! empty($extras['family_section']))    $bits[] = 'فيه قسم عائلات مخصص';
+            if (! empty($extras['avg_price'])) {
+                $priceLabels = [
+                    '50_below' => 'متوسط السعر للشخص أقل من ٥٠ ج',
+                    '50_100'   => 'متوسط السعر للشخص ٥٠-١٠٠ ج',
+                    '100_200'  => 'متوسط السعر للشخص ١٠٠-٢٠٠ ج',
+                    '200_500'  => 'متوسط السعر للشخص ٢٠٠-٥٠٠ ج',
+                    '500_above'=> 'متوسط السعر للشخص فوق ٥٠٠ ج',
+                ];
+                if (isset($priceLabels[$extras['avg_price']])) $bits[] = $priceLabels[$extras['avg_price']];
+            }
+            if (! empty($extras['has_wifi'])) $bits[] = 'فيه واي فاي مجاني';
+            if ($bits) $parts[] = ucfirst(implode('، ', $bits)) . '.';
+        }
+
+        if ($this->category === 'medical') {
+            $bits = [];
+            if (! empty($extras['specialty']))       $bits[] = "التخصص: {$extras['specialty']}";
+            if (! empty($extras['clinic_days']))     $bits[] = "أيام الكشف: {$extras['clinic_days']}";
+            if (! empty($extras['has_appointment'])) $bits[] = 'الكشف بالحجز المسبق';
+            if (! empty($extras['pharmacy_delivery'])) $bits[] = 'الصيدلية بتوصّل دواء للبيت';
+            if (! empty($extras['pharmacy_has_lab'])) $bits[] = 'بتقيس ضغط/سكر في الصيدلية';
+            if ($bits) $parts[] = implode('، ', $bits) . '.';
+        }
+
+        if ($this->category === 'craftsmen') {
+            $bits = [];
+            if (! empty($extras['experience_years']))  $bits[] = "خبرة {$extras['experience_years']} سنة في المجال";
+            if (! empty($extras['emergency_call']))    $bits[] = 'بيرد على طوارئ الصيانة بسرعة';
+            if (! empty($extras['service_area']))      $bits[] = "بيشتغل في {$extras['service_area']}";
+            if (! empty($extras['visit_price']))       $bits[] = "سعر المعاينة {$extras['visit_price']}";
+            if ($bits) $parts[] = implode('، ', $bits) . '.';
+        }
+
+        // ── Booking / Orders capability ──
+        if ($this->supportsOrdering() && $this->has_menu) {
+            $parts[] = "تقدر تطلب أوردر مباشرة من المنيو الرقمي على بنهاوي — الأوردر بيوصل المطعم على لوحة تحكمه فوراً.";
+        } elseif ($this->booking_enabled && $this->bookingApplicable()) {
+            $parts[] = "بيقبل حجز إلكتروني عبر بنهاوي — اختار اليوم والساعة المناسبة وأكّد بضغطة.";
+        }
+
+        // ── Rating signal ──
+        if ($this->rating_avg && $this->ratings_count) {
+            $rating = number_format((float) $this->rating_avg, 1);
+            $parts[] = "تقييم العملاء على بنهاوي: {$rating} من ٥ بناءً على {$this->ratings_count} مراجعة.";
+        }
+
+        // ── Closing CTA-ish ──
+        $closings = [
+            "كل بيانات {$this->name} على بنهاوي محدّثة باستمرار — العنوان، المواعيد، التليفون، والمنيو.",
+            "بنهاوي بيوفّر لك كل التفاصيل اللي محتاجها قبل ما تنزل {$this->name}.",
+            "صفحة {$this->name} على بنهاوي بتوفّر لك تواصل مباشر بدون تطبيقات إضافية.",
+        ];
+        $parts[] = $pickIdx($closings);
+
+        return implode(' ', array_filter($parts));
+    }
+
+    /**
+     * Auto-generated FAQ items for this business page, used both visually
+     * and as FAQPage JSON-LD. Returns [[question, answer], ...].
+     */
+    public function seoFaqs(): array
+    {
+        $faqs = [];
+        $extras = (array) ($this->extra ?? []);
+
+        // Hours
+        if ($this->is_24h) {
+            $faqs[] = ["مواعيد {$this->name}؟", "{$this->name} مفتوح ٢٤ ساعة طول أيام الأسبوع. ممكن تتصل أو تيجي في أي وقت."];
+        } elseif ($status = $this->openStatusLabel()) {
+            $faqs[] = ["إمتى بيفتح {$this->name}؟", "{$status}. تقدر تشوف الجدول الأسبوعي الكامل في قسم 'المواعيد' بصفحته على بنهاوي."];
+        }
+
+        // Address
+        if ($this->address) {
+            $faqs[] = ["فين موقع {$this->name} بالظبط؟", "{$this->name} في {$this->address}، ضمن منطقة " . ($this->zone->name ?? 'بنها') . ". تقدر تضغط زرّ 'الاتجاهات' في الصفحة لو عاوز خرايط جوجل."];
+        }
+
+        // Contact
+        if ($this->phone) {
+            $faqs[] = ["تليفون {$this->name}؟", "رقم {$this->name}: {$this->phone}. اضغط زر 'اتصل' في الصفحة عشان يفتح الكاول مباشرة."];
+        }
+        if ($this->whatsapp) {
+            $faqs[] = ["{$this->name} على واتساب؟", "أيوه، {$this->name} بيستقبل رسايل على واتساب. اضغط زرّ 'واتساب' في الصفحة عشان يفتح الشات مباشرة من غير ما تحفظ الرقم."];
+        }
+
+        // Category-specific
+        if ($this->category === 'food') {
+            if ($this->supportsOrdering() && $this->has_menu) {
+                $faqs[] = ["ازاي أطلب أوردر من {$this->name}؟", "افتح المنيو من زرّ 'اطلب أوردر'، اختار الأصناف، حدّد منطقتك، وأكّد. الأوردر هيوصل للمطعم على لوحة تحكمه في بنهاوي ويتأكدوا منك."];
+            }
+            if (! empty($extras['has_delivery'])) {
+                $faqs[] = ["{$this->name} بيوصّل دليفري؟", "أيوه، {$this->name} بيقدّم خدمة الدليفري. أسعار الشحن بتختلف حسب المنطقة وبتظهر في الكارت قبل تأكيد الأوردر."];
+            }
+            if (! empty($extras['cuisine'])) {
+                $faqs[] = ["نوع الأكل في {$this->name}؟", "{$this->name} بيقدّم أكل {$extras['cuisine']}. تقدر تشوف المنيو الكامل بالأسعار في صفحته."];
+            }
+        }
+
+        if ($this->category === 'medical') {
+            if (! empty($extras['has_appointment'])) {
+                $faqs[] = ["ازاي أحجز موعد عند {$this->name}؟", $this->booking_enabled
+                    ? "تقدر تحجز موعد إلكتروني مباشرة من صفحة {$this->name} على بنهاوي — اختار اليوم والساعة المناسبة."
+                    : "كلّم {$this->name} على رقم التليفون عشان تحجز موعد الكشف."];
+            }
+            if (! empty($extras['specialty'])) {
+                $faqs[] = ["إيه تخصص دكتور {$this->name}؟", "{$this->name} متخصص في {$extras['specialty']}."];
+            }
+            if ($this->sub_type === 'pharmacy' && ! empty($extras['pharmacy_delivery'])) {
+                $faqs[] = ["{$this->name} بتوصّل دواء؟", "أيوه، {$this->name} بتقدّم خدمة توصيل الدواء للبيت. اتصل أو ابعت روشتتك على واتساب."];
+            }
+        }
+
+        if ($this->category === 'craftsmen' && ! empty($extras['emergency_call'])) {
+            $faqs[] = ["{$this->name} بيرد على طوارئ الصيانة؟", "أيوه، {$this->name} بيستقبل مكالمات الطوارئ. اتصل مباشرة وقولّه طبيعة المشكلة."];
+        }
+
+        // Booking
+        if ($this->booking_enabled && $this->bookingApplicable()) {
+            $faqs[] = ["{$this->name} بيقبل حجز إلكتروني؟", "أيوه، {$this->name} بيستقبل حجوزات عبر بنهاوي. اضغط زرّ 'احجز موعد' في الصفحة، اختار يوم وساعة، وأكّد."];
+        }
+
+        // Cap at 5 items so the FAQPage stays focused.
+        return array_slice($faqs, 0, 5);
     }
 }

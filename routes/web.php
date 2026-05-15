@@ -21,6 +21,20 @@ Route::view('/welcome', 'welcome')->name('welcome');
 
 Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
 Route::get('/robots.txt',  [SeoController::class, 'robots'])->name('robots');
+
+// ─── Local-SEO money pages ──────────────────────────────────────
+// Explicit slug whitelist (defined in LocalSeoController::LANDINGS) — anything
+// not in the whitelist 404s, so this won't shadow legit routes.
+Route::get('/{slug}', [\App\Http\Controllers\LocalSeoController::class, 'landing'])
+    ->where('slug', 'best-restaurants-in-banha|cafes-in-banha|doctors-in-banha|pharmacies-in-banha|places-to-go-in-banha|restaurants-in-banha|24-hour-pharmacies-in-banha')
+    ->name('seo.landing');
+
+// Programmatic pattern: /{cat}-in-{area-slug}-banha
+// e.g. /cafes-in-el-felal-banha, /dentists-in-shareh-farid-nada-banha
+Route::get('/{slug}-in-{area}-banha', [\App\Http\Controllers\LocalSeoController::class, 'programmatic'])
+    ->where('slug', 'cafes|doctors|pharmacies|restaurants|dentists|places-to-go')
+    ->where('area', '[a-z0-9-]+')
+    ->name('seo.programmatic');
 Route::view('/offline',    'offline')->name('offline');
 Route::get('/push/vapid', [PushController::class, 'vapidKey'])->name('push.vapid');
 
@@ -42,6 +56,11 @@ Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->n
 
 // Public directory (browseable without login)
 Route::get('/directory',                     [DirectoryController::class, 'index'])->name('directory.index');
+// Brand-friendly canonical URL: /biz/{slug} — matches city-app's URL pattern
+// for direct brand queries ("ارمادا بنها" → /biz/armada).
+Route::get('/biz/{business:slug}',           [DirectoryController::class, 'show'])->name('directory.show.slug');
+// Legacy numeric URL — still works (no 301 to avoid breaking external backlinks)
+// but the canonical <link> on the rendered page points to /biz/{slug}.
 Route::get('/directory/business/{business}', [DirectoryController::class, 'show'])->name('directory.show');
 
 // ── Public booking (guests allowed) ───────────────────────────
