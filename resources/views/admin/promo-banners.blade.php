@@ -15,65 +15,83 @@
         <form method="POST" action="{{ route('admin.promo.banners.store') }}" enctype="multipart/form-data" class="space-y-3">
             @csrf
 
+            {{-- ── Primary path: image + business picker ── --}}
+            <div class="bg-mint-50 ring-1 ring-mint-500/20 rounded-2xl p-3">
+                <p class="text-[11px] font-bold text-mint-700 mb-2">الطريقة الجديدة: صورة + نشاط مرتبط</p>
+                <p class="text-[10px] text-ink-500 leading-relaxed">
+                    ارفع صورة البانر، اختار النشاط اللي هتودّيه عليه — والصورة بتفتح صفحة النشاط لما حد يضغط عليها.
+                    مش محتاج عنوان ولا وصف.
+                </p>
+            </div>
+
             <div>
-                <label class="text-xs font-bold text-ink-500 mb-1 block">صورة الخلفية</label>
+                <label class="text-xs font-bold text-ink-500 mb-1 block">صورة البانر <span class="text-blush-500">*</span></label>
                 <input type="file" name="image" accept="image/jpeg,image/png,image/webp"
                        class="w-full text-xs file:me-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:bg-coral-500 file:text-white file:font-bold file:cursor-pointer">
-                <p class="text-[10px] text-ink-400 mt-1">JPG / PNG / WEBP · أقل من 3MB</p>
+                <p class="text-[10px] text-ink-400 mt-1">JPG / PNG / WEBP · أقل من 4MB · مقاس مقترح 1200×600</p>
+                @error('image') <p class="text-blush-500 text-xs mt-1">{{ $message }}</p> @enderror
             </div>
 
             <div>
-                <label class="text-xs font-bold text-ink-500 mb-1 block">تاج (Badge)</label>
-                <input type="text" name="tag" maxlength="60" placeholder="جديد · خصم"
+                <label class="text-xs font-bold text-ink-500 mb-1 block">يودّي على نشاط</label>
+                <input list="biz-list-new" placeholder="اكتب اسم النشاط…"
+                       data-biz-picker-input
                        class="w-full rounded-2xl px-3 py-2.5 text-sm outline-0 focus:border-coral-500 transition">
+                <datalist id="biz-list-new">
+                    @foreach($businesses as $b)
+                        <option value="{{ $b->name }} · {{ $b->id }}" data-id="{{ $b->id }}">{{ $b->name }}</option>
+                    @endforeach
+                </datalist>
+                <input type="hidden" name="business_id" value="" data-biz-picker-id>
+                <p class="text-[10px] text-ink-400 mt-1">ابدأ تكتب الاسم وهيظهرلك المتاح. سيبها فاضية لو هتحط رابط يدوي.</p>
+                @error('business_id') <p class="text-blush-500 text-xs mt-1">{{ $message }}</p> @enderror
             </div>
 
             <div>
-                <label class="text-xs font-bold text-ink-500 mb-1 block">العنوان <span class="text-blush-500">*</span></label>
-                <input type="text" name="title" required maxlength="120"
-                       placeholder="عرض خاص لزوار بنهاوي"
+                <label class="text-xs font-bold text-ink-500 mb-1 block">ترتيب</label>
+                <input type="number" name="sort_order" min="0" max="9999" value="0"
                        class="w-full rounded-2xl px-3 py-2.5 text-sm outline-0 focus:border-coral-500 transition">
-                @error('title') <p class="text-blush-500 text-xs mt-1">{{ $message }}</p> @enderror
+                <p class="text-[10px] text-ink-400 mt-1">الأصغر يظهر أول. متساوي = الأحدث أول.</p>
             </div>
 
-            <div>
-                <label class="text-xs font-bold text-ink-500 mb-1 block">الوصف</label>
-                <textarea name="description" rows="2" maxlength="500"
-                          placeholder="نص قصير يوصّل الفكرة…"
-                          class="w-full rounded-2xl px-3 py-2.5 text-sm outline-0 focus:border-coral-500 transition resize-none"></textarea>
-            </div>
-
-            <div class="grid grid-cols-2 gap-2">
-                <div>
-                    <label class="text-xs font-bold text-ink-500 mb-1 block">نص الزرار</label>
-                    <input type="text" name="cta_text" maxlength="40" placeholder="اضغط هنا"
-                           class="w-full rounded-2xl px-3 py-2.5 text-sm outline-0 focus:border-coral-500 transition">
+            {{-- ── Legacy / Advanced: keep for backward compat, hidden by default ── --}}
+            <details class="bg-cream-50 rounded-2xl ring-1 ring-ink-950/8 p-3">
+                <summary class="text-[11px] font-bold text-ink-500 cursor-pointer">إعدادات متقدّمة (نص + ألوان + جدولة) ▾</summary>
+                <div class="mt-3 space-y-3">
+                    <div>
+                        <label class="text-[10px] font-bold text-ink-500 mb-1 block">تاج (Badge)</label>
+                        <input type="text" name="tag" maxlength="60" placeholder="جديد · خصم"
+                               class="w-full rounded-xl px-3 py-2 text-xs outline-0 focus:border-coral-500 transition">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-ink-500 mb-1 block">عنوان (اختياري لو حابب overlay)</label>
+                        <input type="text" name="title" maxlength="120" placeholder="سيبها فاضية لو الصورة كافية"
+                               class="w-full rounded-xl px-3 py-2 text-xs outline-0 focus:border-coral-500 transition">
+                        @error('title') <p class="text-blush-500 text-[10px] mt-1">{{ $message }}</p> @enderror
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-ink-500 mb-1 block">وصف</label>
+                        <textarea name="description" rows="2" maxlength="500"
+                                  class="w-full rounded-xl px-3 py-2 text-xs outline-0 focus:border-coral-500 transition resize-none"></textarea>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-ink-500 mb-1 block">نص الزرار</label>
+                        <input type="text" name="cta_text" maxlength="40" placeholder="اضغط هنا"
+                               class="w-full rounded-xl px-3 py-2 text-xs outline-0 focus:border-coral-500 transition">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-ink-500 mb-1 block">رابط يدوي (لو مش مربوط بنشاط)</label>
+                        <input type="text" name="href" maxlength="255" placeholder="https://… أو /directory"
+                               class="w-full rounded-xl px-3 py-2 text-xs outline-0 focus:border-coral-500 transition">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" name="bg_from" maxlength="16" placeholder="#2D5BFF"
+                               class="w-full rounded-xl px-3 py-2 text-xs outline-0 focus:border-coral-500 transition">
+                        <input type="text" name="bg_to" maxlength="16" placeholder="#FFD440"
+                               class="w-full rounded-xl px-3 py-2 text-xs outline-0 focus:border-coral-500 transition">
+                    </div>
                 </div>
-                <div>
-                    <label class="text-xs font-bold text-ink-500 mb-1 block">ترتيب</label>
-                    <input type="number" name="sort_order" min="0" max="9999" value="0"
-                           class="w-full rounded-2xl px-3 py-2.5 text-sm outline-0 focus:border-coral-500 transition">
-                </div>
-            </div>
-
-            <div>
-                <label class="text-xs font-bold text-ink-500 mb-1 block">الرابط</label>
-                <input type="text" name="href" maxlength="255" placeholder="https://… أو /directory"
-                       class="w-full rounded-2xl px-3 py-2.5 text-sm outline-0 focus:border-coral-500 transition">
-            </div>
-
-            <div class="grid grid-cols-2 gap-2">
-                <div>
-                    <label class="text-xs font-bold text-ink-500 mb-1 block">لون من</label>
-                    <input type="text" name="bg_from" maxlength="16" placeholder="#2D5BFF"
-                           class="w-full rounded-2xl px-3 py-2.5 text-sm outline-0 focus:border-coral-500 transition">
-                </div>
-                <div>
-                    <label class="text-xs font-bold text-ink-500 mb-1 block">لون لـ</label>
-                    <input type="text" name="bg_to" maxlength="16" placeholder="#FFD440"
-                           class="w-full rounded-2xl px-3 py-2.5 text-sm outline-0 focus:border-coral-500 transition">
-                </div>
-            </div>
+            </details>
 
             <div class="grid grid-cols-2 gap-2">
                 <div>
@@ -137,10 +155,26 @@
                 <form method="POST" action="{{ route('admin.promo.banners.update', $b) }}" enctype="multipart/form-data" class="space-y-3">
                     @csrf
 
+                    {{-- Business link (primary) — datalist for quick search across all businesses --}}
+                    <div>
+                        <label class="text-[10px] font-bold text-ink-500 mb-1 block">يودّي على نشاط</label>
+                        @php $linkedBiz = $b->business; @endphp
+                        <input list="biz-list-{{ $b->id }}" data-biz-picker-input
+                               value="{{ $linkedBiz ? $linkedBiz->name . ' · ' . $linkedBiz->id : '' }}"
+                               placeholder="اكتب اسم النشاط…"
+                               class="w-full rounded-xl px-3 py-2 text-xs outline-0 focus:border-coral-500 transition">
+                        <datalist id="biz-list-{{ $b->id }}">
+                            @foreach($businesses as $biz)
+                                <option value="{{ $biz->name }} · {{ $biz->id }}">{{ $biz->name }}</option>
+                            @endforeach
+                        </datalist>
+                        <input type="hidden" name="business_id" data-biz-picker-id value="{{ $b->business_id }}">
+                    </div>
+
                     <div class="grid md:grid-cols-2 gap-2">
                         <div>
-                            <label class="text-[10px] font-bold text-ink-500 mb-1 block">العنوان</label>
-                            <input type="text" name="title" required maxlength="120" value="{{ $b->title }}"
+                            <label class="text-[10px] font-bold text-ink-500 mb-1 block">العنوان (اختياري)</label>
+                            <input type="text" name="title" maxlength="120" value="{{ $b->title }}"
                                    class="w-full rounded-xl px-3 py-2 text-xs outline-0 focus:border-coral-500 transition">
                         </div>
                         <div>
@@ -247,10 +281,33 @@
             </div>
         @empty
             <div class="a-card p-8 text-center">
-                <div class="text-4xl mb-3">📣</div>
                 <p class="text-ink-500 text-sm font-bold">مفيش بانرات لسه — ضيف أول واحد من الجنب.</p>
             </div>
         @endforelse
     </div>
 </div>
+
+@push('scripts')
+<script>
+// Datalist-based business picker: each option's value is "Name · ID".
+// We extract the trailing integer and stash it in the sibling hidden input
+// named "business_id" before submit. Empty string clears the link.
+(function () {
+    document.querySelectorAll('[data-biz-picker-input]').forEach(input => {
+        const form = input.closest('form');
+        if (!form) return;
+        const hidden = form.querySelector('[data-biz-picker-id]');
+        if (!hidden) return;
+
+        function sync() {
+            const m = input.value.match(/·\s*(\d+)\s*$/);
+            hidden.value = m ? m[1] : '';
+        }
+        input.addEventListener('input', sync);
+        input.addEventListener('change', sync);
+        form.addEventListener('submit', sync);
+    });
+})();
+</script>
+@endpush
 @endsection

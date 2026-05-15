@@ -689,7 +689,14 @@ class AdminController extends Controller
     public function promoBanners()
     {
         return view('admin.promo-banners', [
-            'banners' => PromoBanner::orderBy('sort_order')->orderByDesc('id')->get(),
+            'banners'    => PromoBanner::with('business:id,name,slug')
+                ->orderBy('sort_order')->orderByDesc('id')->get(),
+            // Searchable list for the business picker — admin sees all businesses
+            // regardless of the Banha-only global scope so they can link any of them.
+            'businesses' => Business::withoutGlobalScope('banha')
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get(['id', 'name', 'slug', 'category', 'zone_id']),
         ]);
     }
 
@@ -739,8 +746,11 @@ class AdminController extends Controller
 
     private function validatePromoBanner(Request $request): array
     {
+        // Title is only required when there's no image AND no linked business.
+        // (Image-only banners with a business link don't need any text.)
         return $request->validate([
-            'title'       => ['required', 'string', 'max:120'],
+            'business_id' => ['nullable', 'integer', 'exists:businesses,id'],
+            'title'       => ['nullable', 'string', 'max:120', 'required_without_all:image,business_id'],
             'tag'         => ['nullable', 'string', 'max:60'],
             'description' => ['nullable', 'string', 'max:500'],
             'cta_text'    => ['nullable', 'string', 'max:40'],
@@ -751,8 +761,10 @@ class AdminController extends Controller
             'is_active'   => ['nullable', 'boolean'],
             'starts_at'   => ['nullable', 'date'],
             'ends_at'     => ['nullable', 'date', 'after_or_equal:starts_at'],
-            'image'       => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:3072'],
+            'image'       => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
             'clear_image' => ['nullable', 'boolean'],
+        ], [
+            'title.required_without_all' => 'محتاج تحط صورة أو تربطه بنشاط (أو تكتب عنوان لو محبتش).',
         ]);
     }
 }

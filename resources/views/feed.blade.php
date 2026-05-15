@@ -63,22 +63,23 @@
         </div>
     </div>
 
-    {{-- ───── Utility shortcuts — the 4 high-intent destinations ─────── --}}
-    <div class="grid grid-cols-4 gap-2 mb-6 rise rise-1">
+    {{-- ───── Utility shortcuts — the 5 high-intent destinations ─────── --}}
+    <div class="grid grid-cols-5 gap-1.5 mb-6 rise rise-1">
         @php
             $utilityShortcuts = [
                 ['route' => route('offers.index'),           'label' => 'عروض',         'icon' => 'tag',          'pill' => 'bg-coral-50 text-coral-600'],
                 ['route' => route('open-now.index'),         'label' => 'مفتوح دلوقتي', 'icon' => 'bell',         'pill' => 'bg-mint-100 text-mint-700'],
+                ['route' => route('trains.index'),           'label' => 'القطارات',     'icon' => 'train',        'pill' => 'bg-coral-50 text-coral-600'],
                 ['route' => route('emergency.index'),        'label' => 'طوارئ',         'icon' => 'bolt',         'pill' => 'bg-blush-100 text-blush-600'],
-                ['route' => route('university.index'),       'label' => 'جامعة بنها',   'icon' => 'graduation',   'pill' => 'bg-honey-100 text-honey-700'],
+                ['route' => route('university.index'),       'label' => 'الجامعة',      'icon' => 'graduation',   'pill' => 'bg-honey-100 text-honey-700'],
             ];
         @endphp
         @foreach($utilityShortcuts as $s)
-            <a href="{{ $s['route'] }}" class="flex flex-col items-center gap-1.5 py-2.5 rounded-2xl hover:bg-cream-100 transition">
-                <span class="w-11 h-11 rounded-full {{ $s['pill'] }} grid place-items-center">
-                    <x-icon :name="$s['icon']" class="w-5 h-5"/>
+            <a href="{{ $s['route'] }}" class="flex flex-col items-center gap-1 py-2.5 rounded-2xl hover:bg-cream-100 transition">
+                <span class="w-10 h-10 rounded-full {{ $s['pill'] }} grid place-items-center">
+                    <x-icon :name="$s['icon']" class="w-4 h-4"/>
                 </span>
-                <span class="text-[10px] font-extrabold text-ink-950 text-center leading-tight">{{ $s['label'] }}</span>
+                <span class="text-[9px] font-extrabold text-ink-950 text-center leading-tight">{{ $s['label'] }}</span>
             </a>
         @endforeach
     </div>
@@ -110,15 +111,17 @@
                 <div class="promo-slider" data-auto-rotate="4500">
                     @foreach($promoBanners as $banner)
                         @include('partials.promo-banner', [
-                            'href'    => $banner->href ?: '#',
-                            'variant' => 'custom',
-                            'tag'     => $banner->tag,
-                            'title'   => $banner->title,
-                            'desc'    => $banner->description,
-                            'cta'     => $banner->cta_text,
-                            'image'   => $banner->image_url,
-                            'bgFrom'  => $banner->bg_from,
-                            'bgTo'    => $banner->bg_to,
+                            'href'      => $banner->destinationUrl(),
+                            'variant'   => 'custom',
+                            'imageOnly' => $banner->isImageOnly(),
+                            'alt'       => $banner->business?->name ?: $banner->title,
+                            'tag'       => $banner->tag,
+                            'title'     => $banner->title,
+                            'desc'      => $banner->description,
+                            'cta'       => $banner->cta_text,
+                            'image'     => $banner->image_url,
+                            'bgFrom'    => $banner->bg_from,
+                            'bgTo'      => $banner->bg_to,
                         ])
                     @endforeach
                 </div>

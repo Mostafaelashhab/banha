@@ -1,24 +1,38 @@
 @props([
     'href',
-    'variant' => 'map',  // map | menu | add | ad | custom
-    'tag',
-    'title',
-    'desc',
-    'cta',
-    'image'   => null,
-    'bgFrom'  => null,
-    'bgTo'    => null,
+    'variant'   => 'map',  // map | menu | add | ad | custom | image
+    'tag'       => null,
+    'title'     => null,
+    'desc'      => null,
+    'cta'       => null,
+    'image'     => null,
+    'bgFrom'    => null,
+    'bgTo'      => null,
+    'imageOnly' => false,  // Full-bleed image render, no overlay
+    'alt'       => null,
 ])
 
 @php
-    $isCustom = $variant === 'custom' || $image || $bgFrom;
+    // Image-only mode: skip all the variant SVG art / overlay text and just
+    // render the uploaded image filling the card. Used for admin banners that
+    // are linked to a business — the image carries all the messaging.
+    $renderImageOnly = $imageOnly && $image;
+    $isCustom = ! $renderImageOnly && ($variant === 'custom' || $image || $bgFrom);
     $style = '';
-    // For custom banners, use the bg color as solid (no gradient, no image overlay).
-    // The image (if any) sits on the side as a separate element — the Shoppe pattern.
     if ($isCustom && $bgFrom) {
         $style = "background: ".e($bgFrom).";";
     }
 @endphp
+
+@if($renderImageOnly)
+    <a href="{{ $href }}" class="promo-card promo-card--image"
+       aria-label="{{ $alt ?: ($title ?: 'بانر بنهاوي') }}"
+       style="background: #F4F5F8;">
+        <img src="{{ $image }}" alt="{{ $alt ?: ($title ?: 'بانر بنهاوي') }}"
+             loading="lazy" decoding="async"
+             class="block w-full h-full object-cover">
+    </a>
+@else
 
 <a href="{{ $href }}" class="promo-card promo-card--{{ $variant }} group" @if($style) style="{{ $style }}" @endif>
     @unless($isCustom)
@@ -395,3 +409,4 @@
         @endif
     @endif
 </a>
+@endif {{-- /imageOnly --}}

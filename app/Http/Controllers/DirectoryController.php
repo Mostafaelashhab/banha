@@ -553,6 +553,35 @@ class DirectoryController extends Controller
         return view('directory.stats', compact('business'));
     }
 
+    /**
+     * Owner/admin dashboard hub — single entry point for managing a business.
+     * Cards link to edit, menu, orders, bookings, stats. Replaces the row
+     * of icons that used to live in the top bar on the business show page.
+     */
+    public function manage(Business $business)
+    {
+        $this->authorizeOwner($business);
+
+        $business->loadCount('reviews');
+
+        // Live counters for the dashboard cards — kept lean so the page is
+        // fast to open from mobile.
+        $pendingOrders = $business->supportsOrdering() && $business->has_menu
+            ? $business->orders()->where('status', 'pending')->count()
+            : 0;
+        $upcomingBookings = $business->booking_enabled && $business->bookingApplicable()
+            ? $business->bookings()->where('starts_at', '>=', now())->whereNotIn('status', ['cancelled'])->count()
+            : 0;
+        $menuItemsCount = $business->has_menu
+            ? $business->menuItems()->where('is_available', true)->count()
+            : 0;
+        $photosCount = $business->photos()->count();
+
+        return view('directory.manage', compact(
+            'business', 'pendingOrders', 'upcomingBookings', 'menuItemsCount', 'photosCount'
+        ));
+    }
+
     private function authorizeOwner(Business $business): void
     {
         if (! Auth::check()) abort(403);

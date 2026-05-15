@@ -113,6 +113,7 @@ Route::get('/offers',           [\App\Http\Controllers\OffersController::class, 
 Route::get('/open-now',         [\App\Http\Controllers\OpenNowController::class,    'index'])->name('open-now.index');
 Route::get('/emergency',        [\App\Http\Controllers\EmergencyController::class,  'index'])->name('emergency.index');
 Route::get('/benha-university', [\App\Http\Controllers\UniversityController::class, 'index'])->name('university.index');
+Route::get('/banha-trains',     [\App\Http\Controllers\TrainsController::class,     'index'])->name('trains.index');
 
 // ─── Marketing landings (own-business pitch + QR menu pitch) ───
 Route::get('/own-business',     [\App\Http\Controllers\MarketingController::class,  'claim'])->name('marketing.claim');
@@ -134,6 +135,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/directory/new',                            [DirectoryController::class, 'create'])->name('directory.create');
     Route::post('/directory',                               [DirectoryController::class, 'store'])->name('directory.store');
     Route::get('/directory/mine',                           [DirectoryController::class, 'myListings'])->name('directory.mine');
+    Route::get('/directory/business/{business}/manage',     [DirectoryController::class, 'manage'])->name('directory.manage');
     Route::get('/directory/business/{business}/edit',       [DirectoryController::class, 'edit'])->name('directory.edit');
     Route::get('/directory/business/{business}/stats',      [DirectoryController::class, 'stats'])->name('directory.stats');
     Route::get('/directory/business/{business}/bookings',   [\App\Http\Controllers\BookingController::class, 'ownerIndex'])->name('booking.owner.index');

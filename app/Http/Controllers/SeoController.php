@@ -16,17 +16,21 @@ class SeoController extends Controller
     public function sitemap(): Response
     {
         $urls = [
-            ['/',           '1.0', 'daily'],
-            ['/feed',       '0.9', 'hourly'],
-            ['/directory',  '0.9', 'daily'],
-            ['/market',     '0.9', 'hourly'],
-            ['/events',     '0.8', 'daily'],
-            ['/nearby',     '0.7', 'weekly'],
-            ['/users',      '0.6', 'weekly'],
-            ['/tags',       '0.6', 'daily'],
-            ['/discover',   '0.7', 'daily'],
-            ['/login',      '0.4', 'monthly'],
-            ['/signup',     '0.6', 'monthly'],
+            ['/',                '1.0', 'daily'],
+            ['/feed',            '0.9', 'hourly'],
+            ['/directory',       '0.9', 'daily'],
+            ['/market',          '0.9', 'hourly'],
+            ['/events',          '0.8', 'daily'],
+            ['/nearby',          '0.7', 'weekly'],
+            ['/users',           '0.6', 'weekly'],
+            ['/tags',            '0.6', 'daily'],
+            ['/discover',        '0.7', 'daily'],
+            ['/login',           '0.4', 'monthly'],
+            ['/signup',          '0.6', 'monthly'],
+            ['/banha-trains',    '0.85', 'daily'],   // High-traffic SEO target
+            ['/emergency',       '0.7', 'weekly'],
+            ['/benha-university','0.7', 'weekly'],
+            ['/offers',          '0.85', 'daily'],
         ];
 
         // Categories

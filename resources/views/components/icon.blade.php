@@ -308,6 +308,16 @@
         <path d="M14 9h4l3 3v5h-7"/><circle cx="6" cy="18" r="2"/><circle cx="17" cy="18" r="2"/>
         @break
 
+    @case('train')
+        <rect x="4" y="3" width="16" height="16" rx="2"/>
+        <path d="M4 11h16"/>
+        <path d="M12 3v8"/>
+        <circle cx="8" cy="16" r="1"/>
+        <circle cx="16" cy="16" r="1"/>
+        <path d="M8 19l-2 3"/>
+        <path d="M16 19l2 3"/>
+        @break
+
     @case('tools')
         <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
         @break

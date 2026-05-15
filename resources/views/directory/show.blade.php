@@ -246,36 +246,26 @@
         </a>
 
         @if($isOwner)
-            <a href="{{ route('menu.manage', $business) }}" class="w-9 h-9 rounded-full bg-honey-100 text-honey-700 grid place-items-center hover:bg-honey-500 hover:text-ink-950 transition" title="منيو">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
-                    <rect x="6" y="3" width="12" height="18" rx="2"/>
-                    <line x1="9" y1="8" x2="15" y2="8"/>
-                    <line x1="9" y1="12" x2="15" y2="12"/>
-                    <line x1="9" y1="16" x2="13" y2="16"/>
+            {{-- One-button entry to the management dashboard. All the individual
+                 actions (edit / menu / orders / stats / photos / delete) live
+                 inside there now. Pending-orders badge surfaces here so the
+                 owner sees urgency without opening the hub. --}}
+            @php
+                $pendingOrders = $business->supportsOrdering() && $business->has_menu
+                    ? $business->orders()->where('status', 'pending')->count()
+                    : 0;
+            @endphp
+            <a href="{{ route('directory.manage', $business) }}"
+               class="relative inline-flex items-center gap-1.5 px-3 h-9 rounded-full bg-coral-500 text-white text-[11px] font-extrabold hover:bg-coral-600 transition"
+               title="إدارة النشاط">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
                 </svg>
-            </a>
-            @if($business->has_menu && $business->whatsapp)
-                @php $pendingOrders = $business->orders()->where('status', 'pending')->count(); @endphp
-                <a href="{{ route('order.owner.index', $business) }}" class="relative w-9 h-9 rounded-full bg-coral-100 text-coral-600 grid place-items-center hover:bg-coral-500 hover:text-white transition" title="الطلبات">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
-                        <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
-                        <path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/>
-                    </svg>
-                    @if($pendingOrders > 0)
-                        <span class="absolute -top-1 -end-1 min-w-[18px] h-[18px] px-1 rounded-full bg-blush-500 text-white text-[10px] font-black grid place-items-center">{{ $pendingOrders }}</span>
-                    @endif
-                </a>
-            @endif
-            <a href="{{ route('directory.stats', $business) }}" class="w-9 h-9 rounded-full bg-mint-100 text-mint-700 grid place-items-center hover:bg-mint-500 hover:text-white transition" title="إحصائيات">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
-                    <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
-                    <line x1="6"  y1="20" x2="6"  y2="14"/><line x1="3"  y1="20" x2="21" y2="20"/>
-                </svg>
-            </a>
-            <a href="{{ route('directory.edit', $business) }}" class="w-9 h-9 rounded-full bg-coral-100 text-coral-700 grid place-items-center hover:bg-coral-500 hover:text-white transition" title="تعديل">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
-                    <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z"/>
-                </svg>
+                إدارة النشاط
+                @if($pendingOrders > 0)
+                    <span class="min-w-[18px] h-[18px] px-1 rounded-full bg-white text-coral-600 text-[10px] font-black grid place-items-center">{{ $pendingOrders }}</span>
+                @endif
             </a>
         @endif
     </div>
