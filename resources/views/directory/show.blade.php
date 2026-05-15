@@ -448,6 +448,106 @@
         </a>
     @endif
 
+    {{-- Delivery info card — shows BEFORE the menu so the user knows if they're covered ──── --}}
+    @if($business->offersDelivery())
+        @php
+            $deliveryFees   = (array) ($business->delivery_fees ?? []);
+            $deliveryAreaCt = count($deliveryFees);
+            $feeValues      = array_map('floatval', array_values($deliveryFees));
+            $feeMin         = $feeValues ? min($feeValues) : 0;
+            $feeMax         = $feeValues ? max($feeValues) : 0;
+            $minOrder       = (int) ($business->delivery_min_order ?? 0);
+            // If the visitor is signed in and has a preferred area, show "to your area"
+            $myArea = null;
+            $myFee  = null;
+            if (auth()->check() && auth()->user()->default_area_id) {
+                $myFee = $business->deliveryFeeFor((int) auth()->user()->default_area_id);
+                if ($myFee !== null) {
+                    $myArea = \App\Models\Area::find(auth()->user()->default_area_id);
+                }
+            }
+            $fmt = fn ($n) => $n == (int) $n ? (string) (int) $n : number_format($n, 2, '.', '');
+        @endphp
+        <div class="card-light p-4 mb-3">
+            <div class="flex items-center gap-3 mb-2">
+                <span class="w-9 h-9 rounded-xl bg-coral-50 text-coral-600 grid place-items-center shrink-0">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                        <rect x="1" y="3" width="15" height="13" rx="1"/>
+                        <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+                        <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+                    </svg>
+                </span>
+                <div class="flex-1 min-w-0">
+                    <div class="text-sm font-extrabold text-ink-950">بيوصّل دليفري</div>
+                    <div class="text-[11px] text-ink-500">
+                        لـ {{ $deliveryAreaCt }} منطقة في
+                        @php
+                            $parents = \App\Models\Area::whereIn('id', array_keys($deliveryFees))->distinct()->pluck('parent')->all();
+                        @endphp
+                        {{ implode(' · ', $parents) ?: 'بنها' }}
+                    </div>
+                </div>
+            </div>
+
+            @if($myArea && $myFee !== null)
+                {{-- We know exactly what this user pays --}}
+                <div class="bg-mint-50 ring-1 ring-mint-500/20 rounded-2xl p-3 flex items-center gap-2">
+                    <span class="w-7 h-7 rounded-full bg-mint-500 text-white grid place-items-center shrink-0">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="w-3.5 h-3.5">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                    </span>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-[11px] text-ink-500">لمنطقتك ({{ $myArea->name }})</div>
+                        <div class="text-sm font-extrabold text-mint-700">
+                            شحن:
+                            @if($myFee == 0)
+                                <span class="text-mint-700">مجاناً 🎉</span>
+                            @else
+                                <span dir="ltr">{{ $fmt($myFee) }} ج</span>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            @else
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="bg-cream-100/70 rounded-xl p-2.5">
+                        <div class="text-[10px] font-bold text-ink-500">سعر الشحن</div>
+                        <div class="text-sm font-extrabold text-ink-950 mt-0.5" dir="ltr">
+                            @if($feeMin == 0 && $feeMax == 0)
+                                مجاناً
+                            @elseif($feeMin === $feeMax)
+                                {{ $fmt($feeMin) }} ج
+                            @else
+                                {{ $fmt($feeMin) }}–{{ $fmt($feeMax) }} ج
+                            @endif
+                        </div>
+                    </div>
+                    <div class="bg-cream-100/70 rounded-xl p-2.5">
+                        <div class="text-[10px] font-bold text-ink-500">الحد الأدنى</div>
+                        <div class="text-sm font-extrabold text-ink-950 mt-0.5" dir="ltr">
+                            @if($minOrder > 0)
+                                {{ $minOrder }} ج
+                            @else
+                                مفيش حد أدنى
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            @if($business->has_menu)
+                <a href="{{ route('menu.public', $business) }}"
+                   class="inline-flex items-center gap-1 text-[11px] font-extrabold text-coral-600 hover:underline mt-2">
+                    شوف كل أسعار الشحن في المنيو
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="w-3 h-3 rtl:rotate-180">
+                        <polyline points="9 18 15 12 9 6"/>
+                    </svg>
+                </a>
+            @endif
+        </div>
+    @endif
+
     {{-- Booking CTA (only for non-food categories where owner enabled bookings) --}}
     @if($business->booking_enabled && $business->bookingApplicable())
         <a href="{{ route('booking.show', $business) }}" class="block mb-3 p-4 rounded-2xl bg-mint-500 text-white text-center hover:scale-[1.01] transition shadow-lg">

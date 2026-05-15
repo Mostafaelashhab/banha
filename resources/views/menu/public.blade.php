@@ -578,17 +578,47 @@
             </form>
 
             {{-- STEP 3: success --}}
-            <div data-cart-step="success" class="flex-1 hidden flex-col items-center justify-center text-center p-6">
-                <div class="w-16 h-16 rounded-full bg-mint-100 grid place-items-center mb-3">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 text-mint-700">
-                        <polyline points="20 6 9 17 4 12"/>
-                    </svg>
+            <div data-cart-step="success" class="flex-1 hidden flex-col p-5 overflow-y-auto">
+                <div class="text-center mb-4">
+                    <div class="w-14 h-14 rounded-full bg-mint-100 grid place-items-center mx-auto mb-2">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7 text-mint-700">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-black text-ink-950 mb-1">تمام، طلبك وصلهم!</h3>
+                    <p class="text-[12px] text-ink-500 mb-1" data-cart-success-msg>المطعم هيتواصل معاك قريب.</p>
+                    <p class="text-[10px] text-ink-400">رقم طلبك: <span dir="ltr" data-cart-order-id class="font-mono font-bold text-ink-950"></span></p>
                 </div>
-                <h3 class="text-lg font-black text-ink-950 mb-1">تمام، طلبك وصلهم!</h3>
-                <p class="text-sm text-ink-500 mb-1" data-cart-success-msg>المطعم هيتواصل معاك قريب.</p>
-                <p class="text-[11px] text-ink-400 mb-5">رقم طلبك: <span dir="ltr" data-cart-order-id class="font-mono font-bold"></span></p>
+
+                {{-- Order summary breakdown (filled in by JS after submit) --}}
+                <div class="bg-cream-100/70 rounded-2xl p-3 space-y-1.5 mb-3" data-cart-success-summary>
+                    <div class="flex items-center justify-between text-[11px] text-ink-500" data-success-area-row>
+                        <span>🗺 المنطقة</span>
+                        <span data-success-area class="font-bold text-ink-950">—</span>
+                    </div>
+                    <div class="flex items-center justify-between text-[11px] text-ink-500">
+                        <span>الأصناف</span>
+                        <span dir="ltr"><span data-success-subtotal>0</span> {{ $currency }}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-[11px] text-ink-500" data-success-fee-row>
+                        <span>🛵 الشحن</span>
+                        <span data-success-fee dir="ltr">—</span>
+                    </div>
+                    <div class="flex items-center justify-between pt-1.5 border-t border-ink-950/8">
+                        <span class="text-xs font-extrabold text-ink-950">الإجمالي للدفع</span>
+                        <span class="text-base font-black text-coral-600" dir="ltr">
+                            <span data-success-total>0</span>
+                            <span class="text-[10px] text-ink-500 font-bold">{{ $currency }}</span>
+                        </span>
+                    </div>
+                </div>
+
+                <p class="text-[10px] text-ink-400 text-center mb-3 leading-relaxed">
+                    الفلوس بتتحاسب كاش وقت التسليم. المطعم هيكلمك يأكد قبل ما يطلع.
+                </p>
+
                 <button type="button" data-cart-close-final
-                        class="px-6 py-2.5 rounded-full bg-ink-950 text-white text-sm font-extrabold">
+                        class="w-full py-3 rounded-full bg-ink-950 text-white text-sm font-extrabold hover:bg-ink-900 transition">
                     تمام
                 </button>
             </div>
@@ -692,6 +722,12 @@
     const errBox      = root.querySelector('[data-cart-error]');
     const successMsg  = root.querySelector('[data-cart-success-msg]');
     const orderIdEl   = root.querySelector('[data-cart-order-id]');
+    const sSubtotal   = root.querySelector('[data-success-subtotal]');
+    const sFeeRow     = root.querySelector('[data-success-fee-row]');
+    const sFee        = root.querySelector('[data-success-fee]');
+    const sAreaRow    = root.querySelector('[data-success-area-row]');
+    const sArea       = root.querySelector('[data-success-area]');
+    const sTotal      = root.querySelector('[data-success-total]');
 
     const steps = {
         review:   root.querySelector('[data-cart-step="review"]'),
@@ -1030,6 +1066,30 @@
 
             orderIdEl.textContent = '#' + body.order_id;
             if (body.message) successMsg.textContent = body.message;
+
+            // Populate the breakdown on the success step
+            const subT  = Number(body.subtotal || 0);
+            const fee   = Number(body.delivery_fee || 0);
+            const grand = Number(body.grand_total != null ? body.grand_total : subT + fee);
+            if (sSubtotal) sSubtotal.textContent = fmt(subT);
+            if (sFee) {
+                if (!body.area) {
+                    sFeeRow?.classList.add('hidden');
+                } else {
+                    sFeeRow?.classList.remove('hidden');
+                    sFee.textContent = fee === 0 ? 'مجاناً' : (fmt(fee) + ' ' + currency);
+                }
+            }
+            if (sArea) {
+                if (body.area) {
+                    sAreaRow?.classList.remove('hidden');
+                    sArea.textContent = body.area.name + (body.area.parent && body.area.parent !== body.area.name ? ' · ' + body.area.parent : '');
+                } else {
+                    sAreaRow?.classList.add('hidden');
+                }
+            }
+            if (sTotal) sTotal.textContent = fmt(grand);
+
             cart = {}; save(); updateAllItemUI(); refresh();
             setStep('success');
         } catch (err) {

@@ -154,12 +154,19 @@ class OrderController extends Controller
         ]);
 
         return response()->json([
-            'ok'       => true,
-            'order_id' => $order->id,
-            'subtotal' => (float) $order->subtotal,
-            'currency' => $order->currency,
-            'sent'     => $waResult['ok'],
-            'message'  => 'تم استلام طلبك! المطعم هيتواصل معاك قريب على رقمك.',
+            'ok'           => true,
+            'order_id'     => $order->id,
+            'subtotal'     => (float) $order->subtotal,
+            'delivery_fee' => (float) ($order->delivery_fee ?? 0),
+            'grand_total'  => $order->grandTotal(),
+            'currency'     => $order->currency,
+            'area'         => $area ? [
+                'id'     => $area->id,
+                'name'   => $area->name,
+                'parent' => $area->parent,
+            ] : null,
+            'sent'         => $waResult['ok'],
+            'message'      => 'تم استلام طلبك! المطعم هيتواصل معاك قريب على رقمك.',
         ]);
     }
 
