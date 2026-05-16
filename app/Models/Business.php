@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'description', 'phone', 'whatsapp', 'hotline', 'address', 'lat', 'lng',
     'hours', 'hours_schedule', 'is_24h', 'is_verified', 'promoted_until', 'is_active',
     'rating_avg', 'ratings_count', 'views_count', 'phone_clicks', 'whatsapp_clicks',
-    'emoji', 'photo_url', 'has_menu', 'menu_currency', 'external_id', 'extra',
+    'emoji', 'photo_url', 'has_menu', 'menu_currency', 'features', 'external_id', 'extra',
     'booking_enabled', 'booking_slot_minutes', 'booking_lead_hours', 'booking_capacity',
     'delivery_fees', 'delivery_min_order',
     'invited_at',
@@ -606,14 +606,14 @@ class Business extends Model
     {
         $map = [
             'food'       => ['title' => 'المنيو',           'cta_show' => 'شوف المنيو والأسعار', 'category_label' => 'القسم',       'item_label' => 'الصنف',     'price_label' => 'السعر',           'cat_examples' => 'بيتزا، مشروبات، حلو…',                 'item_placeholder' => 'مثلاً: مارجريتا'],
-            'hotels'     => ['title' => 'الغرف والباقات',   'cta_show' => 'شوف الغرف والأسعار',   'category_label' => 'الفئة',       'item_label' => 'الغرفة/الباقة', 'price_label' => 'السعر/الليلة',     'cat_examples' => 'غرف عادية، أجنحة، شاليهات…',          'item_placeholder' => 'مثلاً: غرفة دبل'],
+            'hotels'     => ['title' => 'الغرف والباقات',   'cta_show' => 'شوف الغرف والأسعار',   'category_label' => 'الفئة',       'item_label' => 'الغرفة/الباقة', 'price_label' => 'السعر/الليلة',     'cat_examples' => 'غرف عادية، أجنحة، شاليهات…',          'item_placeholder' => 'مثلاً: غرفة دبل',         'capacity_label' => 'تتسع لـ (شخص)'],
             'medical'    => ['title' => 'الخدمات والكشوفات','cta_show' => 'شوف الخدمات والأسعار', 'category_label' => 'القسم',       'item_label' => 'الخدمة',     'price_label' => 'السعر',           'cat_examples' => 'كشوفات، متابعة، أشعة، تحاليل…',         'item_placeholder' => 'مثلاً: كشف عام'],
             'shops'      => ['title' => 'المنتجات',         'cta_show' => 'شوف المنتجات والأسعار', 'category_label' => 'القسم',       'item_label' => 'المنتج',     'price_label' => 'السعر',           'cat_examples' => 'موبايلات، إكسسوارات، أجهزة…',           'item_placeholder' => 'مثلاً: iPhone 15'],
             'craftsmen'  => ['title' => 'الخدمات والأسعار', 'cta_show' => 'شوف الخدمات والأسعار',  'category_label' => 'النوع',       'item_label' => 'الخدمة',     'price_label' => 'السعر',           'cat_examples' => 'تركيبات، صيانة، طوارئ…',                'item_placeholder' => 'مثلاً: تركيب سخان'],
             'services'   => ['title' => 'الخدمات والباقات', 'cta_show' => 'شوف الخدمات والأسعار',  'category_label' => 'القسم',       'item_label' => 'الخدمة',     'price_label' => 'السعر',           'cat_examples' => 'كلاسات، باقات شهرية، خدمات إضافية…',  'item_placeholder' => 'مثلاً: قص شعر'],
             'companies'  => ['title' => 'الخدمات والمنتجات','cta_show' => 'شوف الخدمات والأسعار',  'category_label' => 'القسم',       'item_label' => 'الخدمة',     'price_label' => 'السعر',           'cat_examples' => 'استشارة، تنفيذ، تطوير…',                'item_placeholder' => 'مثلاً: استشارة قانونية'],
             'education'  => ['title' => 'الكورسات والمراحل','cta_show' => 'شوف الكورسات والأسعار', 'category_label' => 'المرحلة',     'item_label' => 'الكورس',     'price_label' => 'المصاريف',         'cat_examples' => 'KG، ابتدائي، إعدادي، ثانوي…',           'item_placeholder' => 'مثلاً: KG2'],
-            'tourist'    => ['title' => 'التذاكر والباقات', 'cta_show' => 'شوف التذاكر والأسعار',  'category_label' => 'الفئة',       'item_label' => 'التذكرة',     'price_label' => 'السعر',           'cat_examples' => 'تذاكر بالغين، أطفال، اشتراكات…',       'item_placeholder' => 'مثلاً: تذكرة بالغ'],
+            'tourist'    => ['title' => 'التذاكر والباقات', 'cta_show' => 'شوف التذاكر والأسعار',  'category_label' => 'الفئة',       'item_label' => 'التذكرة',     'price_label' => 'السعر',           'cat_examples' => 'تذاكر بالغين، أطفال، اشتراكات…',       'item_placeholder' => 'مثلاً: تذكرة بالغ',         'capacity_label' => 'تشمل (شخص)'],
             'banks'      => ['title' => 'الخدمات والرسوم',  'cta_show' => 'شوف الخدمات',            'category_label' => 'النوع',       'item_label' => 'الخدمة',     'price_label' => 'الرسوم',           'cat_examples' => 'تحويلات، حسابات، قروض…',                'item_placeholder' => 'مثلاً: تحويل دولي'],
             'transport'  => ['title' => 'الخطوط والأجرة',   'cta_show' => 'شوف الخطوط والأجرة',    'category_label' => 'الجهة',       'item_label' => 'الخط',       'price_label' => 'الأجرة',           'cat_examples' => 'القاهرة، طوخ، قها…',                    'item_placeholder' => 'مثلاً: بنها → القاهرة'],
             'government' => ['title' => 'الخدمات',          'cta_show' => 'شوف الخدمات',            'category_label' => 'القسم',       'item_label' => 'الخدمة',     'price_label' => 'الرسوم',           'cat_examples' => 'تجديد، استخراج، شكاوى…',               'item_placeholder' => 'مثلاً: تجديد رخصة'],
@@ -621,6 +621,16 @@ class Business extends Model
             'emergency'  => ['title' => 'الخدمات',          'cta_show' => 'شوف الخدمات',            'category_label' => 'النوع',       'item_label' => 'الخدمة',     'price_label' => '',                  'cat_examples' => 'إسعاف، إخلاء، حماية…',                  'item_placeholder' => 'مثلاً: إسعاف منزلي'],
         ];
         return $map[$category] ?? $map['services'];
+    }
+
+    /**
+     * Categories where each menu item has its own feature set (e.g. each
+     * hotel room has its own amenities). For all other categories, features
+     * live on the business itself.
+     */
+    public static function hasItemFeatures(string $category): bool
+    {
+        return \in_array($category, ['hotels', 'tourist'], true);
     }
 
     /** Return the extra-field definitions that apply to a given sub_type. */
@@ -651,6 +661,7 @@ class Business extends Model
             'lng'            => 'decimal:7',
             'rating_avg'     => 'decimal:1',
             'extra'          => 'array',
+            'features'       => 'array',
             'hours_schedule' => 'array',
             'booking_enabled'      => 'boolean',
             'booking_slot_minutes' => 'integer',

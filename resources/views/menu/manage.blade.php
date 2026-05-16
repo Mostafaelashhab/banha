@@ -75,6 +75,11 @@
         </div>
     </div>
 
+    {{-- Business-level features (non-hotel categories) --}}
+    @if(! \App\Models\Business::hasItemFeatures($business->category))
+        @include('menu.partials.business-features-form', ['business' => $business])
+    @endif
+
     {{-- Add category form --}}
     <form method="POST" action="{{ route('menu.category.store', $business) }}" class="card-light p-2 mb-3 flex gap-1.5">
         @csrf

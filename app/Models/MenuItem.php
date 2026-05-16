@@ -8,7 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
     'business_id', 'category_id', 'name', 'description',
-    'price', 'photo_url', 'is_available', 'sort',
+    'price', 'photo_url', 'photos', 'features', 'capacity',
+    'is_available', 'sort',
 ])]
 class MenuItem extends Model
 {
@@ -17,6 +18,9 @@ class MenuItem extends Model
         return [
             'is_available' => 'boolean',
             'price'        => 'decimal:2',
+            'photos'       => 'array',
+            'features'     => 'array',
+            'capacity'     => 'integer',
         ];
     }
 

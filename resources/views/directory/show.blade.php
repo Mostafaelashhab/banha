@@ -1334,38 +1334,6 @@
         </a>
     @endif
 
-    {{-- ─── Static Google Maps embed (when geo is known) ─── --}}
-    @if($business->lat && $business->lng)
-        <div class="card-light p-4 mb-3">
-            <h3 class="text-sm font-extrabold text-ink-950 mb-2 inline-flex items-center gap-2">
-                <span class="w-6 h-6 rounded-md bg-coral-50 text-coral-600 grid place-items-center">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5">
-                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
-                    </svg>
-                </span>
-                موقع {{ $business->name }} على الخريطة
-            </h3>
-            <a href="https://www.google.com/maps/dir/?api=1&destination={{ $business->lat }},{{ $business->lng }}"
-               target="_blank" rel="noopener"
-               data-track-click="map_open" data-business="{{ $business->id }}"
-               class="block rounded-2xl overflow-hidden ring-1 ring-ink-950/8 hover:ring-coral-500/40 transition relative aspect-[16/9]">
-                {{-- OpenStreetMap static image — no API key required, indexable, fast --}}
-                <img loading="lazy" decoding="async"
-                     width="800" height="450"
-                     src="https://staticmap.openstreetmap.de/staticmap.php?center={{ $business->lat }},{{ $business->lng }}&zoom=16&size=800x450&markers={{ $business->lat }},{{ $business->lng }},red-pushpin"
-                     alt="موقع {{ $business->name }} على خريطة بنها"
-                     class="absolute inset-0 w-full h-full object-cover bg-cream-100">
-                <span class="absolute bottom-2 end-2 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/95 text-ink-950 text-[11px] font-extrabold backdrop-blur shadow">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3 h-3">
-                        <path d="M21.71 11.29 12.71 2.29a1 1 0 0 0-1.42 0l-9 9a1 1 0 0 0 0 1.42l9 9a1 1 0 0 0 1.42 0l9-9a1 1 0 0 0 0-1.42z"/>
-                        <polyline points="9 12 11 14 15 10"/>
-                    </svg>
-                    افتح الاتجاهات
-                </span>
-            </a>
-        </div>
-    @endif
-
     {{-- ─── FAQ — auto-generated from business data, matches FAQPage JSON-LD ─── --}}
     @if(! empty($bizFaqs))
         <section class="card-light p-4 mb-3" itemscope itemtype="https://schema.org/FAQPage">

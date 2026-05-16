@@ -156,6 +156,7 @@ Route::middleware('auth')->group(function () {
 
     // Menu management (owner)
     Route::get('/directory/business/{business}/menu',       [\App\Http\Controllers\MenuController::class, 'manage'])->name('menu.manage');
+    Route::post('/directory/business/{business}/menu/features', [\App\Http\Controllers\MenuController::class, 'updateFeatures'])->name('menu.features.update');
     Route::post('/directory/business/{business}/menu/category', [\App\Http\Controllers\MenuController::class, 'storeCategory'])->name('menu.category.store');
     Route::delete('/menu/category/{category}',              [\App\Http\Controllers\MenuController::class, 'destroyCategory'])->name('menu.category.destroy');
     Route::post('/directory/business/{business}/menu/item', [\App\Http\Controllers\MenuController::class, 'storeItem'])->name('menu.item.store');

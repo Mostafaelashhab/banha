@@ -200,6 +200,26 @@
         @endif
     </div>
 
+    {{-- Business-level features (non-hotel: applies to whole place) --}}
+    @if(! \App\Models\Business::hasItemFeatures($business->category) && is_array($business->features) && count($business->features))
+        <div class="card-light p-3 mt-3">
+            <div class="flex items-center gap-1.5 mb-2">
+                <span class="w-5 h-5 rounded-md bg-coral-100 text-coral-600 grid place-items-center shrink-0">
+                    <x-icon name="bolt" class="w-3 h-3"/>
+                </span>
+                <span class="text-[11px] font-extrabold text-ink-950">اللي بيميّز {{ $business->name }}</span>
+            </div>
+            <div class="flex flex-wrap gap-1.5">
+                @foreach($business->features as $f)
+                    <span class="inline-flex items-center gap-1.5 bg-cream-50 text-ink-800 text-[11px] font-bold rounded-full px-2.5 py-1 border border-ink-950/8">
+                        <x-icon name="{{ $f['icon'] ?? 'tag' }}" class="w-3 h-3 text-coral-600"/>
+                        {{ $f['label'] ?? '' }}
+                    </span>
+                @endforeach
+            </div>
+        </div>
+    @endif
+
     {{-- Sticky category nav (jumps to sections) --}}
     @if($business->menuCategories->where('items', '!=', null)->count() > 0)
         @php

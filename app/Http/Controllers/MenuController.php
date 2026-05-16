@@ -54,15 +54,26 @@ class MenuController extends Controller
         $data = $request->validate([
             'category_id'  => ['nullable', 'exists:menu_categories,id'],
             'name'         => ['required', 'string', 'max:120'],
-            'description'  => ['nullable', 'string', 'max:500'],
+            'description'  => ['nullable', 'string', 'max:2000'],
             'price'        => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
+            'capacity'     => ['nullable', 'integer', 'min:1', 'max:255'],
+            'features'     => ['nullable', 'string'],
             'is_available' => ['nullable', 'boolean'],
             'photo'        => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'photos'       => ['nullable', 'array', 'max:10'],
+            'photos.*'     => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ]);
 
-        $photo = null;
+        $cover = null;
         if ($request->hasFile('photo')) {
-            $photo = ImageUploader::store($request->file('photo'), 'menu');
+            $cover = ImageUploader::store($request->file('photo'), 'menu');
+        }
+
+        $gallery = [];
+        foreach ((array) $request->file('photos', []) as $file) {
+            if ($url = ImageUploader::store($file, 'menu')) {
+                $gallery[] = $url;
+            }
         }
 
         MenuItem::create([
@@ -71,7 +82,10 @@ class MenuController extends Controller
             'name'         => $data['name'],
             'description'  => $data['description'] ?? null,
             'price'        => $data['price'] ?? null,
-            'photo_url'    => $photo,
+            'capacity'     => $data['capacity'] ?? null,
+            'photo_url'    => $cover,
+            'photos'       => $gallery ?: null,
+            'features'     => $this->parseFeatures($data['features'] ?? null),
             'is_available' => (bool) ($data['is_available'] ?? true),
             'sort'         => $business->menuItems()->where('category_id', $data['category_id'] ?? null)->count(),
         ]);
@@ -83,26 +97,77 @@ class MenuController extends Controller
     {
         $this->authorizeOwner($item->business);
         $data = $request->validate([
-            'name'         => ['required', 'string', 'max:120'],
-            'description'  => ['nullable', 'string', 'max:500'],
-            'price'        => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
-            'is_available' => ['nullable', 'boolean'],
-            'photo'        => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'name'           => ['required', 'string', 'max:120'],
+            'description'    => ['nullable', 'string', 'max:2000'],
+            'price'          => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
+            'capacity'       => ['nullable', 'integer', 'min:1', 'max:255'],
+            'features'       => ['nullable', 'string'],
+            'is_available'   => ['nullable', 'boolean'],
+            'photo'          => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'photos'         => ['nullable', 'array', 'max:10'],
+            'photos.*'       => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'remove_photos'  => ['nullable', 'array'],
+            'remove_photos.*'=> ['string'],
         ]);
 
-        $newPhoto = $item->photo_url;
+        $cover = $item->photo_url;
         if ($request->hasFile('photo')) {
-            $newPhoto = ImageUploader::store($request->file('photo'), 'menu', $item->photo_url);
+            $cover = ImageUploader::store($request->file('photo'), 'menu', $item->photo_url);
+        }
+
+        // Gallery: keep existing minus removed, plus newly uploaded.
+        $existing = (array) ($item->photos ?? []);
+        $toRemove = (array) ($data['remove_photos'] ?? []);
+        $keptGallery = [];
+        foreach ($existing as $url) {
+            if (in_array($url, $toRemove, true)) {
+                ImageUploader::delete($url);
+            } else {
+                $keptGallery[] = $url;
+            }
+        }
+        foreach ((array) $request->file('photos', []) as $file) {
+            if ($url = ImageUploader::store($file, 'menu')) {
+                $keptGallery[] = $url;
+            }
         }
 
         $item->update([
             'name'         => $data['name'],
             'description'  => $data['description'] ?? null,
             'price'        => $data['price'] ?? null,
+            'capacity'     => $data['capacity'] ?? null,
             'is_available' => (bool) ($data['is_available'] ?? true),
-            'photo_url'    => $newPhoto,
+            'photo_url'    => $cover,
+            'photos'       => $keptGallery ?: null,
+            'features'     => $this->parseFeatures($data['features'] ?? null),
         ]);
         return back()->with('flash', 'تم التعديل.');
+    }
+
+    /**
+     * Accepts a JSON string from the form (e.g. '[{"icon":"wifi","label":"واي فاي"}]')
+     * and returns a cleaned array, or null if empty/invalid.
+     */
+    private function parseFeatures(?string $raw): ?array
+    {
+        if (! $raw) return null;
+        $decoded = json_decode($raw, true);
+        if (! is_array($decoded)) return null;
+
+        $out = [];
+        foreach ($decoded as $row) {
+            if (! is_array($row)) continue;
+            $label = trim((string) ($row['label'] ?? ''));
+            if ($label === '') continue;
+            $icon = preg_replace('/[^a-z0-9-]/', '', strtolower((string) ($row['icon'] ?? '')));
+            $out[] = [
+                'icon'  => $icon ?: 'tag',
+                'label' => mb_substr($label, 0, 40),
+            ];
+            if (count($out) >= 12) break;
+        }
+        return $out ?: null;
     }
 
     public function toggleItem(MenuItem $item)
@@ -112,10 +177,29 @@ class MenuController extends Controller
         return back();
     }
 
+    /**
+     * Owner: update business-level features (used for non-hotel categories
+     * where features describe the whole place, not each menu item).
+     */
+    public function updateFeatures(Business $business, Request $request)
+    {
+        $this->authorizeOwner($business);
+        $request->validate([
+            'features' => ['nullable', 'string'],
+        ]);
+        $business->update([
+            'features' => $this->parseFeatures($request->input('features')),
+        ]);
+        return back()->with('flash', 'تم تحديث المميزات.');
+    }
+
     public function destroyItem(MenuItem $item)
     {
         $this->authorizeOwner($item->business);
         ImageUploader::delete($item->photo_url);
+        foreach ((array) ($item->photos ?? []) as $url) {
+            ImageUploader::delete($url);
+        }
         $item->delete();
         return back()->with('flash', 'تم الحذف.');
     }
