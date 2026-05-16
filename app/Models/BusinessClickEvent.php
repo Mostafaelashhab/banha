@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 #[Fillable(['business_id', 'kind', 'hour', 'dow'])]
 class BusinessClickEvent extends Model
@@ -25,6 +26,8 @@ class BusinessClickEvent extends Model
     public static function popularTimesFor(int $businessId, int $minTotal = 10): ?array
     {
         return Cache::remember("popular-times:$businessId:v1", 3600, function () use ($businessId, $minTotal) {
+            if (! Schema::hasTable('business_click_events')) return null;
+
             $rows = DB::table('business_click_events')
                 ->where('business_id', $businessId)
                 ->where('created_at', '>=', now()->subDays(90))
