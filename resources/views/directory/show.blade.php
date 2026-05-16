@@ -275,12 +275,21 @@
         @php
             $promotedActive = $business->promoted_until && $business->promoted_until->isFuture();
         @endphp
-        <div class="card-light p-4 mb-3 bg-coral-50 ring-1 ring-coral-500/15">
-            <div class="flex items-center gap-2 mb-3">
-                <span class="w-7 h-7 rounded-lg bg-coral-500 text-white grid place-items-center text-xs font-black">★</span>
-                <h3 class="text-sm font-extrabold text-ink-950">لوحة الأدمن السريعة</h3>
-                <a href="{{ route('admin.businesses') }}" class="ms-auto text-[10px] font-bold text-ink-500 hover:text-coral-600">للوحة الكاملة ←</a>
-            </div>
+        <details class="mb-3 group">
+            <summary class="list-none cursor-pointer select-none rounded-2xl bg-coral-500 text-white px-4 py-3 inline-flex items-center gap-2 w-full font-extrabold text-sm hover:bg-coral-600 transition ring-1 ring-coral-500/20">
+                <span class="w-7 h-7 rounded-lg bg-white/15 grid place-items-center text-xs font-black shrink-0">
+                    <svg viewBox="0 0 24 24" fill="currentColor" class="w-3.5 h-3.5"><polygon points="12 2 15 9 22 9.5 17 14.5 18.5 22 12 18 5.5 22 7 14.5 2 9.5 9 9"/></svg>
+                </span>
+                <span class="flex-1 text-start">لوحة الأدمن السريعة</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="w-4 h-4 transition group-open:rotate-180">
+                    <polyline points="6 9 12 15 18 9"/>
+                </svg>
+            </summary>
+
+            <div class="card-light p-4 mt-2 bg-coral-50 ring-1 ring-coral-500/15">
+                <div class="flex items-center justify-end mb-3">
+                    <a href="{{ route('admin.businesses') }}" class="text-[10px] font-bold text-ink-500 hover:text-coral-600">للوحة الكاملة ←</a>
+                </div>
 
             <div class="grid grid-cols-2 gap-2 mb-2">
                 {{-- Verify toggle --}}
@@ -371,96 +380,8 @@
                 @endif
             </div>
 
-            {{-- ─── Card photo manager ─── --}}
-            <div class="bg-white rounded-xl p-3 ring-1 ring-coral-500/15 mt-2">
-                <div class="flex items-center justify-between mb-2">
-                    <span class="text-xs font-extrabold text-ink-950 inline-flex items-center gap-1.5">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5 text-coral-500">
-                            <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
-                        </svg>
-                        كارد الـ home (شكله للناس)
-                    </span>
-                    @php
-                        $coverImage = $business->photos->first()->url ?? $business->photo_url ?? null;
-                    @endphp
-                    @if($coverImage)
-                        <span class="text-[10px] font-bold text-mint-700 bg-mint-100 px-2 py-0.5 rounded-full">صورة معيّنة</span>
-                    @else
-                        <span class="text-[10px] font-bold text-ink-400">فولباك (شوكة الكاتيجوري)</span>
-                    @endif
-                </div>
-
-                {{-- Live preview — actual card mock at home-page aspect ratio --}}
-                <div class="text-[10px] font-bold text-ink-500 mb-1.5">معاينة:</div>
-                <div class="relative rounded-2xl overflow-hidden aspect-[4/3] mb-3 ring-1 ring-ink-950/10 shadow-sm bg-cream-100">
-                    {{-- gradient fallback (always rendered behind) --}}
-                    <div class="absolute inset-0 grid place-items-center"
-                         style="background: linear-gradient(135deg, {{ $cm['color'] ?? '#2D5BFF' }}, {{ $cm['color'] ?? '#2D5BFF' }}aa);">
-                        <x-icon :name="$cm['icon'] ?? 'bag'" class="w-16 h-16 text-white/80"/>
-                    </div>
-                    {{-- actual image on top, if any --}}
-                    @if($coverImage)
-                        <img src="{{ $coverImage }}" alt="" class="absolute inset-0 w-full h-full object-cover"
-                             style="object-position: center 30%;">
-                    @endif
-                    {{-- realistic overlay matching the real card --}}
-                    <div class="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/70 to-transparent">
-                        <div class="text-white font-extrabold text-sm truncate drop-shadow">
-                            {{ $business->name }}
-                            @if($business->is_verified)
-                                <span class="inline-block text-mint-300 text-xs">✓</span>
-                            @endif
-                        </div>
-                        <div class="text-white/85 text-[10px] truncate">{{ $cm['label'] ?? '' }}</div>
-                    </div>
-                </div>
-                <p class="text-[11px] text-ink-500 mb-3 leading-snug">
-                    ⬆ ده الكارد اللي بيظهر في كاروسيل الـ home (مميّزة الأسبوع + الأكتر تقييم).
-                </p>
-
-                {{-- Upload new photo --}}
-                <form method="POST" action="{{ route('admin.businesses.photo', $business) }}" enctype="multipart/form-data" class="space-y-2">
-                    @csrf
-                    <label class="flex items-center gap-2 bg-cream-100 rounded-lg p-2 cursor-pointer border border-ink-950/8 hover:border-coral-500/40 transition">
-                        <span class="w-8 h-8 rounded-lg bg-coral-500 text-white grid place-items-center text-xs font-black shrink-0">+</span>
-                        <span class="text-xs font-bold text-ink-950 flex-1" data-photo-name>ارفع صورة جديدة (JPG/PNG/WEBP · حتى 3 ميجا)</span>
-                        <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" class="hidden" required
-                               onchange="this.parentElement.querySelector('[data-photo-name]').textContent = this.files[0]?.name || 'ارفع صورة'; this.form.requestSubmit()">
-                    </label>
-                </form>
-
-                {{-- Pick from gallery (if any) --}}
-                @if($business->photos->isNotEmpty())
-                    <div class="mt-3">
-                        <div class="text-[10px] font-bold text-ink-500 mb-1.5">أو اختار من الجاليري:</div>
-                        <div class="grid grid-cols-5 gap-1.5">
-                            @foreach($business->photos->take(10) as $p)
-                                <form method="POST" action="{{ route('admin.businesses.photo', $business) }}">
-                                    @csrf
-                                    <input type="hidden" name="gallery_url" value="{{ $p->url }}">
-                                    <button type="submit" class="block w-full aspect-square rounded-lg overflow-hidden ring-1 transition
-                                                                 {{ $business->photo_url === $p->url ? 'ring-coral-500 ring-2' : 'ring-ink-950/8 hover:ring-coral-500/50' }}">
-                                        <img src="{{ $p->url }}" alt="" class="w-full h-full object-cover">
-                                    </button>
-                                </form>
-                            @endforeach
-                        </div>
-                    </div>
-                @endif
-
-                {{-- Clear → revert to category fallback --}}
-                @if($business->photo_url)
-                    <form method="POST" action="{{ route('admin.businesses.photo', $business) }}"
-                          data-confirm="ارجع الصورة لـ الفولباك؟" data-confirm-action="ارجع" class="mt-2">
-                        @csrf
-                        <input type="hidden" name="clear" value="1">
-                        <button type="submit" class="w-full px-3 py-2 rounded-lg bg-blush-100 text-blush-600 text-[11px] font-extrabold hover:bg-blush-500 hover:text-white transition">
-                            🗑️ ارجع الفولباك
-                        </button>
-                    </form>
-                @endif
-            </div>
-        </div>
+          
+        </details>
     @endif
 
     {{-- Hero: branded Banhawy cover when no user photo --}}
@@ -500,14 +421,21 @@
 
         <div class="absolute top-3 start-3 flex flex-col gap-1.5 z-30">
             @if($business->isPromoted())
-                <span class="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-honey-500 text-ink-950 w-fit">
-                    <svg viewBox="0 0 24 24" fill="currentColor" class="w-3 h-3"><polygon points="12 2 15 9 22 9.5 17 14.5 18.5 22 12 18 5.5 22 7 14.5 2 9.5 9 9"/></svg>
-                    مُروَّج
+                <span class="inline-flex items-center gap-1.5 text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-md text-coral-600 w-fit shadow-lg ring-1 ring-white/40">
+                    <svg viewBox="0 0 24 24" fill="currentColor" class="w-3 h-3 text-coral-500">
+                        <polygon points="12 2 15 9 22 9.5 17 14.5 18.5 22 12 18 5.5 22 7 14.5 2 9.5 9 9"/>
+                    </svg>
+                    مميز
                 </span>
             @endif
             @if($business->is_verified)
-                <span class="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-mint-500 text-white w-fit">
-                    <x-icon name="check" class="w-3 h-3"/> موثّق
+                <span class="inline-flex items-center gap-1.5 text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-gradient-to-l from-mint-600 to-mint-500 text-white w-fit shadow-lg ring-1 ring-white/30">
+                    <span class="w-3.5 h-3.5 rounded-full bg-white/25 grid place-items-center">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-2.5 h-2.5">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                    </span>
+                    موثّق
                 </span>
             @endif
         </div>
@@ -705,7 +633,7 @@
             @if($business->whatsapp)
                 <a href="https://wa.me/{{ \App\Services\WaapiService::toIntl($business->whatsapp) }}" target="_blank"
                    data-track-click="whatsapp" data-business="{{ $business->id }}"
-                   class="inline-flex items-center justify-center gap-2 py-3.5 rounded-full font-bold text-white text-sm transition hover:scale-[1.02] bg-mint-600 hover:bg-mint-500">
+                   class="inline-flex items-center justify-center gap-2 py-3.5 rounded-full font-bold text-coral-600  text-sm transition hover:scale-[1.02] bg-mint-600 hover:bg-mint-500">
                     <x-icon name="whatsapp" class="w-4 h-4"/> واتساب
                 </a>
             @endif
@@ -1568,13 +1496,13 @@
     if ($hasPhone) {
         $stickyActions[] = ['kind' => 'phone', 'label' => 'اتصال',
             'href'  => 'tel:'.preg_replace('/[^0-9+]/', '', $callNumberSticky),
-            'cls'   => 'bg-ink-950 text-white hover:bg-ink-800',
+            'cls'   => 'bg-coral-50 text-coral-600 hover:bg-ink-800',
             'track' => 'business_call'];
     }
     if ($hasWa) {
         $stickyActions[] = ['kind' => 'whatsapp', 'label' => 'واتساب',
             'href'  => 'https://wa.me/'.\App\Services\WaapiService::toIntl($business->whatsapp),
-            'cls'   => 'bg-mint-600 text-white hover:bg-mint-500',
+            'cls'   => 'bg-coral-50 text-coral-600 hover:bg-mint-500',
             'track' => 'business_whatsapp', 'external' => true];
     }
     if ($hasDir) {
