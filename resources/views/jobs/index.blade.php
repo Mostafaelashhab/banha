@@ -32,7 +32,14 @@
     </div>
 
     {{-- ─── Post CTA ─── --}}
-    <a href="{{ Auth::check() ? route('marketplace.create', ['category' => 'jobs']) : route('login') }}"
+    @if(session('flash'))
+        <div class="mb-3 rounded-2xl bg-mint-50 ring-1 ring-mint-500/30 p-3 text-[12px] font-bold text-mint-800 flex items-center gap-2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="w-4 h-4 shrink-0"><polyline points="20 6 9 17 4 12"/></svg>
+            {{ session('flash') }}
+        </div>
+    @endif
+
+    <a href="{{ Auth::check() ? route('jobs.create', ['side' => $side]) : route('login') }}"
        class="block mb-4 rounded-2xl p-4 ring-1 ring-mint-500/30 bg-mint-50 hover:ring-mint-500/50 transition">
         <div class="flex items-center gap-3">
             <span class="w-10 h-10 rounded-xl bg-mint-500 text-white grid place-items-center shrink-0">
@@ -101,6 +108,37 @@
                         </span>
                         <div class="flex-1 min-w-0">
                             <h3 class="text-sm font-extrabold text-ink-950 mb-0.5">{{ $l->title }}</h3>
+
+                            @php
+                                $m = $l->meta ?? [];
+                                $empType = $m['employment_type'] ?? null;
+                                $empLabel = $empType ? (\App\Models\Listing::EMPLOYMENT_TYPES[$empType] ?? null) : null;
+                                $salaryMin = $m['salary_min'] ?? $l->price ?? null;
+                                $salaryMax = $m['salary_max'] ?? null;
+                                $employer = $m['employer_name'] ?? null;
+                            @endphp
+
+                            @if($employer)
+                                <div class="text-[11px] font-bold text-ink-700 mb-1">{{ $employer }}</div>
+                            @endif
+
+                            <div class="flex items-center gap-1.5 flex-wrap mb-1.5">
+                                @if($empLabel)
+                                    <span class="px-2 py-0.5 rounded-full bg-coral-50 text-coral-700 text-[10px] font-extrabold">{{ $empLabel }}</span>
+                                @endif
+                                @if($salaryMin || $salaryMax)
+                                    <span class="px-2 py-0.5 rounded-full bg-mint-100 text-mint-800 text-[10px] font-extrabold" dir="ltr">
+                                        @if($salaryMin && $salaryMax)
+                                            {{ number_format($salaryMin) }}–{{ number_format($salaryMax) }} ج
+                                        @elseif($salaryMin)
+                                            من {{ number_format($salaryMin) }} ج
+                                        @else
+                                            حتى {{ number_format($salaryMax) }} ج
+                                        @endif
+                                    </span>
+                                @endif
+                            </div>
+
                             <div class="text-[11px] text-ink-500 inline-flex items-center gap-1.5 flex-wrap">
                                 @if($l->zone)
                                     <span class="inline-flex items-center gap-0.5">
@@ -112,10 +150,6 @@
                                     <span>·</span>
                                 @endif
                                 <span>{{ $l->created_at->diffForHumans(short: true) }}</span>
-                                @if($l->price)
-                                    <span>·</span>
-                                    <span class="text-mint-700 font-bold" dir="ltr">{{ number_format($l->price) }} ج / شهر</span>
-                                @endif
                             </div>
                             @if($l->description)
                                 <p class="text-[12px] text-ink-500 mt-1.5 leading-snug line-clamp-2">{{ $l->description }}</p>

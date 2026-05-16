@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
     'user_id', 'zone_id', 'lat', 'lng', 'kind', 'category', 'title', 'description',
-    'price', 'currency', 'negotiable', 'photo_url',
+    'price', 'currency', 'negotiable', 'photo_url', 'meta',
     'contact_phone', 'contact_whatsapp', 'status', 'expires_at',
     'featured_until', 'phone_clicks', 'whatsapp_clicks',
 ])]
@@ -60,10 +60,26 @@ class Listing extends Model
         return [
             'negotiable'     => 'boolean',
             'price'          => 'integer',
+            'meta'           => 'array',
             'expires_at'     => 'datetime',
             'featured_until' => 'datetime',
         ];
     }
+
+    public const EMPLOYMENT_TYPES = [
+        'full_time'  => 'دوام كامل',
+        'part_time'  => 'دوام جزئي',
+        'shift'      => 'وردية / شغل بالساعة',
+        'freelance'  => 'فري لانس / حسب الحاجة',
+        'internship' => 'تدريب / متدرب',
+    ];
+
+    public const EXPERIENCE_LEVELS = [
+        'entry'       => 'حديث التخرج / بدون خبرة',
+        'mid'         => '1-3 سنين خبرة',
+        'senior'      => '+3 سنين خبرة',
+        'any'         => 'أي مستوى',
+    ];
 
     public function isFeatured(): bool
     {

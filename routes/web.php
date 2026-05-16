@@ -115,6 +115,8 @@ Route::get('/emergency',        [\App\Http\Controllers\EmergencyController::clas
 Route::get('/benha-university', [\App\Http\Controllers\UniversityController::class, 'index'])->name('university.index');
 Route::get('/banha-trains',     [\App\Http\Controllers\TrainsController::class,     'index'])->name('trains.index');
 Route::get('/banha-jobs',          [\App\Http\Controllers\JobsController::class,       'index'])->name('jobs.index');
+Route::get('/banha-jobs/new',      [\App\Http\Controllers\JobsController::class,       'create'])->middleware('auth')->name('jobs.create');
+Route::post('/banha-jobs',         [\App\Http\Controllers\JobsController::class,       'store'])->middleware('auth')->name('jobs.store');
 Route::get('/banha-lost-found',    [\App\Http\Controllers\LostFoundController::class,  'index'])->name('lost-found.index');
 
 // Click-tracking beacon (powers "popular times" histogram on business pages)
