@@ -27,10 +27,12 @@ class SeoController extends Controller
             ['/discover',        '0.7', 'daily'],
             ['/login',           '0.4', 'monthly'],
             ['/signup',          '0.6', 'monthly'],
-            ['/banha-trains',    '0.85', 'daily'],   // High-traffic SEO target
-            ['/emergency',       '0.7', 'weekly'],
-            ['/benha-university','0.7', 'weekly'],
-            ['/offers',          '0.85', 'daily'],
+            ['/banha-trains',     '0.85', 'daily'],   // High-traffic SEO target
+            ['/banha-jobs',       '0.8',  'daily'],
+            ['/banha-lost-found', '0.7',  'daily'],
+            ['/emergency',        '0.7',  'weekly'],
+            ['/benha-university', '0.7',  'weekly'],
+            ['/offers',           '0.85', 'daily'],
         ];
 
         // Categories

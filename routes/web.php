@@ -114,6 +114,13 @@ Route::get('/open-now',         [\App\Http\Controllers\OpenNowController::class,
 Route::get('/emergency',        [\App\Http\Controllers\EmergencyController::class,  'index'])->name('emergency.index');
 Route::get('/benha-university', [\App\Http\Controllers\UniversityController::class, 'index'])->name('university.index');
 Route::get('/banha-trains',     [\App\Http\Controllers\TrainsController::class,     'index'])->name('trains.index');
+Route::get('/banha-jobs',          [\App\Http\Controllers\JobsController::class,       'index'])->name('jobs.index');
+Route::get('/banha-lost-found',    [\App\Http\Controllers\LostFoundController::class,  'index'])->name('lost-found.index');
+
+// Click-tracking beacon (powers "popular times" histogram on business pages)
+Route::post('/track/business-click', [\App\Http\Controllers\ClickTrackingController::class, 'store'])
+    ->middleware('throttle:60,1')
+    ->name('track.business-click');
 
 // ─── Marketing landings (own-business pitch + QR menu pitch) ───
 Route::get('/own-business',     [\App\Http\Controllers\MarketingController::class,  'claim'])->name('marketing.claim');

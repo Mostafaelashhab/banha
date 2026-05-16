@@ -1172,6 +1172,36 @@
         @endpush
     @endif
 
+    {{-- ── Click-tracking beacon ── --}}
+    @push('scripts')
+    <script>
+    // Best-effort click logger — powers the "ساعات الزحمة" histogram. Captures
+    // every tap on `[data-track-click]` on this page and beacons it. Won't
+    // delay the navigation: uses keepalive so the request survives the unload.
+    (function () {
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
+        const url  = @json(route('track.business-click'));
+        const ALLOWED = new Set(['phone', 'whatsapp', 'directions', 'order', 'menu']);
+
+        document.addEventListener('click', (ev) => {
+            const el = ev.target.closest('[data-track-click]');
+            if (!el) return;
+            const kind = el.dataset.trackClick;
+            const bizId = parseInt(el.dataset.business || '0', 10);
+            if (!ALLOWED.has(kind) || !bizId) return;
+            try {
+                fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'X-Requested-With': 'XMLHttpRequest' },
+                    body: JSON.stringify({ business_id: bizId, kind }),
+                    keepalive: true,   // survives page unload (the link is opening)
+                }).catch(() => {});
+            } catch (e) { /* tracking must never break UX */ }
+        }, true);
+    })();
+    </script>
+    @endpush
+
     {{-- Gallery --}}
     @if($business->photos->isNotEmpty() || $isOwner)
         <div class="card-light p-4 mb-3">
@@ -1438,6 +1468,69 @@
                 @endforeach
             </div>
         </section>
+    @endif
+
+    {{-- ─── Popular Times — crowd-sourced histogram from click events ─── --}}
+    @php
+        $popularTimes = \App\Models\BusinessClickEvent::popularTimesFor($business->id);
+    @endphp
+    @if($popularTimes)
+        @php
+            // Find the current hour (Cairo) to highlight in the chart.
+            $nowHour = (int) now('Africa/Cairo')->format('G');
+            // Hide overnight columns (3am-5am) to fit better — most businesses
+            // are closed then. Render 6am→2am next day.
+            $displayHours = [6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,0,1,2];
+        @endphp
+        <div class="card-light p-4 mb-3">
+            <div class="flex items-center gap-2 mb-3">
+                <span class="w-7 h-7 rounded-lg bg-coral-50 text-coral-600 grid place-items-center shrink-0">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                        <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="3" y1="20" x2="21" y2="20"/>
+                    </svg>
+                </span>
+                <h3 class="text-sm font-extrabold text-ink-950">ساعات الزحمة</h3>
+                <span class="ms-auto inline-flex items-center gap-1 text-[10px] font-bold text-mint-700 bg-mint-100 px-2 py-0.5 rounded-full">
+                    <span class="w-1.5 h-1.5 rounded-full bg-mint-500"></span>
+                    من ضغطات الناس
+                </span>
+            </div>
+
+            {{-- Histogram bars --}}
+            <div class="grid items-end gap-px h-20" style="grid-template-columns: repeat({{ count($displayHours) }}, minmax(0, 1fr));">
+                @foreach($displayHours as $h)
+                    @php
+                        $pct = $popularTimes[$h] ?? 0;
+                        $isNow = $h === $nowHour;
+                        $hLabel = $h === 0 ? '12ص' : ($h < 12 ? $h.'ص' : ($h === 12 ? '12م' : ($h - 12).'م'));
+                    @endphp
+                    <div class="flex flex-col items-center justify-end h-full gap-0.5"
+                         title="الساعة {{ $hLabel }} · {{ $pct }}%">
+                        <div class="w-full rounded-sm transition
+                                    {{ $isNow ? 'bg-coral-500' : 'bg-coral-500/30' }}"
+                             style="height: {{ max(4, $pct) }}%;"></div>
+                    </div>
+                @endforeach
+            </div>
+
+            {{-- Hour labels (every 4 hours) --}}
+            <div class="grid mt-1 text-[9px] font-bold text-ink-400"
+                 style="grid-template-columns: repeat({{ count($displayHours) }}, minmax(0, 1fr));">
+                @foreach($displayHours as $i => $h)
+                    @php
+                        $hLabel = $h === 0 ? '12ص' : ($h < 12 ? $h.'ص' : ($h === 12 ? '12م' : ($h - 12).'م'));
+                        $showLabel = $i % 4 === 0;
+                    @endphp
+                    <span class="text-center {{ $h === $nowHour ? 'text-coral-600 font-extrabold' : '' }}">
+                        @if($showLabel || $h === $nowHour) {{ $hLabel }} @endif
+                    </span>
+                @endforeach
+            </div>
+
+            <p class="text-[10px] text-ink-400 mt-2 leading-relaxed">
+                الرسم ده عرف من ضغطات أهل بنها على "اتصل" و"واتساب" و"الاتجاهات" في صفحة النشاط دي خلال آخر 90 يوم.
+            </p>
+        </div>
     @endif
 
     {{-- Similar --}}

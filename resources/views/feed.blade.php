@@ -63,15 +63,18 @@
         </div>
     </div>
 
-    {{-- ───── Utility shortcuts — the 5 high-intent destinations ─────── --}}
-    <div class="grid grid-cols-5 gap-1.5 mb-6 rise rise-1">
+    {{-- ───── Utility shortcuts — high-intent destinations (2 rows × 4) ─────── --}}
+    <div class="grid grid-cols-4 gap-1.5 mb-6 rise rise-1">
         @php
             $utilityShortcuts = [
                 ['route' => route('offers.index'),           'label' => 'عروض',         'icon' => 'tag',          'pill' => 'bg-coral-50 text-coral-600'],
                 ['route' => route('open-now.index'),         'label' => 'مفتوح دلوقتي', 'icon' => 'bell',         'pill' => 'bg-mint-100 text-mint-700'],
+                ['route' => route('jobs.index'),             'label' => 'وظايف',         'icon' => 'briefcase',    'pill' => 'bg-mint-100 text-mint-700'],
                 ['route' => route('trains.index'),           'label' => 'القطارات',     'icon' => 'train',        'pill' => 'bg-coral-50 text-coral-600'],
+                ['route' => route('lost-found.index'),       'label' => 'مفقودات',      'icon' => 'search',       'pill' => 'bg-blush-100 text-blush-600'],
                 ['route' => route('emergency.index'),        'label' => 'طوارئ',         'icon' => 'bolt',         'pill' => 'bg-blush-100 text-blush-600'],
                 ['route' => route('university.index'),       'label' => 'الجامعة',      'icon' => 'graduation',   'pill' => 'bg-honey-100 text-honey-700'],
+                ['route' => route('market.index'),           'label' => 'سوق',          'icon' => 'bag',          'pill' => 'bg-honey-100 text-honey-700'],
             ];
         @endphp
         @foreach($utilityShortcuts as $s)
