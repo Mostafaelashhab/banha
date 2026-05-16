@@ -155,6 +155,9 @@ class Business extends Model
         'toys'            => ['label' => 'محل لعب',           'category' => 'shops',     'emoji' => '🧸', 'icon' => 'gift'],
         'furniture'       => ['label' => 'محل أثاث',          'category' => 'shops',     'emoji' => '🛋️', 'icon' => 'sofa'],
         'baby_shop'       => ['label' => 'محل أطفال',         'category' => 'shops',     'emoji' => '🍼', 'icon' => 'baby'],
+        'car_showroom'    => ['label' => 'معرض عربيات',       'category' => 'shops',     'emoji' => '🚗', 'icon' => 'car'],
+        'car_parts'       => ['label' => 'قطع غيار عربيات',  'category' => 'shops',     'emoji' => '🔩', 'icon' => 'tools'],
+        'tires_shop'      => ['label' => 'محل كاوتش',         'category' => 'shops',     'emoji' => '🛞', 'icon' => 'car'],
         'shops_other'     => ['label' => 'محل تاني',          'category' => 'shops',     'emoji' => '🏬', 'icon' => 'cart'],
 
         // ── services ──────────────────────────────────────────
@@ -445,12 +448,36 @@ class Business extends Model
         ],
         'has_warranty' => [
             'label' => 'بيدّي ضمان على المنتجات', 'type' => 'checkbox',
-            'applies_to' => ['mobile_shop', 'electronics', 'hardware', 'furniture', 'gold_shop'],
+            'applies_to' => ['mobile_shop', 'electronics', 'hardware', 'furniture', 'gold_shop', 'car_showroom', 'car_parts', 'tires_shop'],
         ],
         'fuel_types' => [
             'label' => 'أنواع البنزين', 'type' => 'text',
             'placeholder' => 'مثلاً: ٨٠ + ٩٢ + سولار',
             'applies_to' => ['gas_station'],
+        ],
+
+        // ── Car showroom / parts ──────────────────────────
+        'car_condition' => [
+            'label' => 'نوع العربيات', 'type' => 'select',
+            'options' => [
+                'new'      => 'جديدة (زيرو)',
+                'used'     => 'مستعملة',
+                'both'     => 'جديدة ومستعملة',
+            ],
+            'applies_to' => ['car_showroom'],
+        ],
+        'car_brands' => [
+            'label' => 'الماركات اللي بنبيعها', 'type' => 'text',
+            'placeholder' => 'مثلاً: تويوتا، نيسان، هيونداي، شيفروليه',
+            'applies_to' => ['car_showroom', 'car_parts'],
+        ],
+        'car_financing' => [
+            'label' => 'بيع بالتقسيط متاح', 'type' => 'checkbox',
+            'applies_to' => ['car_showroom'],
+        ],
+        'car_trade_in' => [
+            'label' => 'بناخد عربيتك القديمة', 'type' => 'checkbox',
+            'applies_to' => ['car_showroom'],
         ],
 
         // ── Services ───────────────────────────────────
