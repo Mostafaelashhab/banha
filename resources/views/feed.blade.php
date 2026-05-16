@@ -74,7 +74,7 @@
                 ['route' => route('lost-found.index'),       'label' => 'مفقودات',      'icon' => 'search',       'pill' => 'bg-blush-100 text-blush-600'],
                 ['route' => route('emergency.index'),        'label' => 'طوارئ',         'icon' => 'bolt',         'pill' => 'bg-blush-100 text-blush-600'],
                 ['route' => route('university.index'),       'label' => 'الجامعة',      'icon' => 'graduation',   'pill' => 'bg-honey-100 text-honey-700'],
-                ['route' => route('market.index'),           'label' => 'سوق',          'icon' => 'bag',          'pill' => 'bg-honey-100 text-honey-700'],
+                ['route' => route('marketplace.index'),      'label' => 'سوق',          'icon' => 'bag',          'pill' => 'bg-honey-100 text-honey-700'],
             ];
         @endphp
         @foreach($utilityShortcuts as $s)
