@@ -16,6 +16,40 @@ class BookingController extends Controller
     private const TZ = 'Africa/Cairo';
     private const WINDOW_DAYS = 14;
 
+    /** Public discovery: businesses with booking enabled, optionally filtered by category. */
+    public function index(Request $request)
+    {
+        $cat = $request->query('category');
+
+        $q = Business::query()
+            ->where('booking_enabled', true)
+            ->where('is_active', true)
+            ->with('zone')
+            ->orderByDesc('is_verified')
+            ->orderByDesc('rating_avg')
+            ->orderBy('name');
+        if ($cat && isset(Business::CATEGORIES[$cat])) {
+            $q->where('category', $cat);
+        }
+        $businesses = $q->limit(120)->get();
+
+        // Build category facet (only categories that have at least one bookable business)
+        $facets = Business::query()
+            ->where('booking_enabled', true)
+            ->where('is_active', true)
+            ->selectRaw('category, COUNT(*) as n')
+            ->groupBy('category')
+            ->pluck('n', 'category')
+            ->all();
+
+        return view('booking.index', [
+            'businesses'  => $businesses,
+            'categoryKey' => $cat,
+            'facets'      => $facets,
+            'total'       => array_sum($facets),
+        ]);
+    }
+
     public function show(Business $business, Request $request)
     {
         abort_unless($business->booking_enabled, 404, 'الحجز غير مفعّل لهذا النشاط');

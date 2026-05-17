@@ -64,6 +64,7 @@ Route::get('/biz/{business:slug}',           [DirectoryController::class, 'show'
 Route::get('/directory/business/{business}', [DirectoryController::class, 'show'])->name('directory.show');
 
 // ── Public booking (guests allowed) ───────────────────────────
+Route::get('/bookings',                            [\App\Http\Controllers\BookingController::class, 'index'])->name('bookings.index');
 Route::get('/directory/business/{business}/book',  [\App\Http\Controllers\BookingController::class, 'show'])->name('booking.show');
 Route::post('/directory/business/{business}/book', [\App\Http\Controllers\BookingController::class, 'store'])->name('booking.store');
 Route::get('/directory/c/{category}',        [DirectoryController::class, 'category'])->name('directory.category');

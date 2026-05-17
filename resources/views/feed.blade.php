@@ -63,28 +63,33 @@
         </div>
     </div>
 
-    {{-- ───── Utility shortcuts — high-intent destinations (2 rows × 4) ─────── --}}
-    <div class="grid grid-cols-4 gap-1.5 mb-6 rise rise-1">
-        @php
-            $utilityShortcuts = [
-                ['route' => route('offers.index'),           'label' => 'عروض',         'icon' => 'tag',          'pill' => 'bg-coral-50 text-coral-600'],
-                ['route' => route('open-now.index'),         'label' => 'مفتوح دلوقتي', 'icon' => 'bell',         'pill' => 'bg-mint-100 text-mint-700'],
-                ['route' => route('jobs.index'),             'label' => 'وظايف',         'icon' => 'briefcase',    'pill' => 'bg-mint-100 text-mint-700'],
-                ['route' => route('trains.index'),           'label' => 'القطارات',     'icon' => 'train',        'pill' => 'bg-coral-50 text-coral-600'],
-                ['route' => route('lost-found.index'),       'label' => 'مفقودات',      'icon' => 'search',       'pill' => 'bg-blush-100 text-blush-600'],
-                ['route' => route('emergency.index'),        'label' => 'طوارئ',         'icon' => 'bolt',         'pill' => 'bg-blush-100 text-blush-600'],
-                ['route' => route('university.index'),       'label' => 'الجامعة',      'icon' => 'graduation',   'pill' => 'bg-honey-100 text-honey-700'],
-                ['route' => route('marketplace.index'),      'label' => 'سوق',          'icon' => 'bag',          'pill' => 'bg-honey-100 text-honey-700'],
-            ];
-        @endphp
-        @foreach($utilityShortcuts as $s)
-            <a href="{{ $s['route'] }}" class="flex flex-col items-center gap-1 py-2.5 rounded-2xl hover:bg-cream-100 transition">
-                <span class="w-10 h-10 rounded-full {{ $s['pill'] }} grid place-items-center">
-                    <x-icon :name="$s['icon']" class="w-4 h-4"/>
-                </span>
-                <span class="text-[9px] font-extrabold text-ink-950 text-center leading-tight">{{ $s['label'] }}</span>
-            </a>
-        @endforeach
+    {{-- ───── Utility shortcuts — horizontal slider (uniform blue cards) ─────── --}}
+    @php
+        $utilityShortcuts = [
+            ['route' => route('offers.index'),           'label' => 'عروض',         'icon' => 'tag'],
+            ['route' => route('bookings.index'),         'label' => 'احجز موعد',    'icon' => 'check'],
+            ['route' => route('open-now.index'),         'label' => 'مفتوح دلوقتي', 'icon' => 'bell'],
+            ['route' => route('jobs.index'),             'label' => 'وظايف',         'icon' => 'briefcase'],
+            ['route' => route('trains.index'),           'label' => 'القطارات',     'icon' => 'train'],
+            ['route' => route('lost-found.index'),       'label' => 'مفقودات',      'icon' => 'search'],
+            ['route' => route('emergency.index'),        'label' => 'طوارئ',         'icon' => 'bolt'],
+            ['route' => route('university.index'),       'label' => 'الجامعة',      'icon' => 'graduation'],
+            ['route' => route('marketplace.index'),      'label' => 'سوق',          'icon' => 'bag'],
+        ];
+    @endphp
+    <div class="mb-6 -mx-4 px-4 rise rise-1">
+        <div class="flex gap-2 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-1"
+             style="scroll-padding-inline-start: 1rem;">
+            @foreach($utilityShortcuts as $s)
+                <a href="{{ $s['route'] }}"
+                   class="shrink-0 w-20 snap-start flex flex-col items-center gap-1.5 py-3 rounded-2xl bg-coral-50 hover:bg-coral-100 transition">
+                    <span class="w-11 h-11 rounded-full bg-white text-coral-600 grid place-items-center shadow-sm">
+                        <x-icon :name="$s['icon']" class="w-5 h-5"/>
+                    </span>
+                    <span class="text-[10px] font-extrabold text-ink-950 text-center leading-tight px-1">{{ $s['label'] }}</span>
+                </a>
+            @endforeach
+        </div>
     </div>
 
     {{-- ───── Popular searches — single-tap intents ─────── --}}
