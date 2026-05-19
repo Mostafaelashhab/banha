@@ -27,6 +27,7 @@
         "@capacitor/share": "^8.0.1",
         "@capacitor/splash-screen": "^8.0.1",
         "@capacitor/status-bar": "^8.0.2",
+        "@hotwired/turbo": "^8.0.23",
         "sharp": "^0.34.5"
     }
 }

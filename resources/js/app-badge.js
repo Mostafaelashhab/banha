@@ -43,16 +43,19 @@
         } catch (e) {}
     }
 
-    // ── On every page load, sync from the server value (source of truth) ──
-    const serverCount = readServerCount();
-    setStoredCount(serverCount);
-    apply(serverCount);
-
-    // ── On the notifications page, the user has now seen them → clear ──
-    if (location.pathname.startsWith('/notifications')) {
-        setStoredCount(0);
-        apply(0);
+    // ── Re-run on every page (initial + Turbo navigations). The body's
+    //    data-unread attribute is re-rendered by Laravel on each visit. ──
+    function sync() {
+        const serverCount = readServerCount();
+        setStoredCount(serverCount);
+        apply(serverCount);
+        if (location.pathname.startsWith('/notifications')) {
+            setStoredCount(0);
+            apply(0);
+        }
     }
+    sync();
+    document.addEventListener('banhawy:pageReady', sync);
 
     // ── When the SW receives a push it posts a message; bump the badge ──
     if ('serviceWorker' in navigator) {

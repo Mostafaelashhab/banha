@@ -2622,84 +2622,55 @@ html.is-ptr-ready, html.is-ptr-ready body {
     overscroll-behavior-y: none;
 }
 
-/* ─── Edge-swipe-back: "two screens stacked" ──────────────────
-   Activated by the JS in edge-swipe-back.js. The current <main> is lifted
-   and translated to the right; behind it, .esb-prev fakes the previous page
-   that we'll restore via history.back() once the gesture commits.
+/* ─── Turbo page transitions ───────────────────────────────
+   The turbo-setup.js toggles .turbo-leaving / .turbo-entering on <html> at
+   swap time. We animate <main> (where the page content lives) with a soft
+   slide+fade — the kind iOS does between view controllers. The bottom-nav
+   is data-turbo-permanent so it stays still while the content swaps. */
 
-   No real screenshot is captured — the previous page is approximated with a
-   soft cream pattern + dim layer. When history.back() runs, the browser's
-   bfcache restores the actual content instantly, completing the illusion. */
-
-/* Overlay container — only visible during the gesture. */
-.esb-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 30;   /* below bottom-nav (40), modals (50), lightbox (100) */
-    pointer-events: none;
-    overflow: hidden;
-    visibility: hidden;
-}
-.esb-overlay.is-active {
-    visibility: visible;
-}
-
-/* "Previous page" placeholder — sits behind the live <main>. We use the same
-   cream background + a subtle dotted pattern to suggest content. When the
-   actual previous page restores via bfcache the swap is seamless. */
-.esb-prev {
-    position: absolute;
-    inset: 0;
-    background:
-        radial-gradient(circle at 28% 18%, rgba(45, 91, 255, .06), transparent 60%),
-        radial-gradient(circle at 78% 70%, rgba(255, 122, 77, .05), transparent 55%),
-        #FFF7F1;
-    transform: translate3d(-30%, 0, 0) scale(.92);
-    transform-origin: center left;
-    opacity: .55;
-    will-change: transform, opacity;
-}
-.esb-prev-pattern {
-    position: absolute;
-    inset: 0;
-    background-image:
-        repeating-linear-gradient(0deg,
-            transparent 0 80px,
-            rgba(11, 11, 12, .04) 80px 81px),
-        repeating-linear-gradient(90deg,
-            transparent 0 120px,
-            rgba(11, 11, 12, .03) 120px 121px);
-    opacity: .8;
-}
-
-/* Soft dim between the foreground (lifted) page and the previous one — gives
-   that "two layers" depth feel. Fades to 0 as previous page comes forward. */
-.esb-dim {
-    position: absolute;
-    inset: 0;
-    background: rgba(11, 11, 12, .35);
-    opacity: 0;
-    will-change: opacity;
-}
-
-/* Spring + ease-out used by both the lifted page and overlay when the gesture
-   resets or commits. Only applied via the .esb-anim class so the active drag
-   stays direct (no lag between finger and pixels). */
-.esb-anim {
+main {
+    /* Single source of transition the leaving/entering classes can target. */
     transition:
-        transform .32s cubic-bezier(.22, 1, .36, 1),
-        opacity   .28s ease-out,
-        box-shadow .28s ease-out !important;
+        opacity .18s ease-out,
+        transform .22s cubic-bezier(.22, 1, .36, 1);
+    will-change: opacity, transform;
 }
 
-/* While the gesture is active, the <main> needs a will-change hint and a
-   left edge that hugs the screen so the shadow we paint via box-shadow is
-   actually visible on the left side. */
-html.esb-active main {
-    will-change: transform, box-shadow;
+/* Leaving — fades out + slides up tiny amount (the OS "page lifts" feel). */
+html.turbo-leaving main {
+    opacity: 0;
+    transform: translate3d(0, -8px, 0);
+    transition-duration: .18s;
 }
-html.esb-active body {
-    /* Prevent any other scroll-glue from messing with the lifted page */
-    overflow-x: hidden;
-    overscroll-behavior: none;
+
+/* Entering — starts low-opacity & slid-down, settles to rest. */
+html.turbo-entering main {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0);
+    /* Force the browser to commit this start state before transitioning to rest. */
+    animation: turbo-page-in .26s cubic-bezier(.22, 1, .36, 1) forwards;
 }
+@keyframes turbo-page-in {
+    from { opacity: 0; transform: translate3d(0, 12px, 0); }
+    to   { opacity: 1; transform: translate3d(0, 0,    0); }
+}
+
+/* Turbo's built-in progress bar at the very top of the page — match brand. */
+.turbo-progress-bar {
+    height: 2.5px;
+    background: linear-gradient(90deg, #2D5BFF, #5C7DFF);
+    box-shadow: 0 0 6px rgba(45, 91, 255, .6);
+}
+
+/* Respect "reduce motion" — no animations for users who opted out. */
+@media (prefers-reduced-motion: reduce) {
+    main { transition: none; }
+    html.turbo-leaving main,
+    html.turbo-entering main {
+        transition: none;
+        animation: none;
+        opacity: 1;
+        transform: none;
+    }
+}
+

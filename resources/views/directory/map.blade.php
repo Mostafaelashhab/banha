@@ -4,6 +4,10 @@
 ])
 
 @push('head')
+{{-- Force a full reload when navigating to/from the map page. Leaflet
+     initializes against a specific DOM node + binds many touch listeners
+     that don't survive Turbo's body swap cleanly. --}}
+<meta name="turbo-visit-control" content="reload">
 {{-- Preconnect: cuts TLS+DNS handshake time on mobile networks --}}
 <link rel="preconnect" href="https://unpkg.com" crossorigin>
 <link rel="preconnect" href="https://basemaps.cartocdn.com" crossorigin>

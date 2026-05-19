@@ -1,3 +1,7 @@
+// SPA-style navigation: keep the UI mounted, swap content via fetch.
+// Must load before the native-feel modules so they can hook turbo:load events.
+import './turbo-setup.js';
+
 // Native shell (iOS/Android via Capacitor) — no-op when running in a normal browser.
 import './cap-bridge.js';
 
@@ -5,7 +9,6 @@ import './cap-bridge.js';
 import './pull-to-refresh.js';
 import './app-badge.js';
 import './nav-autohide.js';
-import './edge-swipe-back.js';
 
 // ─── Guest mode: redirect to login when an action needs auth ─
 // `requireAuth()` returns true if the user is logged in; otherwise it

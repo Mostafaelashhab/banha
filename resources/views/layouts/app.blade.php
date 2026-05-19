@@ -167,7 +167,9 @@
         $navUnread = $bodyUnread ?? 0;
     @endphp
     @unless($isAuthPage)
-    <nav class="bottom-nav">
+    {{-- Persisted across Turbo navigations — same DOM node survives the body
+         swap so users don't see the nav flicker on every page change. --}}
+    <nav class="bottom-nav" id="bottom-nav" data-turbo-permanent>
         <div class="bottom-nav-inner">
 
             {{-- Home --}}
