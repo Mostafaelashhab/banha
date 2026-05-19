@@ -35,8 +35,18 @@ class SeoController extends Controller
             ['/benha-university', '0.7',  'weekly'],
             ['/offers',           '0.85', 'daily'],
             ['/bookings',         '0.85', 'daily'],
+            ['/craftsmen',        '0.95', 'daily'],   // campaign destination — highest priority
+            ['/craftsmen/jobs',   '0.8',  'hourly'],
             ['/zones',            '0.7',  'weekly'],
         ];
+
+        // Per-trade landing pages — high SEO value
+        foreach (['plumber','electrician','carpenter','painter','ac_tech','appliance_tech',
+                 'gas_tech','aluminum','tile_setter','blacksmith','welder',
+                 'glazier','locksmith','gypsum','moving','finishing','satellite_tech',
+                 'pest_control','mechanic_car'] as $trade) {
+            $urls[] = ['/craftsmen/'.$trade, '0.85', 'daily'];
+        }
 
         // Categories
         foreach (['food', 'medical', 'shops', 'craftsmen', 'services'] as $cat) {

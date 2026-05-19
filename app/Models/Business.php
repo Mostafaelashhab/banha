@@ -16,6 +16,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'booking_enabled', 'booking_slot_minutes', 'booking_lead_hours', 'booking_capacity',
     'delivery_fees', 'delivery_min_order',
     'invited_at',
+    'years_experience', 'service_zones', 'accepts_emergency', 'min_callout_fee',
+    'is_verified_paid', 'verified_paid_until', 'jobs_completed', 'avg_response_minutes',
 ])]
 class Business extends Model
 {
@@ -663,6 +665,14 @@ class Business extends Model
             'extra'          => 'array',
             'features'       => 'array',
             'hours_schedule' => 'array',
+            'service_zones'        => 'array',
+            'accepts_emergency'    => 'boolean',
+            'is_verified_paid'     => 'boolean',
+            'verified_paid_until'  => 'datetime',
+            'years_experience'     => 'integer',
+            'min_callout_fee'      => 'integer',
+            'jobs_completed'       => 'integer',
+            'avg_response_minutes' => 'integer',
             'booking_enabled'      => 'boolean',
             'booking_slot_minutes' => 'integer',
             'booking_lead_hours'   => 'integer',
@@ -837,6 +847,28 @@ class Business extends Model
     public function menuItems(): HasMany
     {
         return $this->hasMany(MenuItem::class)->orderBy('sort')->orderBy('id');
+    }
+
+    public function jobResponses(): HasMany
+    {
+        return $this->hasMany(JobResponse::class);
+    }
+
+    /** Whether the paid verified badge is currently effective. */
+    public function hasPaidVerified(): bool
+    {
+        if (! $this->is_verified_paid) return false;
+        if ($this->verified_paid_until && $this->verified_paid_until->isPast()) return false;
+        return true;
+    }
+
+    /** Zone IDs the craftsman serves — defaults to their home zone if not set. */
+    public function effectiveServiceZones(): array
+    {
+        $zones = is_array($this->service_zones) ? $this->service_zones : [];
+        $zones = array_values(array_unique(array_filter(array_map('intval', $zones))));
+        if (! $zones && $this->zone_id) $zones = [(int) $this->zone_id];
+        return $zones;
     }
 
     public function bookings(): HasMany

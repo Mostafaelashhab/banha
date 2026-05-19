@@ -86,6 +86,19 @@ Route::get('/biz/{business:slug}',           [DirectoryController::class, 'show'
 // but the canonical <link> on the rendered page points to /biz/{slug}.
 Route::get('/directory/business/{business}', [DirectoryController::class, 'show'])->name('directory.show');
 
+// ── Public craftsmen vertical (campaign destination) ─────────
+Route::get('/craftsmen',                  [\App\Http\Controllers\CraftsmenController::class, 'index'])->name('craftsmen.index');
+Route::get('/craftsmen/signup',           [\App\Http\Controllers\CraftsmenController::class, 'signup'])->name('craftsmen.signup');
+Route::post('/craftsmen/signup',          [\App\Http\Controllers\CraftsmenController::class, 'storeSignup'])->name('craftsmen.signup.store');
+Route::get('/craftsmen/post-job',         [\App\Http\Controllers\JobRequestController::class, 'create'])->name('craft-jobs.create');
+Route::post('/craftsmen/post-job',        [\App\Http\Controllers\JobRequestController::class, 'store'])->name('craft-jobs.store');
+Route::get('/craftsmen/jobs',             [\App\Http\Controllers\JobRequestController::class, 'index'])->name('craft-jobs.index');
+Route::get('/craftsmen/jobs/{jobRequest}', [\App\Http\Controllers\JobRequestController::class, 'show'])->name('craft-jobs.show');
+Route::post('/craftsmen/jobs/{jobRequest}/respond', [\App\Http\Controllers\JobRequestController::class, 'respond'])->middleware('auth')->name('craft-jobs.respond');
+Route::get('/craftsmen/{trade}',          [\App\Http\Controllers\CraftsmenController::class, 'trade'])
+    ->where('trade', 'plumber|electrician|carpenter|painter|ac_tech|appliance_tech|gas_tech|aluminum|builder|tile_setter|blacksmith|welder|mechanic_car|mechanic_bike|glazier|locksmith|gypsum|moving|finishing|satellite_tech|pest_control')
+    ->name('craftsmen.trade');
+
 // ── Public booking (guests allowed) ───────────────────────────
 Route::get('/bookings',                            [\App\Http\Controllers\BookingController::class, 'index'])->name('bookings.index');
 Route::get('/directory/business/{business}/book',  [\App\Http\Controllers\BookingController::class, 'show'])->name('booking.show');

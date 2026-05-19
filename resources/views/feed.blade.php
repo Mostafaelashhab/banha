@@ -66,6 +66,7 @@
     {{-- ───── Utility shortcuts — horizontal slider (uniform blue cards) ─────── --}}
     @php
         $utilityShortcuts = [
+            ['route' => route('craftsmen.index'),        'label' => 'صنايعية',      'icon' => 'wrench'],
             ['route' => route('offers.index'),           'label' => 'عروض',         'icon' => 'tag'],
             ['route' => route('bookings.index'),         'label' => 'احجز موعد',    'icon' => 'check'],
             ['route' => route('open-now.index'),         'label' => 'مفتوح دلوقتي', 'icon' => 'bell'],
