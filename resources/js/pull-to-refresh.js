@@ -1,30 +1,39 @@
 /**
- * Pull-to-refresh — native-style downward pull from the top of the page to
- * reload. Renders a circular spinner that fades and rotates as the user pulls
- * past the threshold, then reloads when released.
+ * Pull-to-refresh — buttery-smooth native-style pull at the top of the page.
+ *
+ * Visual: a circular pill with an SVG progress ring that fills as you pull.
+ * Past the threshold, a subtle scale "spring" + haptic confirms you can release
+ * to refresh. The ring then spins indeterminately while we reload.
+ *
+ * Smoothness:
+ *   • All DOM writes batched into a single requestAnimationFrame.
+ *   • `transform` + `opacity` only — never width/height/top — so it's GPU-composited.
+ *   • Threshold easing makes the pull feel resistant past the trigger point.
  *
  * Constraints:
- *   • Only triggers when the document is scrolled to the very top.
- *   • Skipped when the touch starts inside a horizontally-scrollable element,
- *     an input/textarea, the Leaflet map, or anything tagged [data-no-ptr].
- *   • Disabled on desktop (no touch input).
- *
- * No dependency. Inserts its own DOM at runtime — no Blade changes needed.
+ *   • Only on touch-primary devices.
+ *   • Document must be scrolled to the very top.
+ *   • Skipped inside inputs, the map, modals, horizontal scrollers, [data-no-ptr].
  */
 (function () {
     if (typeof window === 'undefined') return;
-    // Skip on devices that aren't touch-primary
     if (!matchMedia('(hover: none) and (pointer: coarse)').matches) return;
-    // Skip when document already explicitly disables PTR
     if (document.documentElement.dataset.ptr === 'off') return;
 
-    const THRESHOLD     = 80;   // px past which release will trigger reload
-    const MAX_PULL      = 140;  // px hard cap on visual stretch
-    const ACTIVATION_PX = 8;    // px before we commit (vs treating as a tap)
-    const STAGE_CLASS   = 'is-ptr-ready';
+    const THRESHOLD = 84;
+    const MAX_PULL  = 160;
+    const ACTIVATION_PX = 6;
 
-    // ── DOM: a small floating spinner host inserted once on first pull ──
-    let host = null;
+    // SVG ring geometry (must match the markup below)
+    const RING_R    = 13;
+    const RING_C    = 2 * Math.PI * RING_R; // ≈ 81.68
+
+    // ── DOM ──────────────────────────────────────────────────
+    let host    = null;
+    let ringEl  = null;
+    let arrowEl = null;
+    let pillEl  = null;
+
     function ensureHost() {
         if (host) return host;
         host = document.createElement('div');
@@ -32,24 +41,31 @@
         host.setAttribute('aria-hidden', 'true');
         host.innerHTML =
             '<div class="ptr-pill">' +
-                '<svg class="ptr-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">' +
-                    '<path d="M21 12a9 9 0 1 1-3-6.7" />' +
-                    '<polyline points="21 4 21 10 15 10"/>' +
+                '<svg class="ptr-ring" viewBox="0 0 32 32" aria-hidden="true">' +
+                    '<circle class="ptr-ring-track" cx="16" cy="16" r="' + RING_R + '"/>' +
+                    '<circle class="ptr-ring-bar"   cx="16" cy="16" r="' + RING_R + '" ' +
+                            'stroke-dasharray="' + RING_C.toFixed(2) + '" ' +
+                            'stroke-dashoffset="' + RING_C.toFixed(2) + '"/>' +
+                '</svg>' +
+                '<svg class="ptr-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+                    '<polyline points="6 9 12 15 18 9"/>' +
                 '</svg>' +
             '</div>';
         document.body.appendChild(host);
+        ringEl  = host.querySelector('.ptr-ring-bar');
+        arrowEl = host.querySelector('.ptr-arrow');
+        pillEl  = host.querySelector('.ptr-pill');
         return host;
     }
 
-    // ── State ──────────────────────────────────────────────────
+    // ── State ────────────────────────────────────────────────
     let startY      = null;
-    let lastY       = null;
-    let pullPx      = 0;
+    let currentDy   = 0;
     let committed   = false;
     let refreshing  = false;
-    let starterEl   = null;
+    let armed       = false;
+    let rafId       = 0;
 
-    /** Should this touch start a pull? */
     function canStartPull(e) {
         if (refreshing) return false;
         if (window.scrollY > 0 || document.documentElement.scrollTop > 0) return false;
@@ -58,102 +74,140 @@
         if (t.closest('input, textarea, select, [contenteditable="true"]')) return false;
         if (t.closest('[data-no-ptr]')) return false;
         if (t.closest('#banha-map, .leaflet-container')) return false;
-        // Sheets/modals open → they have their own scrolling
         if (document.body.classList.contains('lb-locked')) return false;
         if (document.body.style.overflow === 'hidden') return false;
-        // If we're inside a scrollable element that's been scrolled — let it handle the gesture
+        // Walk up — if we're inside an already-scrolled scrollable, bail
         let n = t;
         while (n && n !== document.body) {
             const cs = getComputedStyle(n);
-            if ((cs.overflowY === 'auto' || cs.overflowY === 'scroll' || cs.overflowX === 'auto' || cs.overflowX === 'scroll') && (n.scrollTop > 0 || n.scrollLeft > 0)) return false;
+            if ((cs.overflowY === 'auto' || cs.overflowY === 'scroll' || cs.overflowX === 'auto' || cs.overflowX === 'scroll')
+                && (n.scrollTop > 0 || n.scrollLeft > 0)) return false;
             n = n.parentElement;
         }
         return true;
     }
 
-    function setPullVisual(dy) {
-        ensureHost();
-        // Decay past the threshold so it feels resistant
-        const eased = dy > THRESHOLD
-            ? THRESHOLD + (Math.min(dy, MAX_PULL) - THRESHOLD) * 0.4
-            : dy;
-        host.style.transform = 'translate(-50%, ' + (eased - 32) + 'px)';
-        host.style.opacity   = String(Math.min(1, dy / 50));
-        host.classList.toggle('is-armed', dy >= THRESHOLD);
-        const rot = Math.min(360, (dy / THRESHOLD) * 360);
-        const spinner = host.querySelector('.ptr-spinner');
-        if (spinner) spinner.style.transform = 'rotate(' + rot + 'deg)';
+    /** Resistance easing past the threshold so the pull feels heavier. */
+    function eased(dy) {
+        if (dy <= THRESHOLD) return dy;
+        const overshoot = dy - THRESHOLD;
+        // 1 - 1 / (1 + x/D) → asymptotic resistance
+        return THRESHOLD + (MAX_PULL - THRESHOLD) * (1 - 1 / (1 + overshoot / 80));
     }
 
-    function reset(animate) {
+    /** Schedule a single rAF that paints the latest pull frame — coalesces
+     *  rapid touchmove events into one paint per refresh. */
+    function schedulePaint() {
+        if (rafId) return;
+        rafId = requestAnimationFrame(() => {
+            rafId = 0;
+            paint(currentDy);
+        });
+    }
+
+    function paint(dy) {
+        if (!host) return;
+        const e = eased(dy);
+        // Translate down. Pill is 56px → -28 keeps center aligned.
+        host.style.transform = 'translate3d(-50%, ' + (e - 28).toFixed(1) + 'px, 0)';
+        // Fade in over the first ~40px, then full opacity.
+        host.style.opacity = String(Math.min(1, dy / 40));
+
+        // Ring progress: 0 → 1 over THRESHOLD pixels.
+        const pct = Math.min(1, dy / THRESHOLD);
+        const offset = RING_C * (1 - pct);
+        if (ringEl) ringEl.style.strokeDashoffset = offset.toFixed(2);
+
+        // Arrow rotates 0° → 180° as a hint that "release will refresh".
+        if (arrowEl) arrowEl.style.transform = 'rotate(' + (pct * 180).toFixed(0) + 'deg)';
+
+        // Armed state (threshold reached) — flip color, scale bump.
+        const nowArmed = dy >= THRESHOLD;
+        if (nowArmed !== armed) {
+            armed = nowArmed;
+            host.classList.toggle('is-armed', armed);
+            if (armed) tryHaptic();
+        }
+    }
+
+    function tryHaptic() {
+        try { navigator.vibrate?.(8); } catch (_) {}
+        // Capacitor native haptics if available
+        try { window.Capacitor?.Plugins?.Haptics?.impact?.({ style: 'LIGHT' }); } catch (_) {}
+    }
+
+    function reset() {
+        if (rafId) { cancelAnimationFrame(rafId); rafId = 0; }
         if (host) {
-            if (animate) host.classList.add('is-animating');
+            host.classList.add('is-resetting');
             host.style.transform = '';
             host.style.opacity = '';
             host.classList.remove('is-armed');
-            setTimeout(() => host && host.classList.remove('is-animating'), 240);
+            if (ringEl) ringEl.style.strokeDashoffset = RING_C.toFixed(2);
+            if (arrowEl) arrowEl.style.transform = '';
+            setTimeout(() => host && host.classList.remove('is-resetting'), 320);
         }
-        startY = lastY = null;
-        pullPx = 0;
+        startY    = null;
+        currentDy = 0;
         committed = false;
-        starterEl = null;
-        document.documentElement.classList.remove(STAGE_CLASS);
+        armed     = false;
     }
 
     function triggerRefresh() {
         refreshing = true;
+        if (rafId) { cancelAnimationFrame(rafId); rafId = 0; }
         if (host) {
             host.classList.add('is-refreshing');
-            host.style.transform = 'translate(-50%, 28px)';
+            host.style.transform = 'translate3d(-50%, 24px, 0)';
             host.style.opacity = '1';
         }
-        // Give the spinner ~250ms to render before the navigation freezes the page
+        // Brief delay so the spinner state is visible before the reload freezes us
         setTimeout(() => {
             try { window.location.reload(); } catch (_) { location.reload(); }
-        }, 280);
+        }, 320);
     }
 
-    // ── Event handlers ─────────────────────────────────────────
+    // ── Touch handlers ───────────────────────────────────────
     document.addEventListener('touchstart', (e) => {
         if (e.touches.length !== 1) return;
         if (!canStartPull(e)) return;
         startY = e.touches[0].clientY;
-        lastY  = startY;
-        starterEl = e.target;
+        ensureHost();
     }, { passive: true });
 
     document.addEventListener('touchmove', (e) => {
         if (startY === null) return;
-        const y  = e.touches[0].clientY;
-        const dy = y - startY;
-        lastY = y;
+        const dy = e.touches[0].clientY - startY;
 
         if (dy <= 0) {
-            if (committed) reset(false);
+            if (committed) { reset(); }
             return;
         }
 
         if (!committed && dy > ACTIVATION_PX) {
             committed = true;
-            document.documentElement.classList.add(STAGE_CLASS);
+            document.documentElement.classList.add('is-ptr-ready');
         }
 
         if (committed) {
-            pullPx = dy;
-            setPullVisual(dy);
-            // Block native scroll for the duration of the pull
+            currentDy = dy;
+            schedulePaint();
             if (e.cancelable) e.preventDefault();
         }
     }, { passive: false });
 
     document.addEventListener('touchend', () => {
         if (startY === null) return;
-        if (committed && pullPx >= THRESHOLD) {
+        if (committed && currentDy >= THRESHOLD) {
             triggerRefresh();
         } else {
-            reset(true);
+            reset();
         }
+        document.documentElement.classList.remove('is-ptr-ready');
     }, { passive: true });
 
-    document.addEventListener('touchcancel', () => reset(true), { passive: true });
+    document.addEventListener('touchcancel', () => {
+        reset();
+        document.documentElement.classList.remove('is-ptr-ready');
+    }, { passive: true });
 })();

@@ -2490,53 +2490,121 @@ body.lb-locked { overflow: hidden; }
 }
 
 /* ─── Pull-to-refresh ───────────────────────────────────────
-   The PTR module inserts .ptr-host at the top center on first pull.
-   Translates downward as the user drags, fades in past ~50px,
-   "arms" past the threshold (color shift), and runs an indeterminate
-   spinner during the brief delay before reload. */
+   The PTR module inserts .ptr-host on first pull. The pill is a 56px circle
+   with two stacked SVGs: a progress ring that fills as the user pulls past
+   the threshold, and a chevron that rotates 180° as a hint. */
 .ptr-host {
     position: fixed;
-    top: env(safe-area-inset-top);
+    top: env(safe-area-inset-top, 0);
     left: 50%;
     z-index: 9999;
-    transform: translate(-50%, -40px);
+    transform: translate3d(-50%, -56px, 0);
     opacity: 0;
     pointer-events: none;
     will-change: transform, opacity;
 }
-.ptr-host.is-animating {
-    transition: transform .22s ease, opacity .18s ease;
+/* Spring-back when the user releases without crossing the threshold,
+   or when the threshold-cross fires. */
+.ptr-host.is-resetting {
+    transition:
+        transform .32s cubic-bezier(.22, 1.4, .36, 1),
+        opacity   .22s ease-out;
 }
+
 .ptr-pill {
-    width: 44px; height: 44px;
+    position: relative;
+    width: 56px; height: 56px;
     border-radius: 999px;
     background: #fff;
     color: #2D5BFF;
     display: grid; place-items: center;
-    box-shadow: 0 10px 24px -6px rgba(11,11,12,.18), 0 0 0 1px rgba(11,11,12,.06);
-    transition: background .15s ease, color .15s ease, transform .12s ease;
+    box-shadow:
+        0 12px 32px -8px rgba(11, 11, 12, .22),
+        0 4px 12px -4px rgba(11, 11, 12, .14),
+        0 0 0 1px rgba(11, 11, 12, .06);
+    transition:
+        background .22s ease,
+        color      .22s ease,
+        transform  .22s cubic-bezier(.22, 1.4, .36, 1),
+        box-shadow .22s ease;
 }
-.ptr-spinner {
+
+/* Progress ring — fills as user pulls (controlled via stroke-dashoffset in JS). */
+.ptr-ring {
+    position: absolute;
+    inset: 0;
+    width: 100%; height: 100%;
+    /* Rotate -90° so the ring starts at 12 o'clock and fills clockwise. */
+    transform: rotate(-90deg);
+}
+.ptr-ring-track {
+    fill: none;
+    stroke: rgba(45, 91, 255, .12);
+    stroke-width: 2.5;
+}
+.ptr-ring-bar {
+    fill: none;
+    stroke: #2D5BFF;
+    stroke-width: 2.8;
+    stroke-linecap: round;
+    transition: stroke-dashoffset .08s linear;
+}
+
+/* The chevron inside the pill — rotates as user pulls (0° → 180°). */
+.ptr-arrow {
     width: 22px; height: 22px;
-    transition: transform .05s linear;
+    transition: transform .08s linear;
+    will-change: transform;
 }
-/* "Armed" — passed the threshold, release will refresh. */
+
+/* ── Armed: passed the threshold, release will refresh ──
+   Brand-blue fill + a tiny spring bounce. Haptic fires from JS. */
 .ptr-host.is-armed .ptr-pill {
     background: #2D5BFF;
     color: #fff;
-    transform: scale(1.08);
+    transform: scale(1.06);
+    box-shadow:
+        0 16px 38px -6px rgba(45, 91, 255, .35),
+        0 4px 12px -4px rgba(11, 11, 12, .18);
 }
-/* During the actual refresh, spin indeterminate. */
-@keyframes ptr-spin { to { transform: rotate(360deg); } }
-.ptr-host.is-refreshing .ptr-spinner {
-    animation: ptr-spin .75s linear infinite;
+.ptr-host.is-armed .ptr-ring-track {
+    stroke: rgba(255, 255, 255, .25);
+}
+.ptr-host.is-armed .ptr-ring-bar {
+    stroke: #fff;
+}
+
+/* ── Refreshing: ring becomes an indeterminate spinner ──
+   Chevron fades out, ring becomes a 25%-arc that spins forever. */
+@keyframes ptr-ring-spin {
+    to { transform: rotate(270deg); }    /* 270 = -90 (start) + 360 */
+}
+.ptr-host.is-refreshing {
+    transition: transform .28s cubic-bezier(.22, 1.4, .36, 1), opacity .2s ease;
 }
 .ptr-host.is-refreshing .ptr-pill {
     background: #2D5BFF;
     color: #fff;
 }
-/* Lock vertical document scroll while user is pulling — keeps the gesture
-   feeling deliberate and matches native PTR. */
+.ptr-host.is-refreshing .ptr-arrow {
+    opacity: 0;
+    transform: scale(.6);
+    transition: opacity .15s ease, transform .15s ease;
+}
+.ptr-host.is-refreshing .ptr-ring {
+    animation: ptr-ring-spin .9s linear infinite;
+    transform-origin: center;
+}
+.ptr-host.is-refreshing .ptr-ring-track { stroke: rgba(255, 255, 255, .2); }
+.ptr-host.is-refreshing .ptr-ring-bar {
+    stroke: #fff;
+    /* Show a 25% arc instead of full progress so the spin is visible. */
+    stroke-dasharray: 20 100;
+    stroke-dashoffset: 0;
+    transition: none;
+}
+
+/* Lock vertical overscroll while pulling — gesture stays committed. */
 html.is-ptr-ready, html.is-ptr-ready body {
     overscroll-behavior-y: none;
 }
