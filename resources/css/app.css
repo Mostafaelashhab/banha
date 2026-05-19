@@ -1804,6 +1804,19 @@ html[dir="rtl"] body {
     border-top: 1px solid rgba(11, 11, 12, .06);
     padding-bottom: env(safe-area-inset-bottom);
     box-shadow: 0 -8px 24px -12px rgba(11, 11, 12, .08);
+    /* Auto-hide on scroll: the .is-hidden class slides the nav off-screen.
+       JS controls when. transform-only so the bar stays GPU-composited. */
+    will-change: transform;
+    transition:
+        transform .28s cubic-bezier(.22, 1, .36, 1),
+        box-shadow .2s ease;
+}
+.bottom-nav.is-hidden {
+    /* Push beyond the safe-area inset so the bar is fully off-screen on
+       devices with a home indicator. */
+    transform: translateY(calc(100% + env(safe-area-inset-bottom, 0px)));
+    box-shadow: none;
+    pointer-events: none;
 }
 
 .bottom-nav-inner {

@@ -4,6 +4,7 @@ import './cap-bridge.js';
 // Native-feel modules — no-op when unsupported / desktop.
 import './pull-to-refresh.js';
 import './app-badge.js';
+import './nav-autohide.js';
 
 // ─── Guest mode: redirect to login when an action needs auth ─
 // `requireAuth()` returns true if the user is logged in; otherwise it
