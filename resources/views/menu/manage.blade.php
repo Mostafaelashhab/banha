@@ -81,15 +81,12 @@
     @endif
 
     {{-- Add category form --}}
-    <form method="POST" action="{{ route('menu.category.store', $business) }}" class="card-light p-2 mb-3 flex gap-1.5">
+    <form method="POST" action="{{ route('menu.category.store', $business) }}" class="card-light p-2 mb-3 flex gap-1.5 items-stretch">
         @csrf
         <input type="text" name="name" required maxlength="80"
                placeholder="{{ $L['category_label'] }} جديد — مثلاً: {{ $L['cat_examples'] }}"
                class="flex-1 bg-cream-100 rounded-xl px-3 py-2.5 text-ink-950 placeholder-ink-400 outline-0 border border-ink-950/8 focus:border-coral-500 focus:bg-white transition text-sm">
-        <button class="bg-coral-500 hover:bg-coral-600 text-white font-extrabold rounded-xl px-4 text-xs inline-flex items-center gap-1 transition shrink-0">
-            <x-icon name="plus" class="w-3.5 h-3.5"/>
-            <span>{{ $L['category_label'] }}</span>
-        </button>
+        <x-button type="submit" icon="plus" size="sm" class="shrink-0">{{ $L['category_label'] }}</x-button>
     </form>
 
     {{-- Categories with their items --}}
@@ -143,15 +140,10 @@
             </div>
         </div>
     @empty
-        <div class="card-light p-6 text-center mb-3">
-            <span class="w-12 h-12 mx-auto rounded-2xl bg-coral-100 text-coral-600 grid place-items-center mb-3">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
-                    <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
-                </svg>
-            </span>
-            <p class="text-sm font-bold text-ink-950 mb-1">ابدأ بضيف {{ $L['category_label'] }}</p>
-            <p class="text-xs text-ink-500 leading-relaxed">مثلاً: <b>{{ $L['cat_examples'] }}</b></p>
-        </div>
+        <x-empty-state icon="filter"
+                       :title="'ابدأ بضيف ' . $L['category_label']"
+                       :hint="'مثلاً: ' . $L['cat_examples']"
+                       class="mb-3"/>
     @endforelse
 
     {{-- Loose items (not in any category) --}}

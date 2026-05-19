@@ -15,40 +15,19 @@
 
     {{-- ─── Top row: avatar + wallet pill + 3 quick actions ───── --}}
     <div class="flex items-center gap-3 mb-5">
-        @if($user->avatar_url)
-            <img src="{{ $user->avatar_url }}" alt="" class="w-14 h-14 rounded-full object-cover ring-2 ring-coral-500/30">
-        @else
-            <span class="w-14 h-14 rounded-full grid place-items-center text-white text-lg font-black ring-2 ring-coral-500/30"
-                  style="background: {{ $avatarColor }};">{{ $initial }}</span>
-        @endif
+      
 
         @if($isMe)
-            <a href="{{ route('wallet') }}"
-               class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-coral-500 text-white text-sm font-extrabold hover:opacity-90 transition">
-                <x-icon name="bag" class="w-4 h-4"/>
-                محفظتي
-            </a>
-        @else
-            <a href="{{ route('chat.open', $user->username) }}"
-               class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-coral-500 text-white text-sm font-extrabold hover:opacity-90 transition">
-                <x-icon name="comment" class="w-4 h-4"/>
-                ابعتله رسالة
-            </a>
+            <x-button :href="route('wallet')" pill icon="bag" block>محفظتي</x-button>
         @endif
 
         <div class="flex items-center gap-1.5 shrink-0">
             @if($isMe)
-                <a href="{{ route('chat.inbox') }}" aria-label="الرسائل"
-                   class="w-10 h-10 rounded-full bg-coral-50 text-coral-600 grid place-items-center hover:bg-coral-100 transition">
-                    <x-icon name="comment" class="w-4 h-4"/>
-                </a>
-                <a href="{{ route('notifications.index') }}" aria-label="الإشعارات"
-                   class="w-10 h-10 rounded-full bg-coral-50 text-coral-600 grid place-items-center hover:bg-coral-100 transition">
-                    <x-icon name="bell" class="w-4 h-4"/>
-                </a>
+                <x-icon-tile icon="comment" shape="circle" :href="route('chat.inbox')" aria-label="الرسائل"/>
+                <x-icon-tile icon="bell" shape="circle" :href="route('notifications.index')" aria-label="الإشعارات"/>
             @else
                 <button type="button" aria-label="بلّغ"
-                        class="w-10 h-10 rounded-full bg-coral-50 text-coral-600 grid place-items-center hover:bg-coral-100 transition">
+                        class="w-10 h-10 rounded-full bg-coral-100 text-coral-600 grid place-items-center hover:bg-coral-200 transition">
                     <x-icon name="flag" class="w-4 h-4"/>
                 </button>
             @endif
@@ -65,9 +44,7 @@
         <a href="{{ route('wallet') }}"
            class="block bg-white rounded-2xl p-4 mb-7 hover:bg-cream-100 transition">
             <div class="flex items-center gap-4">
-                <span class="w-14 h-14 rounded-full bg-coral-50 grid place-items-center text-coral-600 shrink-0">
-                    <x-icon name="bag" class="w-6 h-6"/>
-                </span>
+                <x-icon-tile icon="bag" size="xl" shape="circle"/>
                 <div class="flex-1 min-w-0">
                     <div class="text-sm font-black text-ink-950 mb-0.5">
                         عندك {{ number_format($repPoints) }} نقطة

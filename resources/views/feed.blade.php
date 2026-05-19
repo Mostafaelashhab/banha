@@ -146,11 +146,7 @@
             <a href="{{ route('directory.index') }}"
                class="inline-flex items-center gap-2 text-sm font-extrabold text-ink-950 hover:text-coral-600 transition">
                 شوف الكل
-                <span class="w-9 h-9 rounded-full bg-coral-50 text-coral-600 grid place-items-center hover:bg-coral-100 transition">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="w-4 h-4">
-                        <polyline points="15 18 9 12 15 6"/>
-                    </svg>
-                </span>
+                <x-icon-tile icon="chevron-left" shape="circle" size="md"/>
             </a>
         </div>
         <div class="overflow-x-auto scrollbar-hide -mx-4 px-4 py-2">
@@ -174,11 +170,7 @@
             <a href="{{ route('directory.index') }}"
                class="inline-flex items-center gap-2 text-sm font-extrabold text-ink-950 hover:text-coral-600 transition">
                 شوف الكل
-                <span class="w-9 h-9 rounded-full bg-coral-50 text-coral-600 grid place-items-center hover:bg-coral-100 transition">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="w-4 h-4">
-                        <polyline points="15 18 9 12 15 6"/>
-                    </svg>
-                </span>
+                <x-icon-tile icon="chevron-left" shape="circle" size="md"/>
             </a>
         </div>
 
@@ -223,9 +215,7 @@
                             نشاطك يطلع في الصفحة الرئيسية لكل زوار بنهاوي
                         </div>
                     </div>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="w-5 h-5 text-honey-700 shrink-0 group-hover:-translate-x-1 transition">
-                        <polyline points="15 18 9 12 15 6"/>
-                    </svg>
+                    <x-icon name="chevron-left" class="w-5 h-5 text-honey-700 shrink-0 group-hover:-translate-x-1 transition"/>
                 </div>
             </a>
         @endif
@@ -239,11 +229,7 @@
                 <a href="{{ route('directory.index') }}"
                    class="inline-flex items-center gap-2 text-sm font-extrabold text-ink-950 hover:text-coral-600 transition">
                     شوف الكل
-                    <span class="w-9 h-9 rounded-full bg-coral-50 text-coral-600 grid place-items-center hover:bg-coral-100 transition">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="w-4 h-4">
-                            <polyline points="15 18 9 12 15 6"/>
-                        </svg>
-                    </span>
+                    <x-icon-tile icon="chevron-left" shape="circle" size="md"/>
                 </a>
             </div>
 
@@ -310,11 +296,7 @@
                 <a href="{{ route('directory.index', ['open_now' => 1]) }}"
                    class="inline-flex items-center gap-2 text-sm font-extrabold text-ink-950 hover:text-coral-600 transition">
                     شوف الكل
-                    <span class="w-9 h-9 rounded-full bg-coral-50 text-coral-600 grid place-items-center hover:bg-coral-100 transition">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="w-4 h-4">
-                            <polyline points="15 18 9 12 15 6"/>
-                        </svg>
-                    </span>
+                    <x-icon-tile icon="chevron-left" shape="circle" size="md"/>
                 </a>
             </div>
 
@@ -334,11 +316,7 @@
                 <a href="{{ route('marketplace.index') }}"
                    class="inline-flex items-center gap-2 text-sm font-extrabold text-ink-950 hover:text-coral-600 transition">
                     شوف الكل
-                    <span class="w-9 h-9 rounded-full bg-coral-50 text-coral-600 grid place-items-center hover:bg-coral-100 transition">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="w-4 h-4">
-                            <polyline points="15 18 9 12 15 6"/>
-                        </svg>
-                    </span>
+                    <x-icon-tile icon="chevron-left" shape="circle" size="md"/>
                 </a>
             </div>
 
@@ -405,9 +383,7 @@
                 <div class="text-sm font-black text-ink-950 leading-tight">دليل طلاب جامعة بنها</div>
                 <div class="text-[11px] text-ink-500 mt-0.5 leading-snug truncate">أكل، سكن، مكتبات، كورسات، Part-time.</div>
             </div>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="w-4 h-4 text-honey-700 shrink-0">
-                <polyline points="15 18 9 12 15 6"/>
-            </svg>
+            <x-icon name="chevron-left" class="w-4 h-4 text-honey-700 shrink-0"/>
         </div>
     </a>
 
@@ -430,9 +406,7 @@
                 <div class="text-sm font-black leading-tight">عندك محل أو مطعم؟ امتلك صفحتك</div>
                 <div class="text-[11px] text-white/85 mt-0.5 leading-snug font-bold truncate">واتساب، صور، منيو، عروض — كله من مكان واحد.</div>
             </div>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="w-4 h-4 text-white shrink-0">
-                <polyline points="15 18 9 12 15 6"/>
-            </svg>
+            <x-icon name="chevron-left" class="w-4 h-4 text-white shrink-0"/>
         </div>
     </a>
 

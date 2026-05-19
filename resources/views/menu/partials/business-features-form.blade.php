@@ -21,10 +21,7 @@
                 <p class="text-[11px] text-ink-500 mt-0.5 leading-relaxed">اللي بيميّز محلك — توصيل، تكييف، واي فاي، عائلي… بتظهر في صفحتك العامة.</p>
             </div>
         </div>
-        <button class="bg-mint-500 hover:bg-mint-600 text-white font-extrabold rounded-full px-4 py-1.5 text-[11px] inline-flex items-center gap-1 transition shrink-0">
-            <x-icon name="check" class="w-3 h-3"/>
-            حفظ
-        </button>
+        <x-button type="submit" size="sm" icon="check" class="shrink-0">حفظ</x-button>
     </div>
 
     <div class="bg-white rounded-xl border border-ink-950/8 p-2.5" data-features-app>

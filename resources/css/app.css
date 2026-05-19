@@ -907,7 +907,7 @@ html[dir="rtl"] body {
     color: #fff;
     overflow: hidden;
     background: #2D5BFF;
-    min-height: 160px;
+    min-height: 180px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -947,8 +947,6 @@ html[dir="rtl"] body {
 .promo-card-cta:hover { transform: scale(1.05); }
 
 /* ─── Custom (admin-uploaded) banner — Shoppe-style ─────────── */
-.promo-card { min-height: 180px; }
-
 .promo-card-wave {
     position: absolute;
     inset: 0;

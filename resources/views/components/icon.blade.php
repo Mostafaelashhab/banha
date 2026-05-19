@@ -148,6 +148,14 @@
         <polyline points="6 9 12 15 18 9"/>
         @break
 
+    @case('chevron-left')
+        <polyline points="15 18 9 12 15 6"/>
+        @break
+
+    @case('chevron-right')
+        <polyline points="9 18 15 12 9 6"/>
+        @break
+
     @case('battery')
         <rect x="2" y="7" width="18" height="10" rx="2"/>
         <line x1="22" y1="11" x2="22" y2="13"/>

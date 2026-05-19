@@ -161,10 +161,7 @@
 
     {{-- ── Submit ── --}}
     <div class="px-4 pb-4 pt-3 bg-coral-50/30 border-t border-ink-950/5">
-        <button class="w-full bg-coral-500 hover:bg-coral-600 active:bg-coral-700 text-white font-black rounded-xl px-4 py-3.5 text-sm inline-flex items-center justify-center gap-2 transition shadow-sm hover:shadow-md">
-            <x-icon name="check" class="w-4 h-4"/>
-            احفظ {{ $L['item_label'] }}
-        </button>
+        <x-button type="submit" size="lg" icon="check" block>احفظ {{ $L['item_label'] }}</x-button>
     </div>
 </form>
 

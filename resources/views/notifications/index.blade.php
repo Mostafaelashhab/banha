@@ -39,9 +39,7 @@
                     </div>
                     <a href="{{ $n->url ?? '#' }}"
                        class="notif-swipe-content flex items-start gap-3 p-3 rounded-xl hover:bg-cream-100 transition {{ ! $n->read_at && $loop->first ? 'bg-coral-50' : '' }}">
-                        <span class="w-9 h-9 rounded-full pill-coral grid place-items-center shrink-0 mt-0.5">
-                            <x-icon name="bell" class="w-4 h-4"/>
-                        </span>
+                        <x-icon-tile icon="bell" shape="circle" class="mt-0.5"/>
                         <div class="flex-1 min-w-0">
                             <div class="text-sm font-bold text-ink-950">{{ $n->title }}</div>
                             @if($n->body)
