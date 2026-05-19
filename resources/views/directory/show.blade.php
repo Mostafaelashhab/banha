@@ -411,11 +411,14 @@
             </span>
         @endunless
 
-        {{-- User-uploaded photo, if any --}}
+        {{-- User-uploaded photo, if any. Tappable to lightbox. --}}
         @if($heroPhoto)
             <img src="{{ $heroPhoto }}" alt="{{ $business->name }}" loading="eager"
                  class="absolute inset-0 w-full h-full object-cover z-10"
-                 onerror="this.style.display='none'">
+                 onerror="this.style.display='none'"
+                 data-lightbox
+                 data-lightbox-group="biz-{{ $business->id }}-photos"
+                 data-lightbox-src="{{ $heroPhoto }}">
         @endif
         <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent z-20"></div>
 
@@ -1153,8 +1156,13 @@
             @if($business->photos->isNotEmpty())
                 <div class="grid grid-cols-3 gap-2">
                     @foreach($business->photos as $ph)
-                        <div class="relative aspect-square">
-                            <img src="{{ $ph->url }}" alt="" loading="lazy" class="w-full h-full object-cover rounded-xl">
+                        <div class="relative aspect-square group"
+                             data-lightbox
+                             data-lightbox-group="biz-{{ $business->id }}-photos"
+                             data-lightbox-src="{{ $ph->url }}"
+                             aria-label="{{ $business->name }}">
+                            <img src="{{ $ph->url }}" alt="{{ $business->name }}" loading="lazy"
+                                 class="w-full h-full object-cover rounded-xl transition group-hover:scale-[1.02]">
                             @if($isOwner)
                                 <form method="POST" action="{{ route('business.photo.destroy', $ph) }}"
                                       data-confirm="حذف الصورة؟" data-confirm-tone="danger"

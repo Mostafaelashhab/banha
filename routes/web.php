@@ -22,6 +22,29 @@ Route::view('/welcome', 'welcome')->name('welcome');
 Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
 Route::get('/robots.txt',  [SeoController::class, 'robots'])->name('robots');
 
+// ─── TWA: Digital Asset Links (Play Store ↔ this domain) ──────
+// Chrome on Android checks /.well-known/assetlinks.json before trusting our
+// signed APK. The fingerprints come from .env (TWA_SHA256) so we can publish
+// the same code across env without rebuilding.
+Route::get('/.well-known/assetlinks.json', function () {
+    $packageName = config('twa.package_name');
+    $fingerprints = config('twa.sha256', []);
+    $links = [];
+    if (! empty($packageName) && ! empty($fingerprints)) {
+        $links[] = [
+            'relation' => ['delegate_permission/common.handle_all_urls'],
+            'target'   => [
+                'namespace'              => 'android_app',
+                'package_name'           => $packageName,
+                'sha256_cert_fingerprints' => array_values($fingerprints),
+            ],
+        ];
+    }
+    return response()->json($links, 200, [
+        'Cache-Control' => 'public, max-age=86400',
+    ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+})->name('assetlinks');
+
 // ─── Local-SEO money pages ──────────────────────────────────────
 // Explicit slug whitelist (defined in LocalSeoController::LANDINGS) — anything
 // not in the whitelist 404s, so this won't shadow legit routes.

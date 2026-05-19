@@ -2284,3 +2284,207 @@ html, body, * {
     -ms-overflow-style: none;    /* IE/Edge legacy */
 }
 ::-webkit-scrollbar { width: 0; height: 0; display: none; }
+
+/* ─── Native-app feel ─────────────────────────────────────────
+   Tweaks that turn the PWA from "website on a phone" into "an app":
+   no rubber-band, no long-press popups, no double-tap zoom, no
+   text-select on chrome, real momentum scroll, and a tap-highlight
+   color that matches the brand instead of the default iOS gray. */
+html {
+    -webkit-text-size-adjust: 100%;           /* iOS Safari: keep font sizes stable on orient change */
+    -webkit-tap-highlight-color: transparent; /* we draw our own active states */
+    text-rendering: optimizeLegibility;
+    touch-action: manipulation;               /* kills double-tap-to-zoom delay */
+    overscroll-behavior-y: none;              /* no rubber-band bounce past the top */
+}
+body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overscroll-behavior: contain;
+    overflow-x: hidden;
+    /* Account for the iOS notch / status bar (we use black-translucent). */
+    padding-top: env(safe-area-inset-top);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+}
+
+/* Disable text-selection + iOS callout on UI chrome — keep it on actual
+   content (paragraphs, descriptions) so users can copy where it matters. */
+button, a, [role="button"],
+nav, header, .bottom-nav, .nav-item,
+.btn-primary, .btn-dark, .chip, .pill-coral, .pill-mint, .pill-blush, .pill-honey {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+}
+
+/* Inputs: 16px+ font-size to prevent iOS auto-zoom on focus. */
+input:not([type=range]), textarea, select {
+    font-size: max(16px, 1rem);
+}
+
+/* App-installed view (standalone): pad the bottom-nav around the iOS home indicator. */
+@media (display-mode: standalone), (display-mode: minimal-ui) {
+    .bottom-nav { padding-bottom: env(safe-area-inset-bottom); }
+    body { background: var(--color-cream-50, #FAFAFC); }
+    /* In standalone we hide the install prompts since we're already installed. */
+    [data-install-only-web] { display: none; }
+}
+
+/* Smooth momentum scrolling for horizontal pickers and modal sheets. */
+.scrollbar-hide, [data-cart-list], [data-cart-grid], .menu-cat-nav {
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Tap feedback — subtle scale + opacity for buttons. Doesn't fire on hover
+   (which is meaningless on phones) so desktop reviewers still see crisp hover. */
+@media (hover: none) and (pointer: coarse) {
+    button:active, a:active, [role="button"]:active {
+        transform: scale(0.97);
+        transition: transform .08s ease;
+    }
+}
+
+/* ─── Lightbox: fullscreen image viewer ──────────────────────
+   Activated by [data-lightbox] elements anywhere in the app. The JS handler
+   in app.js inserts the root <div class="lb-root"> on first open and
+   removes/hides it on close. */
+.lb-root {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: rgba(0, 0, 0, .92);
+    display: grid;
+    place-items: center;
+    opacity: 0;
+    transition: opacity .2s ease;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    /* Respect iOS notch + home indicator */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+}
+.lb-root.is-open { opacity: 1; }
+.lb-root[hidden]:not([hidden=""]) { display: none; }
+
+.lb-stage {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+}
+.lb-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 6px;
+    box-shadow: 0 24px 60px -12px rgba(0, 0, 0, .8);
+    transition: transform .2s ease, opacity .2s ease;
+    will-change: transform;
+    -webkit-user-drag: none;
+    pointer-events: none;          /* tap on backdrop = close */
+}
+.lb-img.is-swiping {
+    transition: none;
+}
+
+/* Close button (top end) */
+.lb-close {
+    position: absolute;
+    top: max(12px, env(safe-area-inset-top));
+    inset-inline-end: 12px;
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .12);
+    backdrop-filter: blur(8px);
+    border: 0;
+    color: #fff;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    z-index: 2;
+    -webkit-tap-highlight-color: transparent;
+}
+.lb-close:hover { background: rgba(255, 255, 255, .22); }
+.lb-close svg { width: 20px; height: 20px; }
+
+/* Counter (top start) */
+.lb-counter {
+    position: absolute;
+    top: max(20px, env(safe-area-inset-top));
+    inset-inline-start: 16px;
+    color: rgba(255, 255, 255, .9);
+    font-size: 13px;
+    font-weight: 800;
+    z-index: 2;
+    background: rgba(0, 0, 0, .35);
+    backdrop-filter: blur(8px);
+    padding: 4px 12px;
+    border-radius: 999px;
+    pointer-events: none;
+}
+.lb-counter:empty { display: none; }
+
+/* Prev / next arrows (sides) — hidden when group has just one image */
+.lb-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .12);
+    backdrop-filter: blur(8px);
+    border: 0;
+    color: #fff;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    z-index: 2;
+    -webkit-tap-highlight-color: transparent;
+}
+.lb-nav:hover { background: rgba(255, 255, 255, .22); }
+.lb-nav[disabled] { opacity: .25; pointer-events: none; }
+.lb-nav.prev { inset-inline-start: 12px; }
+.lb-nav.next { inset-inline-end:   12px; }
+.lb-nav svg { width: 22px; height: 22px; }
+/* On phones, arrows feel out of place — hide and rely on swipe. */
+@media (max-width: 600px) {
+    .lb-nav { display: none; }
+}
+
+/* Dots indicator (bottom center) */
+.lb-dots {
+    position: absolute;
+    bottom: max(16px, env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 6px;
+    z-index: 2;
+    pointer-events: none;
+}
+.lb-dots .lb-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .35);
+    transition: background .2s ease, width .2s ease;
+}
+.lb-dots .lb-dot.is-active {
+    background: #fff;
+    width: 18px;
+}
+
+/* While the lightbox is open, lock body scroll. */
+body.lb-locked { overflow: hidden; }
+
+/* Make gallery photos look tappable */
+[data-lightbox] {
+    cursor: zoom-in;
+    -webkit-tap-highlight-color: transparent;
+}

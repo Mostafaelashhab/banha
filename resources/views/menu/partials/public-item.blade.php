@@ -11,14 +11,21 @@
         <div class="flex gap-2 overflow-x-auto -mx-1 px-1 mb-2 snap-x snap-mandatory" style="scrollbar-width: thin;">
             @foreach($gallery as $url)
                 <img src="{{ $url }}" alt="{{ $item->name }}" loading="lazy"
-                     class="w-44 h-32 rounded-xl object-cover shrink-0 snap-start">
+                     class="w-44 h-32 rounded-xl object-cover shrink-0 snap-start"
+                     data-lightbox
+                     data-lightbox-group="menu-item-{{ $item->id }}"
+                     data-lightbox-src="{{ $url }}">
             @endforeach
         </div>
     @endif
 
     <div class="flex items-start gap-3">
         @if(count($gallery) === 1)
-            <img src="{{ $gallery[0] }}" alt="{{ $item->name }}" loading="lazy" class="w-20 h-20 rounded-xl object-cover shrink-0">
+            <img src="{{ $gallery[0] }}" alt="{{ $item->name }}" loading="lazy"
+                 class="w-20 h-20 rounded-xl object-cover shrink-0"
+                 data-lightbox
+                 data-lightbox-group="menu-item-{{ $item->id }}"
+                 data-lightbox-src="{{ $gallery[0] }}">
         @endif
 
         <div class="flex-1 min-w-0">

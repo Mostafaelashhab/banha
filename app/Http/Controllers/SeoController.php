@@ -10,6 +10,7 @@ use App\Models\Listing;
 use App\Models\Post;
 use App\Models\Zone;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Schema;
 
 class SeoController extends Controller
 {
@@ -33,6 +34,8 @@ class SeoController extends Controller
             ['/emergency',        '0.7',  'weekly'],
             ['/benha-university', '0.7',  'weekly'],
             ['/offers',           '0.85', 'daily'],
+            ['/bookings',         '0.85', 'daily'],
+            ['/zones',            '0.7',  'weekly'],
         ];
 
         // Categories
@@ -49,14 +52,18 @@ class SeoController extends Controller
         // (Each city neighborhood with coords + an English slug gets a few
         //  category-in-area pages.)
         $programmaticCats = ['cafes', 'doctors', 'restaurants', 'dentists', 'pharmacies'];
-        $cityAreas = \App\Models\Area::banha()
-            ->whereNotNull('lat')->whereNotNull('lng')
-            ->whereNotNull('slug_en')
-            ->orderBy('sort')->limit(20)->get(['slug_en']);
-        foreach ($cityAreas as $area) {
-            foreach ($programmaticCats as $cat) {
-                $urls[] = ['/'.$cat.'-in-'.$area->slug_en.'-banha', '0.7', 'weekly'];
+        try {
+            $cityAreas = \App\Models\Area::banha()
+                ->whereNotNull('lat')->whereNotNull('lng')
+                ->whereNotNull('slug_en')
+                ->orderBy('sort')->limit(20)->get(['slug_en']);
+            foreach ($cityAreas as $area) {
+                foreach ($programmaticCats as $cat) {
+                    $urls[] = ['/'.$cat.'-in-'.$area->slug_en.'-banha', '0.7', 'weekly'];
+                }
             }
+        } catch (\Throwable $e) {
+            // areas table may not exist yet — skip programmatic combos rather than 500 the sitemap
         }
 
         // Zones — both the dedicated SEO landing page and the localized feed
@@ -67,14 +74,17 @@ class SeoController extends Controller
 
         // Active businesses — use slug URL when available (brand-friendly,
         // higher CTR), fall back to numeric for any slug-less rows.
+        $hasSlugCol = Schema::hasColumn('businesses', 'slug');
+        $bizCols = $hasSlugCol ? ['id', 'slug', 'updated_at', 'has_menu'] : ['id', 'updated_at', 'has_menu'];
         Business::where('is_active', true)
             ->orderByDesc('has_menu')
             ->orderByDesc('is_verified')
             ->orderByDesc('rating_avg')
             ->limit(500)
-            ->get(['id', 'slug', 'updated_at', 'has_menu'])
-            ->each(function ($b) use (&$urls) {
-                $path = $b->slug ? '/biz/'.$b->slug : '/directory/business/'.$b->id;
+            ->get($bizCols)
+            ->each(function ($b) use (&$urls, $hasSlugCol) {
+                $slug = $hasSlugCol ? ($b->slug ?? null) : null;
+                $path = $slug ? '/biz/'.$slug : '/directory/business/'.$b->id;
                 $urls[] = [$path, '0.85', 'weekly', $b->updated_at?->toAtomString()];
                 if ($b->has_menu) {
                     // Menu pages get the highest priority — they're the SEO gold

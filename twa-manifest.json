@@ -1,0 +1,87 @@
+{
+    "packageId": "com.banhawy.app",
+    "host": "banha.shop",
+    "name": "بنهاوي · دليلك الكامل لمدينة بنها",
+    "launcherName": "بنهاوي",
+    "display": "standalone",
+    "themeColor": "#FFF7F1",
+    "themeColorDark": "#0B0B0C",
+    "navigationColor": "#FFF7F1",
+    "navigationColorDark": "#0B0B0C",
+    "navigationDividerColor": "#FFF7F1",
+    "navigationDividerColorDark": "#0B0B0C",
+    "backgroundColor": "#FFF7F1",
+    "enableNotifications": true,
+    "startUrl": "/launch.html?source=twa",
+    "iconUrl": "https://banha.shop/icons/icon-512.png?v=3",
+    "maskableIconUrl": "https://banha.shop/icons/icon-512.png?v=3",
+    "monochromeIconUrl": "https://banha.shop/icons/icon-512.png?v=3",
+    "splashScreenFadeOutDuration": 300,
+    "appVersionName": "1.0.0",
+    "appVersionCode": 1,
+    "shortcuts": [
+        {
+            "name": "احجز موعد",
+            "short_name": "احجز",
+            "url": "/bookings?source=twa-shortcut",
+            "chosenIconUrl": "https://banha.shop/icons/icon-192.png?v=3"
+        },
+        {
+            "name": "عروض بنها النهارده",
+            "short_name": "عروض",
+            "url": "/offers?source=twa-shortcut",
+            "chosenIconUrl": "https://banha.shop/icons/icon-192.png?v=3"
+        },
+        {
+            "name": "خريطة بنها",
+            "short_name": "الخريطة",
+            "url": "/map?source=twa-shortcut",
+            "chosenIconUrl": "https://banha.shop/icons/icon-192.png?v=3"
+        },
+        {
+            "name": "أرقام طوارئ بنها",
+            "short_name": "طوارئ",
+            "url": "/emergency?source=twa-shortcut",
+            "chosenIconUrl": "https://banha.shop/icons/icon-192.png?v=3"
+        }
+    ],
+    "signingKey": {
+        "path": "./android.keystore",
+        "alias": "android"
+    },
+    "appVersion": "1.0.0",
+    "fallbackType": "customtabs",
+    "features": {
+        "locationDelegation": {
+            "enabled": true
+        },
+        "playBilling": {
+            "enabled": false
+        }
+    },
+    "alphaDependencies": {
+        "enabled": false
+    },
+    "enableSiteSettingsShortcut": true,
+    "isChromeOSOnly": false,
+    "isMetaQuest": false,
+    "fullScopeUrl": "https://banha.shop/",
+    "minSdkVersion": 21,
+    "orientation": "portrait",
+    "fingerprints": [],
+    "additionalTrustedOrigins": [],
+    "retainedBundles": [],
+    "protocolHandlers": [],
+    "fileHandlers": [],
+    "launchHandlerClientMode": "navigate-existing",
+    "shareTarget": {
+        "action": "/share-receive",
+        "method": "GET",
+        "enctype": "application/x-www-form-urlencoded",
+        "params": {
+            "title": "title",
+            "text":  "text",
+            "url":   "url"
+        }
+    }
+}

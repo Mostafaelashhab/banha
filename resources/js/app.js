@@ -1,3 +1,6 @@
+// Native shell (iOS/Android via Capacitor) — no-op when running in a normal browser.
+import './cap-bridge.js';
+
 // ─── Guest mode: redirect to login when an action needs auth ─
 // `requireAuth()` returns true if the user is logged in; otherwise it
 // sends them to /login?redirect=<current url> and returns false so the
@@ -281,10 +284,45 @@ if ('IntersectionObserver' in window) {
     document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
 }
 
-// ─── PWA: register service worker ───────────────────────────
+// ─── PWA: register service worker + update prompt ───────────
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').catch(() => {});
+        navigator.serviceWorker.register('/sw.js').then((reg) => {
+            // When a new SW takes over (after we tell it to skipWaiting), reload
+            // once so the user gets the new version without losing their place.
+            let refreshing = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (refreshing) return;
+                refreshing = true;
+                window.location.reload();
+            });
+
+            const promptUpdate = (worker) => {
+                // Tiny non-modal toast — non-blocking, dismissable
+                if (document.querySelector('[data-sw-update]')) return;
+                const bar = document.createElement('div');
+                bar.dataset.swUpdate = '1';
+                bar.style.cssText = 'position:fixed;bottom:calc(7rem + env(safe-area-inset-bottom));inset-inline:16px;max-width:28rem;margin:0 auto;background:#0B0B0C;color:#fff;border-radius:18px;padding:12px 14px;display:flex;align-items:center;gap:10px;font-family:Cairo,sans-serif;font-size:13px;font-weight:800;box-shadow:0 12px 32px -8px rgba(0,0,0,.35);z-index:9999;animation:swUpFade .25s ease';
+                bar.innerHTML = '<span style="flex:1">في تحديث جديد لبنهاوي</span>' +
+                    '<button type="button" data-up style="background:#2D5BFF;color:#fff;border:0;border-radius:999px;padding:6px 14px;font-weight:800;font-size:12px;font-family:inherit">حدّث</button>' +
+                    '<button type="button" data-dismiss aria-label="إغلاق" style="background:transparent;color:#fff;opacity:.7;border:0;font-size:18px;line-height:1;padding:0 4px;cursor:pointer">×</button>';
+                document.body.appendChild(bar);
+                bar.querySelector('[data-up]').addEventListener('click', () => worker.postMessage({ type: 'SKIP_WAITING' }));
+                bar.querySelector('[data-dismiss]').addEventListener('click', () => bar.remove());
+            };
+
+            if (reg.waiting) promptUpdate(reg.waiting);
+            reg.addEventListener('updatefound', () => {
+                const sw = reg.installing;
+                if (!sw) return;
+                sw.addEventListener('statechange', () => {
+                    if (sw.state === 'installed' && navigator.serviceWorker.controller) promptUpdate(sw);
+                });
+            });
+
+            // Check for updates every 10 minutes while the tab is open
+            setInterval(() => reg.update().catch(() => {}), 10 * 60 * 1000);
+        }).catch(() => {});
     });
 }
 
@@ -1008,4 +1046,193 @@ document.addEventListener('keydown', (e) => {
         document.querySelectorAll('[data-promoted-info].is-open').forEach((b) => b.classList.remove('is-open'));
     }
 });
+
+// ─── Lightbox: tap any image with [data-lightbox] to view full-screen ────
+// Group multiple images with the same data-lightbox-group attribute to enable
+// swipe / arrow navigation between them. Reads the full-size URL from
+// data-lightbox-src (falls back to the <img>'s src attribute).
+(function () {
+    /** @type {{ src:string, alt:string, group:string|null, el:HTMLElement }[]} */
+    let currentSet = [];
+    let currentIndex = 0;
+    let root = null;          // .lb-root container
+    let imgEl = null;
+    let counterEl = null;
+    let prevBtn = null;
+    let nextBtn = null;
+    let dotsEl = null;
+    let touchStartX = null;
+    let touchStartY = null;
+    let touchDx = 0;
+
+    function ensureRoot() {
+        if (root) return;
+        root = document.createElement('div');
+        root.className = 'lb-root';
+        root.hidden = true;
+        root.innerHTML =
+            '<span class="lb-counter" data-lb-counter></span>' +
+            '<button type="button" class="lb-close" data-lb-close aria-label="إغلاق">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+            '</button>' +
+            '<button type="button" class="lb-nav prev" data-lb-prev aria-label="السابقة">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>' +
+            '</button>' +
+            '<button type="button" class="lb-nav next" data-lb-next aria-label="التالية">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>' +
+            '</button>' +
+            '<div class="lb-stage"><img class="lb-img" alt=""></div>' +
+            '<div class="lb-dots" data-lb-dots></div>';
+
+        document.body.appendChild(root);
+        imgEl     = root.querySelector('.lb-img');
+        counterEl = root.querySelector('[data-lb-counter]');
+        prevBtn   = root.querySelector('[data-lb-prev]');
+        nextBtn   = root.querySelector('[data-lb-next]');
+        dotsEl    = root.querySelector('[data-lb-dots]');
+
+        // ─── Click / tap handlers
+        root.addEventListener('click', (e) => {
+            if (e.target === root || e.target.closest('.lb-stage') === root.querySelector('.lb-stage') && !e.target.closest('.lb-img,.lb-nav,.lb-close,.lb-dots,.lb-counter')) {
+                close();
+            }
+        });
+        root.querySelector('[data-lb-close]').addEventListener('click', close);
+        prevBtn.addEventListener('click', () => go(-1));
+        nextBtn.addEventListener('click', () => go(+1));
+
+        // ─── Touch swipe (mobile)
+        const stage = root.querySelector('.lb-stage');
+        stage.addEventListener('touchstart', (e) => {
+            if (e.touches.length !== 1) return;
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+            touchDx = 0;
+            imgEl.classList.add('is-swiping');
+        }, { passive: true });
+        stage.addEventListener('touchmove', (e) => {
+            if (touchStartX == null) return;
+            const dx = e.touches[0].clientX - touchStartX;
+            const dy = e.touches[0].clientY - touchStartY;
+            // If primarily vertical, treat as a pull-to-close (close on big pulls)
+            if (Math.abs(dy) > Math.abs(dx) * 1.5) {
+                touchDx = 0;
+                imgEl.style.transform = `translateY(${dy}px)`;
+                imgEl.style.opacity = String(1 - Math.min(Math.abs(dy) / 400, 0.6));
+                return;
+            }
+            touchDx = dx;
+            imgEl.style.transform = `translateX(${dx}px)`;
+        }, { passive: true });
+        stage.addEventListener('touchend', (e) => {
+            if (touchStartX == null) return;
+            const finalDx = touchDx;
+            const transform = imgEl.style.transform;
+            const isVertical = transform.includes('translateY');
+            const verticalDy = isVertical ? parseFloat(transform.match(/-?\d+/)?.[0] ?? '0') : 0;
+
+            imgEl.classList.remove('is-swiping');
+            imgEl.style.transform = '';
+            imgEl.style.opacity = '';
+            touchStartX = touchStartY = null;
+            touchDx = 0;
+
+            if (Math.abs(verticalDy) > 120) { close(); return; }
+            if (Math.abs(finalDx) > 60) {
+                // RTL flip: swipe right = previous when dir=rtl, but the user
+                // probably expects the visual swipe to match (drag image to the
+                // right = next image revealed from the left). Keep it simple:
+                // go(+1) on left-swipe, go(-1) on right-swipe, regardless of RTL.
+                go(finalDx < 0 ? +1 : -1);
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (root.hidden) return;
+            if (e.key === 'Escape')      close();
+            else if (e.key === 'ArrowLeft')  go(document.documentElement.dir === 'rtl' ? -1 : +1);
+            else if (e.key === 'ArrowRight') go(document.documentElement.dir === 'rtl' ? +1 : -1);
+        });
+
+        window.addEventListener('popstate', () => {
+            if (!root.hidden) close(true); // already popped — just clean up
+        });
+    }
+
+    function open(set, index) {
+        ensureRoot();
+        currentSet = set;
+        currentIndex = Math.max(0, Math.min(index, set.length - 1));
+        root.hidden = false;
+        document.body.classList.add('lb-locked');
+        // Trigger fade-in
+        requestAnimationFrame(() => root.classList.add('is-open'));
+        // Add a history entry so Android back-button closes the lightbox
+        try { history.pushState({ lightbox: 1 }, ''); } catch (e) {}
+        render();
+    }
+
+    function close(skipHistory) {
+        if (!root || root.hidden) return;
+        root.classList.remove('is-open');
+        document.body.classList.remove('lb-locked');
+        setTimeout(() => { root.hidden = true; }, 200);
+        if (!skipHistory) {
+            try { if (history.state && history.state.lightbox) history.back(); } catch (e) {}
+        }
+    }
+
+    function go(delta) {
+        if (currentSet.length < 2) return;
+        currentIndex = (currentIndex + delta + currentSet.length) % currentSet.length;
+        render();
+    }
+
+    function render() {
+        const item = currentSet[currentIndex];
+        if (!item) return close();
+        imgEl.src = item.src;
+        imgEl.alt = item.alt || '';
+        const n = currentSet.length;
+        counterEl.textContent = n > 1 ? `${currentIndex + 1} / ${n}` : '';
+        prevBtn.style.display = n > 1 ? '' : 'none';
+        nextBtn.style.display = n > 1 ? '' : 'none';
+
+        // Dots (only if 2–10 images — more gets noisy)
+        if (n > 1 && n <= 10) {
+            dotsEl.innerHTML = '';
+            for (let i = 0; i < n; i++) {
+                const d = document.createElement('span');
+                d.className = 'lb-dot' + (i === currentIndex ? ' is-active' : '');
+                dotsEl.appendChild(d);
+            }
+        } else {
+            dotsEl.innerHTML = '';
+        }
+    }
+
+    // ─── Global click handler: build set on demand from siblings in same group
+    document.addEventListener('click', (e) => {
+        const trigger = e.target.closest('[data-lightbox]');
+        if (!trigger) return;
+        // Skip if the click landed on an inner control (e.g. owner delete button)
+        if (e.target.closest('button, form, a:not([data-lightbox])')) return;
+        e.preventDefault();
+
+        const group = trigger.dataset.lightboxGroup || null;
+        const siblings = group
+            ? Array.from(document.querySelectorAll(`[data-lightbox][data-lightbox-group="${CSS.escape(group)}"]`))
+            : [trigger];
+
+        const set = siblings.map((el) => ({
+            src: el.dataset.lightboxSrc || el.getAttribute('data-src') || (el.tagName === 'IMG' ? el.currentSrc || el.src : ''),
+            alt: el.getAttribute('alt') || el.getAttribute('aria-label') || '',
+            group,
+            el,
+        })).filter((x) => x.src);
+
+        const index = siblings.indexOf(trigger);
+        open(set, index === -1 ? 0 : index);
+    });
+})();
 

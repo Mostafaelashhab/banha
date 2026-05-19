@@ -2,10 +2,15 @@
 <html lang="ar-EG" dir="rtl">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F4F5F8">
-    <meta name="theme-color" media="(prefers-color-scheme: dark)"  content="#0B0B0C">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
+    {{-- Light-only theme color (matches our cream UI). When iOS-installed, the
+         status bar is translucent and the page background shows through — so
+         the theme color also tints the URL bar on Android Chrome. --}}
+    <meta name="theme-color" content="#FFF7F1">
+    <meta name="color-scheme" content="light">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
     <title>{{ $title ?? 'بنهاوي · مدينتك على راحة إيدك · بنها · القليوبية' }}</title>
 
     {{-- ─── SEO ─────────────────────────────────────────────── --}}
@@ -14,32 +19,45 @@
         $seoUrl  = $canonical ?? url()->current();
         $seoImg  = $ogImage ?? asset('icons/icon-512.png');
         $seoKw   = $keywords ?? 'بنها, القليوبية, مطاعم بنها, دليل بنها, أسعار بنها, تنبيهات بنها, منيو بنها, بيع وشراء بنها, banha, qalyubia';
+        $seoTitle = $title ?? 'بنهاوي · مدينتك على راحة إيدك';
     @endphp
     <meta name="description" content="{{ $seoDesc }}">
     <meta name="keywords"    content="{{ $seoKw }}">
+    <meta name="author"      content="بنهاوي">
+    <meta name="application-name" content="بنهاوي">
     <meta name="robots"      content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
     <link rel="canonical"    href="{{ $seoUrl }}">
     <link rel="alternate"    hreflang="ar-EG" href="{{ $seoUrl }}">
+    <link rel="alternate"    hreflang="x-default" href="{{ $seoUrl }}">
+
+    {{-- DNS pre-resolution & connection warm-up for our heaviest third parties --}}
+    <link rel="dns-prefetch" href="//tile.openstreetmap.org">
+    <link rel="dns-prefetch" href="//unpkg.com">
+    <link rel="preconnect"   href="https://fonts.gstatic.com" crossorigin>
 
     {{-- Open Graph --}}
     <meta property="og:type"        content="{{ $ogType ?? 'website' }}">
     <meta property="og:site_name"   content="بنهاوي">
-    <meta property="og:title"       content="{{ $title ?? 'بنهاوي · مدينتك على راحة إيدك' }}">
+    <meta property="og:title"       content="{{ $seoTitle }}">
     <meta property="og:description" content="{{ $seoDesc }}">
     <meta property="og:url"         content="{{ $seoUrl }}">
     <meta property="og:locale"      content="ar_EG">
     @if($seoImg)
-        <meta property="og:image"   content="{{ $seoImg }}">
+        <meta property="og:image"        content="{{ $seoImg }}">
+        <meta property="og:image:secure_url" content="{{ $seoImg }}">
+        <meta property="og:image:type"   content="image/png">
         <meta property="og:image:width"  content="1200">
         <meta property="og:image:height" content="630">
+        <meta property="og:image:alt"    content="{{ $seoTitle }}">
     @endif
 
     {{-- Twitter Card --}}
     <meta name="twitter:card"        content="summary_large_image">
-    <meta name="twitter:title"       content="{{ $title ?? 'بنهاوي' }}">
+    <meta name="twitter:title"       content="{{ $seoTitle }}">
     <meta name="twitter:description" content="{{ $seoDesc }}">
     @if($seoImg)
-        <meta name="twitter:image"   content="{{ $seoImg }}">
+        <meta name="twitter:image"     content="{{ $seoImg }}">
+        <meta name="twitter:image:alt" content="{{ $seoTitle }}">
     @endif
 
     {{-- Geo (Banha specific) --}}
@@ -84,14 +102,24 @@
     @stack('json-ld')
 
     {{-- PWA --}}
-    <link rel="manifest" href="/manifest.json?v=2">
-    <link rel="icon" type="image/svg+xml" href="/icons/icon.svg?v=2">
-    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png?v=2">
-    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png?v=2">
+    <link rel="manifest" href="/manifest.json?v=3">
+    <link rel="icon" type="image/svg+xml" href="/icons/icon.svg?v=3">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png?v=3">
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png?v=3">
+    {{-- iOS: black-translucent gives a true full-screen feel — the status bar
+         overlays the page so our hero/header reaches the top edge. We respect
+         safe-area-insets in CSS so nothing hides behind the notch. --}}
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="بنهاوي">
     <meta name="mobile-web-app-capable" content="yes">
+    {{-- Windows/Edge tile (cheap, ignored elsewhere) --}}
+    <meta name="msapplication-TileColor" content="#FFF7F1">
+    <meta name="msapplication-tap-highlight" content="no">
+
+    {{-- iOS launch splash — single SVG that scales to any device. Prevents the
+         white flash that breaks the "native app" feel on cold-launch. --}}
+    <link rel="apple-touch-startup-image" href="/icons/icon-512.png?v=3">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('head')
