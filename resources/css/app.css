@@ -2622,55 +2622,21 @@ html.is-ptr-ready, html.is-ptr-ready body {
     overscroll-behavior-y: none;
 }
 
-/* ─── Turbo page transitions ───────────────────────────────
-   The turbo-setup.js toggles .turbo-leaving / .turbo-entering on <html> at
-   swap time. We animate <main> (where the page content lives) with a soft
-   slide+fade — the kind iOS does between view controllers. The bottom-nav
-   is data-turbo-permanent so it stays still while the content swaps. */
+/* ─── Turbo: instant navigation, no progress bar ──────────────
+   Native apps don't show "loading" indicators on tap. We hide Turbo's default
+   progress bar entirely and let the body swap happen instantly — same way
+   tapping a row in an iOS settings panel changes the screen with no fanfare.
+   The persisted bottom-nav (data-turbo-permanent) means the only thing the
+   user perceives moving is the content itself. */
+.turbo-progress-bar { display: none !important; }
 
-main {
-    /* Single source of transition the leaving/entering classes can target. */
-    transition:
-        opacity .18s ease-out,
-        transform .22s cubic-bezier(.22, 1, .36, 1);
-    will-change: opacity, transform;
-}
-
-/* Leaving — fades out + slides up tiny amount (the OS "page lifts" feel). */
-html.turbo-leaving main {
-    opacity: 0;
-    transform: translate3d(0, -8px, 0);
-    transition-duration: .18s;
-}
-
-/* Entering — starts low-opacity & slid-down, settles to rest. */
+/* Suppress any transition that might leak onto <main> during a Turbo swap —
+   we want a hard, immediate change of content. */
+html.turbo-leaving main,
 html.turbo-entering main {
-    opacity: 0;
-    transform: translate3d(0, 12px, 0);
-    /* Force the browser to commit this start state before transitioning to rest. */
-    animation: turbo-page-in .26s cubic-bezier(.22, 1, .36, 1) forwards;
-}
-@keyframes turbo-page-in {
-    from { opacity: 0; transform: translate3d(0, 12px, 0); }
-    to   { opacity: 1; transform: translate3d(0, 0,    0); }
-}
-
-/* Turbo's built-in progress bar at the very top of the page — match brand. */
-.turbo-progress-bar {
-    height: 2.5px;
-    background: linear-gradient(90deg, #2D5BFF, #5C7DFF);
-    box-shadow: 0 0 6px rgba(45, 91, 255, .6);
-}
-
-/* Respect "reduce motion" — no animations for users who opted out. */
-@media (prefers-reduced-motion: reduce) {
-    main { transition: none; }
-    html.turbo-leaving main,
-    html.turbo-entering main {
-        transition: none;
-        animation: none;
-        opacity: 1;
-        transform: none;
-    }
+    transition: none !important;
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
 }
 

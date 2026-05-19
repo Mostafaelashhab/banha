@@ -1,84 +1,51 @@
 /**
- * Hotwire Turbo setup — turns the Laravel MPA into an app-feel SPA.
+ * Hotwire Turbo — minimal native-feel setup.
  *
- * What it does:
- *   • Intercepts every <a> and <form> → fetches over the wire, swaps the body.
- *   • Keeps the URL in sync via history.pushState.
- *   • Caches previous pages → back/forward is instant (and animation looks real).
- *   • Persists [data-turbo-permanent] elements across navigations (bottom-nav).
- *   • Fires `turbo:before-render` / `turbo:render` events that drive CSS transitions.
+ * Goals:
+ *   • Navigation must feel INSTANT. No fade, no slide, no progress bar.
+ *     Native apps don't animate every screen change — neither do we.
+ *   • The body swap is invisible because the persistent bottom-nav doesn't
+ *     move and the new content drops in immediately.
+ *   • A light tap-haptic on link click gives the "registered" feedback that
+ *     native apps deliver via UIKit/Material.
  *
- * Edge cases we handle:
- *   • Leaflet map page → opted out via [data-turbo="false"] on its links.
- *   • External links → opted out (Turbo only handles same-origin by default).
- *   • Multipart forms (file uploads) → still POST traditionally.
- *   • Owner / admin actions with custom JS → re-init on `turbo:load`.
+ * Edge-case wiring:
+ *   • Progress bar: hidden via CSS (.turbo-progress-bar) AND we set a huge
+ *     delay so it would never spawn even if CSS leaked.
+ *   • Scroll: Turbo handles restore for back/forward visits; for new visits
+ *     it scrolls to top, which is the right default.
+ *   • Bottom-nav active state + app-badge sync re-run on `turbo:load`.
  */
 import * as Turbo from '@hotwired/turbo';
 
-// ── Cache strategy ───────────────────────────────────────
-// Turbo caches the last visited page so back navigation is instant. We keep
-// the cache up to 1 minute fresh, then revalidate.
 Turbo.session.drive = true;
+// Effectively disables the progress bar (CSS hides it; this is belt+braces)
+Turbo.setProgressBarDelay(60000);
 
-// ── Show progress bar after 250ms only (snappy on fast nets, visible on slow)
-Turbo.setProgressBarDelay(250);
+// ── Tap haptic on link clicks — feels native, costs ~5ms ──
+document.addEventListener('click', (e) => {
+    const a = e.target.closest('a[href]');
+    if (!a) return;
+    // Skip non-Turbo links (external, blank target, downloads)
+    if (a.target === '_blank' || a.hasAttribute('download')) return;
+    if (a.dataset.turbo === 'false') return;
+    try { navigator.vibrate?.(5); } catch (_) {}
+    try { window.Capacitor?.Plugins?.Haptics?.impact?.({ style: 'LIGHT' }); } catch (_) {}
+}, { capture: true });
 
-// ── Page-transition class hooks ──────────────────────────
-// We toggle .turbo-leaving / .turbo-entering on <html> at swap time so the
-// CSS in app.css can run fade+slide transitions on the <main> element.
-document.addEventListener('turbo:before-visit', () => {
-    // Save scroll position on the current page before it leaves
-    sessionStorage.setItem('turbo:scroll:' + location.pathname, String(window.scrollY));
-});
-
-document.addEventListener('turbo:before-render', (e) => {
-    document.documentElement.classList.add('turbo-leaving');
-    // Briefly delay the render so the leaving animation can play out (220ms).
-    e.preventDefault();
-    requestAnimationFrame(() => {
-        setTimeout(() => {
-            e.detail.resume();
-        }, 180);
-    });
-});
-
-document.addEventListener('turbo:render', () => {
-    document.documentElement.classList.remove('turbo-leaving');
-    document.documentElement.classList.add('turbo-entering');
-    requestAnimationFrame(() => {
-        // Force a reflow then drop the class to retrigger the enter animation
-        void document.body.offsetHeight;
-        setTimeout(() => {
-            document.documentElement.classList.remove('turbo-entering');
-        }, 260);
-    });
-});
-
-// ── Restore scroll position when going back ──
-document.addEventListener('turbo:load', () => {
-    const saved = sessionStorage.getItem('turbo:scroll:' + location.pathname);
-    // Only restore for back/forward navigations (Turbo flags this in event.detail)
-    // We can't easily detect that here — but Turbo automatically restores scroll
-    // for "restoration" visits, so we only need to handle the case it missed.
-    if (saved && window.scrollY === 0 && parseInt(saved, 10) > 0) {
-        // Small delay so the swapped DOM has reflowed before we scroll
-        setTimeout(() => window.scrollTo(0, parseInt(saved, 10)), 20);
-    }
-});
-
-// ── Bridge: emit a custom event the rest of our modules can listen to
-//    for "the page just changed" (works for both initial load + Turbo nav).
+// ── Page-ready event the rest of the modules listen to ──
 ['DOMContentLoaded', 'turbo:load'].forEach((evt) => {
     document.addEventListener(evt, () => {
         document.dispatchEvent(new CustomEvent('banhawy:pageReady'));
+        // After Turbo swaps, scroll to top for new visits is automatic — we
+        // just make sure nothing weird leaks from previous transitions.
+        document.documentElement.classList.remove('turbo-leaving', 'turbo-entering');
     });
 });
 
-// ── Bottom-nav active state: the nav itself is data-turbo-permanent (so it
-//    survives the body swap without flicker), but that means its is-active
-//    class never updates from the server. We update it client-side based on
-//    the new URL after every navigation.
+// ── Bottom-nav active state: the nav is data-turbo-permanent, so its
+//    is-active class never updates from the server after the first load.
+//    We update it client-side after every navigation. ──
 document.addEventListener('banhawy:pageReady', () => {
     const nav = document.getElementById('bottom-nav');
     if (!nav) return;
@@ -89,10 +56,8 @@ document.addEventListener('banhawy:pageReady', () => {
         let isActive = false;
         try {
             const linkPath = new URL(href, location.origin).pathname;
-            if (linkPath === '/' || linkPath === '') {
+            if (linkPath === '/' || linkPath === '/feed') {
                 isActive = path === '/' || path === '/feed';
-            } else if (linkPath === '/feed') {
-                isActive = path === '/feed' || path === '/';
             } else if (linkPath === '/directory') {
                 isActive = path.startsWith('/directory') && !path.startsWith('/directory/map');
             } else if (linkPath === '/map' || linkPath === '/directory/map') {
