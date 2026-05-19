@@ -148,7 +148,7 @@
     "src": "_fonts-ZGZVAuXX.css"
   },
   "resources/css/app.css": {
-    "file": "assets/app-CYuGvRyu.css",
+    "file": "assets/app-BDGZhC9k.css",
     "name": "app",
     "names": [
       "app.css"
@@ -157,7 +157,7 @@
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-Dm2LtuZf.js",
+    "file": "assets/app-Cks5sE3f.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true

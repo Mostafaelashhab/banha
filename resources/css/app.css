@@ -2621,3 +2621,85 @@ body.lb-locked { overflow: hidden; }
 html.is-ptr-ready, html.is-ptr-ready body {
     overscroll-behavior-y: none;
 }
+
+/* ─── Edge-swipe-back: "two screens stacked" ──────────────────
+   Activated by the JS in edge-swipe-back.js. The current <main> is lifted
+   and translated to the right; behind it, .esb-prev fakes the previous page
+   that we'll restore via history.back() once the gesture commits.
+
+   No real screenshot is captured — the previous page is approximated with a
+   soft cream pattern + dim layer. When history.back() runs, the browser's
+   bfcache restores the actual content instantly, completing the illusion. */
+
+/* Overlay container — only visible during the gesture. */
+.esb-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 30;   /* below bottom-nav (40), modals (50), lightbox (100) */
+    pointer-events: none;
+    overflow: hidden;
+    visibility: hidden;
+}
+.esb-overlay.is-active {
+    visibility: visible;
+}
+
+/* "Previous page" placeholder — sits behind the live <main>. We use the same
+   cream background + a subtle dotted pattern to suggest content. When the
+   actual previous page restores via bfcache the swap is seamless. */
+.esb-prev {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(circle at 28% 18%, rgba(45, 91, 255, .06), transparent 60%),
+        radial-gradient(circle at 78% 70%, rgba(255, 122, 77, .05), transparent 55%),
+        #FFF7F1;
+    transform: translate3d(-30%, 0, 0) scale(.92);
+    transform-origin: center left;
+    opacity: .55;
+    will-change: transform, opacity;
+}
+.esb-prev-pattern {
+    position: absolute;
+    inset: 0;
+    background-image:
+        repeating-linear-gradient(0deg,
+            transparent 0 80px,
+            rgba(11, 11, 12, .04) 80px 81px),
+        repeating-linear-gradient(90deg,
+            transparent 0 120px,
+            rgba(11, 11, 12, .03) 120px 121px);
+    opacity: .8;
+}
+
+/* Soft dim between the foreground (lifted) page and the previous one — gives
+   that "two layers" depth feel. Fades to 0 as previous page comes forward. */
+.esb-dim {
+    position: absolute;
+    inset: 0;
+    background: rgba(11, 11, 12, .35);
+    opacity: 0;
+    will-change: opacity;
+}
+
+/* Spring + ease-out used by both the lifted page and overlay when the gesture
+   resets or commits. Only applied via the .esb-anim class so the active drag
+   stays direct (no lag between finger and pixels). */
+.esb-anim {
+    transition:
+        transform .32s cubic-bezier(.22, 1, .36, 1),
+        opacity   .28s ease-out,
+        box-shadow .28s ease-out !important;
+}
+
+/* While the gesture is active, the <main> needs a will-change hint and a
+   left edge that hugs the screen so the shadow we paint via box-shadow is
+   actually visible on the left side. */
+html.esb-active main {
+    will-change: transform, box-shadow;
+}
+html.esb-active body {
+    /* Prevent any other scroll-glue from messing with the lifted page */
+    overflow-x: hidden;
+    overscroll-behavior: none;
+}

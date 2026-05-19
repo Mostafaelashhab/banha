@@ -5,6 +5,7 @@ import './cap-bridge.js';
 import './pull-to-refresh.js';
 import './app-badge.js';
 import './nav-autohide.js';
+import './edge-swipe-back.js';
 
 // ─── Guest mode: redirect to login when an action needs auth ─
 // `requireAuth()` returns true if the user is logged in; otherwise it
