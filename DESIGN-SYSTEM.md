@@ -426,12 +426,13 @@ Replacing existing inline markup with components is **always safe** and **always
 - [`directory/show.blade.php`](resources/views/directory/show.blade.php) — owner "إدارة النشاط" pill button.
 - [`feed.blade.php`](resources/views/feed.blade.php) — 5 "see all" chevron tiles → `<x-icon-tile>`; 3 standalone chevron arrows → `<x-icon name="chevron-left">`.
 - [`notifications/index.blade.php`](resources/views/notifications/index.blade.php) — bell icon tile in list rows.
-- [`profile.blade.php`](resources/views/profile.blade.php) — top-section primary buttons, comment/bell tile chips, wallet hint big tile.
+- [`profile.blade.php`](resources/views/profile.blade.php) — top-section primary buttons, comment/bell tile chips, wallet hint big tile, settings rows (camera/lock/logout tiles), my-orders cart tile.
+- [`directory/manage.blade.php`](resources/views/directory/manage.blade.php) — owner dashboard: edit/menu/photos/stats/globe tiles (5 inline rows).
 
 ### Components added since first list
 
 - **[`<x-icon-tile>`](resources/views/components/icon-tile.blade.php)** — soft-tinted icon container. Documented in §11 above.
-- **`chevron-left` + `chevron-right`** added to [`<x-icon>`](resources/views/components/icon.blade.php).
+- **`chevron-left`, `chevron-right`, `bookmark`, `lock`, `edit`, `menu`, `chart`, `globe`** added to [`<x-icon>`](resources/views/components/icon.blade.php).
 - **`pill` prop on `<x-button>`** — rounded-full for header/CTAs.
 
 ### What NOT to migrate (yet)
@@ -450,9 +451,162 @@ Replacing existing inline markup with components is **always safe** and **always
 - ~~**Phase 2:** Core components (button, input, textarea, card, chip, empty-state, skeleton)~~ ✓ shipped
 - ~~**Phase 3:** First-pass migration of Search/Feed/Business-profile~~ ✓ shipped (limited).
 - ~~**Phase 4 — part 1:** `<x-icon-tile>` + feed/notifications/profile icon-tile migration~~ ✓ shipped.
-- **Phase 4 — part 2:** Continue migrating remaining icon-tile patterns (~70 more inline instances), then auth/booking/admin screens (note: auth pages use a self-contained design system; visit but don't blindly migrate).
-- **Phase 5:** Empty/loading/error pass across every screen + a11y audit (focus rings, ARIA, tap targets).
-- **Phase 6:** Cleanup pass (unused Blade partials, dead CSS, unused npm packages) + dark mode tokens + production checklist.
+- ~~**Phase 4 — part 2:** profile + directory/manage migrations~~ ✓ shipped (51 inline tile patterns remain, all in low-traffic files; migrate opportunistically).
+- ~~**Phase 5:** Empty-state sweep (5 hero migrations) + a11y focus rings on components~~ ✓ shipped (partial — 25 hand-rolled empties remain; migrate as touched).
+- ~~**Phase 6:** Dead-code detection report + dark mode plan + production checklist~~ ✓ shipped (see §14, §15, §16).
+
+---
+
+## 14. Dead-code audit (snapshot — 2026-05-19)
+
+Run this audit before any cleanup PR.
+
+### Unused Blade partials
+
+- [`resources/views/partials/feed-page.blade.php`](resources/views/partials/feed-page.blade.php) (25 lines) — declares itself as "unified feed renderer"; never `@included` anywhere. **Do not delete blindly** — looks like work-in-progress for a unified renderer. Verify with author or git history (`git log -- resources/views/partials/feed-page.blade.php`) before removing.
+
+### Dead CSS classes
+
+**0/210** class definitions in `app.css` are unreferenced — surprisingly clean for a codebase this size. (Detection is fuzzy: a "reference" inside a comment counts; sample-verify before deleting any class.)
+
+### npm packages
+
+All 13 production deps + 7 dev deps are in use:
+- `@capacitor/*` — mobile (PWA → native) shell
+- `@hotwired/turbo` — partial page navigations
+- `sharp` — image post-processing
+- `@tailwindcss/vite`, `tailwindcss`, `vite`, `laravel-vite-plugin` — build chain
+- `concurrently` — dev script orchestration
+- `@capacitor/assets`, `@capacitor/cli` — Capacitor build tooling
+
+### Composer (PHP) packages
+
+All production + dev deps are standard Laravel 13 + tooling. `laravel/pao` is the only non-obvious one — confirm with the team if uncertain.
+
+### Detection method (re-runnable)
+
+```bash
+# Unused Blade partials
+find resources/views -type d -name "partials" -exec find {} -name "*.blade.php" \; | while read p; do
+    rel=$(echo "$p" | sed 's|resources/views/||; s|\.blade\.php$||; s|/|.|g')
+    used=$(grep -rl "@include.*['\"]$rel['\"]" resources/views/ 2>/dev/null | wc -l)
+    [ "$used" -eq 0 ] && echo "UNUSED: $rel"
+done
+
+# Dead CSS classes
+grep -oE "^\.[a-z][a-z0-9_-]+\b" resources/css/app.css | sort -u | while read cls; do
+    name="${cls#.}"
+    hits=$(grep -rE "\b$name\b" resources/views/ resources/js/ public/ 2>/dev/null | wc -l)
+    [ "$hits" -eq 0 ] && echo "DEAD: $name"
+done
+```
+
+---
+
+## 15. Dark mode — strategy (not yet implemented)
+
+**Status:** intentionally not shipped. The current app has [`<meta name="color-scheme" content="light">`](resources/views/layouts/app.blade.php#L10) so the OS won't auto-invert.
+
+### Why deferred
+
+Dark mode in a Tailwind app **is not a 5-minute task.** It needs:
+- A dark variant for every brand surface token (cream-*, ink-*, white)
+- A per-screen audit (many cards hard-code `bg-white`; many text colors hard-code `text-ink-950`)
+- Image/photo backgrounds need handling (cover photos work in dark; hero blobs do not)
+- The 30+ inline gradient/image overlays in app.css need dark variants
+- Maps need a dark tile layer
+- Brand color (`coral-500` = `#2D5BFF`) needs reverification for contrast against dark surfaces
+
+### When we do it (Phase 7 — separate roadmap)
+
+1. Add dark companions to the surface tokens in `app.css`:
+   ```css
+   @media (prefers-color-scheme: dark) {
+     :root {
+       --color-cream-50:  #0F0F11;
+       --color-cream-100: #131316;
+       --color-cream-200: #1A1A1E;
+       --color-ink-950:   #F2F2F4;
+       --color-ink-900:   #E1E1E5;
+       --color-ink-700:   #C2C2CA;
+       --color-ink-500:   #8A8A93;
+       /* coral-* stays the same — brand survives dark */
+     }
+   }
+   ```
+2. Switch [layouts/app.blade.php](resources/views/layouts/app.blade.php#L10) to `color-scheme: light dark`.
+3. Update `theme-color` meta with a `media="(prefers-color-scheme: dark)"` variant.
+4. Audit every screen — fix any `bg-white`, `text-black`, hex-coded `#FFF`/`#000`, gradient overlays.
+5. Test in iOS/Android dark mode.
+
+**Don't ship partial dark mode** — half-converted screens look worse than no dark mode.
+
+---
+
+## 16. Production readiness checklist
+
+Tick before any release-candidate push. The first time you tick a box, leave a date+link.
+
+### Build & assets
+- [ ] `npm run build` succeeds with no warnings — `php artisan view:cache` succeeds
+- [ ] Compiled CSS bundle stays under 200 KB (currently ~160 KB / 26 KB gzipped)
+- [ ] Compiled JS bundle stays under 200 KB (currently ~133 KB / 37 KB gzipped)
+- [ ] No `console.log` / `dd()` / `dump()` left in shipped code
+- [ ] `npm audit --omit=dev` shows no high/critical CVEs
+
+### Performance budgets (mobile, 3G)
+- [ ] Largest Contentful Paint < 2.5s on `/feed`
+- [ ] Cumulative Layout Shift < 0.1 (verify image dimensions are set; `aspect-[16/10]` on cover photos)
+- [ ] First Input Delay < 100ms
+- [ ] Lighthouse mobile score ≥ 90 on `/feed`, `/biz/{slug}`, `/m/{business}`
+
+### SEO
+- [ ] Every page has a unique `<title>` (currently driven by `@extends('layouts.app', ['title' => …])`)
+- [ ] Every page has a meta description
+- [ ] `/sitemap.xml` and `/robots.txt` resolve and update on new content
+- [ ] JSON-LD structured data on business profiles + menu pages
+
+### Accessibility
+- [ ] All icon-only buttons have `aria-label` (`<x-icon-tile aria-label="…"/>` when not in a labelled link)
+- [ ] Keyboard navigation reaches every interactive element
+- [ ] Focus rings visible on `<x-button>`, `<x-icon-tile>`, `<x-card as="a">`, `.chip` (✓ shipped Phase 5)
+- [ ] Contrast: `text-ink-500` on `cream-100` passes WCAG AA at 14px+
+- [ ] Forms have visible error states (✓ `<x-input :error>` supports this)
+- [ ] No `:hover` reveals critical info (mobile has no hover)
+
+### Errors & states
+- [ ] Every list page has an empty state (`<x-empty-state>`) — current sweep: 5 done, ~25 hand-rolled remain
+- [ ] Every async fetch has a loading state (skeleton, not spinner) — Phase 7 work
+- [ ] Every fetch failure shows an actionable error (`<x-empty-state tone="danger">`)
+- [ ] 404 and 500 pages match the design system
+- [ ] `/offline` page exists and renders without external assets (already present)
+
+### Security
+- [ ] CSRF token on every form (Laravel default; verify no `@csrf` was dropped)
+- [ ] No secrets in `.env.example` or committed config
+- [ ] CSP headers configured (review for inline `<script>` in views)
+- [ ] Rate limits on `/m/{business}/order`, `/login`, `/forgot/send` (already throttled)
+- [ ] User-generated content goes through `e()` or `{{ }}` — never `{!! !!}` without trust
+
+### Mobile / PWA
+- [ ] `manifest.webmanifest` lists current screen icons
+- [ ] iOS `apple-touch-icon` set
+- [ ] `viewport-fit=cover` honoured with `env(safe-area-inset-*)` (already done in [`layouts/app.blade.php`](resources/views/layouts/app.blade.php))
+- [ ] PWA install prompt path tested
+- [ ] Capacitor builds succeed on iOS + Android
+
+### Observability
+- [ ] Laravel logs to a real destination (file or remote)
+- [ ] Error tracker (Sentry/Bugsnag) configured for production env
+- [ ] Critical user actions (signup, business claim, menu order) emit a track event
+
+### Pre-launch one-liners
+```bash
+php artisan view:clear && php artisan view:cache && npm run build       # rebuild fresh
+php artisan route:list                                                  # sanity-check routes
+php artisan migrate:status                                              # confirm migrations
+php artisan optimize                                                    # cache config/routes/views
+```
 
 ---
 

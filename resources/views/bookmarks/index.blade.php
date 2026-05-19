@@ -5,13 +5,9 @@
     <h1 class="text-xl font-extrabold text-ink-950 mb-4">محفوظاتي</h1>
 
     @if($businesses->isEmpty() && $listings->isEmpty())
-        <div class="card-light p-10 text-center">
-            <div class="icon-tile mx-auto mb-4 text-coral-600 w-16 h-16">
-                <x-icon name="heart" class="w-7 h-7"/>
-            </div>
-            <h3 class="text-xl font-extrabold text-ink-950 mb-1">مفيش حاجة محفوظة</h3>
-            <p class="text-ink-500 text-sm">اضغط  على أي نشاط او إعلان عشان يتحفظ هنا.</p>
-        </div>
+        <x-empty-state size="lg" icon="heart"
+                       title="مفيش حاجة محفوظة"
+                       hint="اضغط على أي نشاط أو إعلان عشان يتحفظ هنا."/>
     @else
         @if($listings->isNotEmpty())
             <h3 class="text-sm font-extrabold text-ink-950 mb-2">إعلانات</h3>

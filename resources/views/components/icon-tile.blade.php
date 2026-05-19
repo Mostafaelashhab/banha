@@ -47,7 +47,7 @@
     };
 
     $base = "grid place-items-center shrink-0 $boxClass $shapeClass $colorClass";
-    $hoverClass = $href ? ' hover:opacity-90 transition' : '';
+    $hoverClass = $href ? ' hover:opacity-90 transition focus:outline-none focus-visible:ring-4 focus-visible:ring-coral-500/30' : '';
     $classes = trim($base . $hoverClass);
 @endphp
 

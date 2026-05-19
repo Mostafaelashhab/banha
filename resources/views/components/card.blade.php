@@ -38,10 +38,11 @@
 
     $baseClass = $variant === 'dark' ? 'card-dark' : 'card-light';
     $classes = trim("$baseClass $padClass $tierClass $variantClass");
+    $linkA11y = 'focus:outline-none focus-visible:ring-4 focus-visible:ring-coral-500/30 transition';
 @endphp
 
 @if($as === 'a')
-    <a @if($href) href="{{ $href }}" @endif {{ $attributes->merge(['class' => $classes]) }}>{{ $slot }}</a>
+    <a @if($href) href="{{ $href }}" @endif {{ $attributes->merge(['class' => "$classes $linkA11y"]) }}>{{ $slot }}</a>
 @elseif($as === 'section')
     <section {{ $attributes->merge(['class' => $classes]) }}>{{ $slot }}</section>
 @elseif($as === 'article')

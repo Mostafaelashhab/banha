@@ -107,11 +107,7 @@
         {{-- Edit data --}}
         <a href="{{ route('directory.edit', $business) }}"
            class="flex items-center gap-3 px-4 py-3.5 hover:bg-cream-100 transition">
-            <span class="w-10 h-10 rounded-xl bg-coral-50 text-coral-600 grid place-items-center shrink-0">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
-                    <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z"/>
-                </svg>
-            </span>
+            <x-icon-tile icon="edit"/>
             <div class="flex-1 min-w-0">
                 <div class="text-sm font-extrabold text-ink-950">تعديل البيانات</div>
                 <div class="text-[11px] text-ink-500">الاسم · العنوان · المواعيد · التواصل · الصور</div>
@@ -122,14 +118,7 @@
         {{-- Menu --}}
         <a href="{{ route('menu.manage', $business) }}"
            class="flex items-center gap-3 px-4 py-3.5 hover:bg-cream-100 transition">
-            <span class="w-10 h-10 rounded-xl bg-honey-100 text-honey-700 grid place-items-center shrink-0">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
-                    <rect x="6" y="3" width="12" height="18" rx="2"/>
-                    <line x1="9" y1="8" x2="15" y2="8"/>
-                    <line x1="9" y1="12" x2="15" y2="12"/>
-                    <line x1="9" y1="16" x2="13" y2="16"/>
-                </svg>
-            </span>
+            <x-icon-tile icon="menu" tone="honey"/>
             <div class="flex-1 min-w-0">
                 <div class="text-sm font-extrabold text-ink-950">
                     @php $L = \App\Models\Business::menuLabels($business->category); @endphp
@@ -149,12 +138,7 @@
         {{-- Photos quick link (uses the edit page section) --}}
         <a href="{{ route('directory.edit', $business) }}#photos"
            class="flex items-center gap-3 px-4 py-3.5 hover:bg-cream-100 transition">
-            <span class="w-10 h-10 rounded-xl bg-mint-100 text-mint-700 grid place-items-center shrink-0">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
-                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                    <circle cx="12" cy="13" r="4"/>
-                </svg>
-            </span>
+            <x-icon-tile icon="camera" tone="mint"/>
             <div class="flex-1 min-w-0">
                 <div class="text-sm font-extrabold text-ink-950">الصور</div>
                 <div class="text-[11px] text-ink-500">
@@ -167,12 +151,7 @@
         {{-- Stats --}}
         <a href="{{ route('directory.stats', $business) }}"
            class="flex items-center gap-3 px-4 py-3.5 hover:bg-cream-100 transition">
-            <span class="w-10 h-10 rounded-xl bg-blush-100 text-blush-600 grid place-items-center shrink-0">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
-                    <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
-                    <line x1="6"  y1="20" x2="6"  y2="14"/><line x1="3"  y1="20" x2="21" y2="20"/>
-                </svg>
-            </span>
+            <x-icon-tile icon="chart" tone="blush"/>
             <div class="flex-1 min-w-0">
                 <div class="text-sm font-extrabold text-ink-950">الإحصائيات</div>
                 <div class="text-[11px] text-ink-500">مشاهدات · اتصالات · واتساب · تقييمات</div>
@@ -185,12 +164,7 @@
     <h2 class="text-[11px] font-extrabold text-ink-500 mb-2 mt-5 px-1">صفحتك العامة</h2>
     <div class="bg-white rounded-2xl ring-1 ring-ink-950/8 p-4 mb-3">
         <div class="flex items-center gap-3 mb-3">
-            <span class="w-10 h-10 rounded-xl bg-coral-50 text-coral-600 grid place-items-center shrink-0">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
-                    <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
-                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-                </svg>
-            </span>
+            <x-icon-tile icon="globe"/>
             <div class="flex-1 min-w-0">
                 <div class="text-sm font-extrabold text-ink-950">رابط صفحتك</div>
                 <div class="text-[10px] text-ink-500 truncate" dir="ltr">{{ $business->slug ? url('/biz/'.$business->slug) : route('directory.show', $business) }}</div>

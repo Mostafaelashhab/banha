@@ -68,7 +68,11 @@ input, textarea, select {
     font-size: 16px; /* prevents iOS auto-zoom on focus */
 }
 
-html[dir="rtl"] body {
+/* Cairo is the global default — applies to ALL elements regardless of
+   direction (LTR fragments inside RTL pages like phone numbers / prices
+   would otherwise fall back to system sans). Tailwind v4 preflight makes
+   form controls inherit font-family from body automatically. */
+body {
     font-family: var(--font-sans);
     font-feature-settings: 'kern', 'liga';
     -webkit-font-smoothing: antialiased;
@@ -1884,6 +1888,10 @@ html[dir="rtl"] body {
     white-space: nowrap;
     transition: background .15s ease, color .15s ease, transform .15s ease;
     user-select: none;
+}
+.chip:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(45, 91, 255, .25);
 }
 .chip:hover {
     background: rgba(45, 91, 255, .14);

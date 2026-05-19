@@ -152,17 +152,13 @@
                 </div>
             </div>
         @empty
-            <div class="card-light p-10 text-center">
-                <div class="icon-tile mx-auto mb-3 text-coral-600 w-14 h-14">
-                    <x-icon name="bolt" class="w-6 h-6"/>
-                </div>
-                <h3 class="font-extrabold text-ink-950 mb-1">مفيش تنبيهات شغّالة</h3>
-                <p class="text-ink-500 text-sm mb-5">الجو هادي في حيك. شفت حاجة؟ بلّغ.</p>
-                <a href="{{ route('alerts.create') }}" class="btn-primary">
-                    بلّغ عن حاجة
-                    <x-icon name="arrow-left" class="w-4 h-4"/>
-                </a>
-            </div>
+            <x-empty-state size="lg" icon="bolt"
+                           title="مفيش تنبيهات شغّالة"
+                           hint="الجو هادي في حيك. شفت حاجة؟ بلّغ.">
+                <x-slot:cta>
+                    <x-button :href="route('alerts.create')" icon="arrow-left" iconEnd>بلّغ عن حاجة</x-button>
+                </x-slot:cta>
+            </x-empty-state>
         @endforelse
     </div>
 </div>

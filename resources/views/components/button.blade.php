@@ -45,7 +45,7 @@
 
     $iconSize = $size === 'sm' ? 'w-3.5 h-3.5' : 'w-4 h-4';
 
-    $base = 'inline-flex items-center justify-center transition disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none';
+    $base = 'inline-flex items-center justify-center transition disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none focus:outline-none focus-visible:ring-4 focus-visible:ring-coral-500/30';
     $allClasses = trim($base . ' ' . $variantClasses . ' ' . $sizeClasses . ($block ? ' w-full' : ''));
 @endphp
 

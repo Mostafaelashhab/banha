@@ -33,7 +33,7 @@
     $classes = trim("$base $borderState $disabledClass");
 @endphp
 
-<div class="space-y-1" @if($showCounter) data-textarea-counter @endif>
+<div {{ $showCounter ? 'data-textarea-counter' : '' }} class="space-y-1">
     @if($label)
         <label for="{{ $id }}" class="block text-xs font-extrabold text-ink-700">
             {{ $label }}
@@ -41,10 +41,7 @@
         </label>
     @endif
 
-    <textarea
-        id="{{ $id }}"
-        name="{{ $name }}"
-        rows="{{ $rows }}"
+    <textarea id="{{ $id }}" name="{{ $name }}" rows="{{ $rows }}"
         @if($maxlength) maxlength="{{ $maxlength }}" @endif
         @if($placeholder) placeholder="{{ $placeholder }}" @endif
         @if($required) required @endif
@@ -70,7 +67,7 @@
 @once
 @push('scripts')
 <script>
-// Lightweight char counter — runs once per page, hydrates every <x-textarea counter>.
+// Lightweight char counter — runs once per page, hydrates every textarea with `data-textarea-counter`.
 (function () {
     document.querySelectorAll('[data-textarea-counter]').forEach(wrap => {
         const ta = wrap.querySelector('textarea');

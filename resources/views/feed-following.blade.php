@@ -8,14 +8,13 @@
     </div>
 
     @if(($empty ?? false) || $posts->isEmpty())
-        <div class="card-light p-10 text-center">
-            <div class="icon-tile mx-auto mb-4 text-coral-600 w-16 h-16">
-                <x-icon name="user" class="w-7 h-7"/>
-            </div>
-            <h3 class="text-xl font-extrabold text-ink-950 mb-1">مفيش حد بتتابعه</h3>
-            <p class="text-ink-500 text-sm mb-4">روح أي بروفايل واضغط "تابع" عشان تشوف بوستاته هنا.</p>
-            <a href="{{ route('discover') }}" class="btn-primary mx-auto">اكتشف يوزرز</a>
-        </div>
+        <x-empty-state size="lg" icon="user"
+                       title="مفيش حد بتتابعه"
+                       hint='روح أي بروفايل واضغط "تابع" عشان تشوف بوستاته هنا.'>
+            <x-slot:cta>
+                <x-button :href="route('discover')">اكتشف يوزرز</x-button>
+            </x-slot:cta>
+        </x-empty-state>
     @else
         <div>
             @foreach($posts as $p)

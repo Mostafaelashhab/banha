@@ -5,13 +5,9 @@
     <h1 class="text-xl font-extrabold text-ink-950 mb-4">💬 الرسايل</h1>
 
     @if($threads->isEmpty())
-        <div class="card-light p-10 text-center">
-            <div class="icon-tile mx-auto mb-4 text-coral-600 w-16 h-16">
-                <x-icon name="comment" class="w-7 h-7"/>
-            </div>
-            <h3 class="text-xl font-extrabold text-ink-950 mb-1">مفيش رسايل لسه</h3>
-            <p class="text-ink-500 text-sm">لما حد يبعتلك أو تبعت لحد، الرسايل هتظهر هنا.</p>
-        </div>
+        <x-empty-state size="lg" icon="comment"
+                       title="مفيش رسايل لسه"
+                       hint="لما حد يبعتلك أو تبعت لحد، الرسايل هتظهر هنا."/>
     @else
         <div class="card-light p-2 space-y-1">
             @foreach($threads as $t)

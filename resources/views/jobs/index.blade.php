@@ -72,28 +72,11 @@
 
     {{-- ─── List ─── --}}
     @if($items->isEmpty())
-        <div class="card-light p-10 text-center">
-            <span class="w-14 h-14 rounded-2xl bg-cream-100 text-ink-400 grid place-items-center mx-auto mb-3">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
-                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
-                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
-                </svg>
-            </span>
-            <h3 class="text-base font-extrabold text-ink-950 mb-1">
-                @if($side === 'hiring')
-                    مفيش وظائف متاحة دلوقتي
-                @else
-                    مفيش بوستات لسه
-                @endif
-            </h3>
-            <p class="text-[12px] text-ink-500 max-w-xs mx-auto">
-                @if($side === 'hiring')
-                    ابدأ أنت ونشاطك يبقى أول واحد على لوحة وظائف بنها.
-                @else
-                    لو بتدور على شغل، انشر بوستك هنا وهيوصل لأصحاب النشاطات.
-                @endif
-            </p>
-        </div>
+        <x-empty-state icon="briefcase"
+                       :title="$side === 'hiring' ? 'مفيش وظائف متاحة دلوقتي' : 'مفيش بوستات لسه'"
+                       :hint="$side === 'hiring'
+                              ? 'ابدأ أنت ونشاطك يبقى أول واحد على لوحة وظائف بنها.'
+                              : 'لو بتدور على شغل، انشر بوستك هنا وهيوصل لأصحاب النشاطات.'"/>
     @else
         <div class="space-y-2">
             @foreach($items as $l)
