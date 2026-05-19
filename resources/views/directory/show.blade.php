@@ -575,6 +575,20 @@
         </div>
     @endif
 
+    {{-- Verified-badge upsell — shown to the owner of an unverified craftsman.
+         Brief, single CTA to the dedicated /verify-badge page. --}}
+    @if($isActualOwner && $business->category === 'craftsmen' && ! $business->hasPaidVerified() && ! $business->is_verified)
+        <a href="{{ route('verify.show', $business) }}"
+           class="block mb-3 p-3 rounded-2xl text-center transition hover:scale-[1.01] shadow-md"
+           style="background: linear-gradient(135deg, #F5BA12 0%, #FFD440 100%); color: #0B0B0C;">
+            <div class="inline-flex items-center gap-2 font-extrabold">
+                <span class="w-8 h-8 rounded-full bg-white grid place-items-center text-base">★</span>
+                <span class="text-sm">فعّل شارة "موثّق" — ظهور أول + ثقة أعلى</span>
+                <x-icon name="arrow-left" class="w-4 h-4"/>
+            </div>
+        </a>
+    @endif
+
     {{-- Booking CTA (only for non-food categories where owner enabled bookings) --}}
     @if($business->booking_enabled && $business->bookingApplicable())
         <a href="{{ route('booking.show', $business) }}" class="block mb-3 p-4 rounded-2xl bg-mint-500 text-white text-center hover:scale-[1.01] transition shadow-lg">
@@ -1133,7 +1147,17 @@
     </script>
     @endpush
 
-    {{-- Gallery --}}
+    {{-- Gallery / Portfolio (craftsmen get a higher cap + captions) --}}
+    @php
+        $isCraftsman   = $business->category === 'craftsmen';
+        $maxPhotos     = $isCraftsman
+            ? \App\Http\Controllers\BusinessPhotoController::MAX_PHOTOS_CRAFTSMEN
+            : \App\Http\Controllers\BusinessPhotoController::MAX_PHOTOS_DEFAULT;
+        $galleryTitle  = $isCraftsman ? 'أعمال سابقة (Portfolio)' : 'صور النشاط';
+        $emptyHint     = $isCraftsman
+            ? 'لسه مفيش صور لأعمالك — ضيف صور للأعمال السابقة عشان العملاء يثقوا فيك أكتر.'
+            : 'مفيش صور لسه — أضف أول صورة.';
+    @endphp
     @if($business->photos->isNotEmpty() || $isOwner)
         <div class="card-light p-4 mb-3">
             <div class="flex items-center justify-between mb-3">
@@ -1141,46 +1165,94 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-coral-600">
                         <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
                     </svg>
-                    صور النشاط
+                    {{ $galleryTitle }}
                 </h3>
-                @if($isOwner && $business->photos->count() < 6)
-                    <form method="POST" action="{{ route('business.photo.store', $business) }}" enctype="multipart/form-data" class="inline">
+                @if($isOwner && $business->photos->count() < $maxPhotos)
+                    <form method="POST" action="{{ route('business.photo.store', $business) }}" enctype="multipart/form-data" class="inline-flex items-center gap-2" data-photo-upload>
                         @csrf
-                        <label class="cursor-pointer text-xs font-bold text-coral-600 hover:underline">
+                        @if($isCraftsman)
+                            <input type="text" name="caption" maxlength="120"
+                                   placeholder="وصف الصورة (اختياري)"
+                                   class="text-xs bg-cream-100 rounded-lg px-2.5 py-1.5 outline-0 border border-ink-950/8 focus:border-coral-500 transition w-36">
+                        @endif
+                        <label class="cursor-pointer text-xs font-bold text-coral-600 hover:underline whitespace-nowrap">
                             + أضف صورة
-                            <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" class="hidden" onchange="this.form.submit()">
+                            <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" class="hidden" onchange="this.form.requestSubmit()">
                         </label>
                     </form>
                 @endif
             </div>
+
             @if($business->photos->isNotEmpty())
-                <div class="grid grid-cols-3 gap-2">
-                    @foreach($business->photos as $ph)
-                        <div class="relative aspect-square group"
-                             data-lightbox
-                             data-lightbox-group="biz-{{ $business->id }}-photos"
-                             data-lightbox-src="{{ $ph->url }}"
-                             aria-label="{{ $business->name }}">
-                            <img src="{{ $ph->url }}" alt="{{ $business->name }}" loading="lazy"
-                                 class="w-full h-full object-cover rounded-xl transition group-hover:scale-[1.02]">
-                            @if($isOwner)
-                                <form method="POST" action="{{ route('business.photo.destroy', $ph) }}"
-                                      data-confirm="حذف الصورة؟" data-confirm-tone="danger"
-                                      class="absolute top-1 end-1">
-                                    @csrf @method('DELETE')
-                                    <button class="w-7 h-7 rounded-full bg-white/90 grid place-items-center text-blush-500 hover:bg-blush-500 hover:text-white transition" aria-label="حذف">
-                                        <x-icon name="trash" class="w-3.5 h-3.5"/>
-                                    </button>
-                                </form>
-                            @endif
-                        </div>
-                    @endforeach
-                </div>
+                @if($isCraftsman)
+                    {{-- Craftsman portfolio: bigger cards, 2-column, captions visible --}}
+                    <div class="grid grid-cols-2 gap-2">
+                        @foreach($business->photos as $ph)
+                            <div class="relative group">
+                                <div class="relative aspect-[4/3]"
+                                     data-lightbox
+                                     data-lightbox-group="biz-{{ $business->id }}-photos"
+                                     data-lightbox-src="{{ $ph->url }}"
+                                     aria-label="{{ $ph->caption ?: $business->name }}">
+                                    <img src="{{ $ph->url }}" alt="{{ $ph->caption ?: $business->name }}" loading="lazy"
+                                         class="w-full h-full object-cover rounded-xl transition group-hover:scale-[1.02]">
+                                    @if($isOwner)
+                                        <form method="POST" action="{{ route('business.photo.destroy', $ph) }}"
+                                              data-confirm="حذف الصورة؟" data-confirm-tone="danger"
+                                              class="absolute top-1 end-1">
+                                            @csrf @method('DELETE')
+                                            <button class="w-7 h-7 rounded-full bg-white/90 grid place-items-center text-blush-500 hover:bg-blush-500 hover:text-white transition" aria-label="حذف">
+                                                <x-icon name="trash" class="w-3.5 h-3.5"/>
+                                            </button>
+                                        </form>
+                                    @endif
+                                </div>
+                                {{-- Caption row (editable for owner, read-only for visitors) --}}
+                                @if($isOwner)
+                                    <form method="POST" action="{{ route('business.photo.caption', $ph) }}" class="mt-1">
+                                        @csrf @method('PATCH')
+                                        <input type="text" name="caption" maxlength="120"
+                                               value="{{ $ph->caption }}"
+                                               placeholder="وصف الصورة"
+                                               onblur="if(this.defaultValue !== this.value) this.form.requestSubmit()"
+                                               class="w-full text-[11px] bg-transparent text-ink-600 outline-0 border-b border-dashed border-ink-950/15 focus:border-coral-500 py-1 transition">
+                                    </form>
+                                @elseif($ph->caption)
+                                    <p class="text-[11px] text-ink-600 mt-1 px-1 line-clamp-2 leading-snug">{{ $ph->caption }}</p>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    {{-- Default 3-col gallery for non-craftsmen --}}
+                    <div class="grid grid-cols-3 gap-2">
+                        @foreach($business->photos as $ph)
+                            <div class="relative aspect-square group"
+                                 data-lightbox
+                                 data-lightbox-group="biz-{{ $business->id }}-photos"
+                                 data-lightbox-src="{{ $ph->url }}"
+                                 aria-label="{{ $business->name }}">
+                                <img src="{{ $ph->url }}" alt="{{ $business->name }}" loading="lazy"
+                                     class="w-full h-full object-cover rounded-xl transition group-hover:scale-[1.02]">
+                                @if($isOwner)
+                                    <form method="POST" action="{{ route('business.photo.destroy', $ph) }}"
+                                          data-confirm="حذف الصورة؟" data-confirm-tone="danger"
+                                          class="absolute top-1 end-1">
+                                        @csrf @method('DELETE')
+                                        <button class="w-7 h-7 rounded-full bg-white/90 grid place-items-center text-blush-500 hover:bg-blush-500 hover:text-white transition" aria-label="حذف">
+                                            <x-icon name="trash" class="w-3.5 h-3.5"/>
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
                 @if($isOwner)
-                    <p class="text-[10px] text-ink-400 mt-2">{{ $business->photos->count() }}/6</p>
+                    <p class="text-[10px] text-ink-400 mt-2">{{ $business->photos->count() }}/{{ $maxPhotos }}</p>
                 @endif
             @else
-                <p class="text-xs text-ink-400 text-center py-4">مفيش صور لسه — أضف أول صورة.</p>
+                <p class="text-xs text-ink-400 text-center py-4 leading-relaxed">{{ $emptyHint }}</p>
             @endif
         </div>
     @endif

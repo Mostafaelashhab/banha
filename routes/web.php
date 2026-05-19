@@ -240,7 +240,15 @@ Route::middleware('auth')->group(function () {
 
     // Business photo gallery (owner CRUD)
     Route::post('/directory/business/{business}/photo',  [\App\Http\Controllers\BusinessPhotoController::class, 'store'])->name('business.photo.store');
+    Route::patch('/business-photos/{photo}/caption',     [\App\Http\Controllers\BusinessPhotoController::class, 'updateCaption'])->name('business.photo.caption');
     Route::delete('/business-photos/{photo}',            [\App\Http\Controllers\BusinessPhotoController::class, 'destroy'])->name('business.photo.destroy');
+
+    // ── Verified-badge payments (owner submits proof; admin reviews) ──
+    Route::get('/directory/business/{business}/verify-badge',  [\App\Http\Controllers\VerificationController::class, 'show'])->name('verify.show');
+    Route::post('/directory/business/{business}/verify-badge', [\App\Http\Controllers\VerificationController::class, 'store'])->name('verify.store');
+    Route::get('/admin/verifications',                         [\App\Http\Controllers\VerificationController::class, 'adminIndex'])->name('verify.admin');
+    Route::post('/admin/verifications/{payment}/approve',      [\App\Http\Controllers\VerificationController::class, 'approve'])->name('verify.approve');
+    Route::post('/admin/verifications/{payment}/reject',       [\App\Http\Controllers\VerificationController::class, 'reject'])->name('verify.reject');
 
     // Business reviews (logged-in users)
     Route::post('/directory/business/{business}/review',   [\App\Http\Controllers\BusinessReviewController::class, 'store'])->name('business.review.store');
