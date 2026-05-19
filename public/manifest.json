@@ -1,57 +1,111 @@
 {
     "name": "بنهاوي · دليلك الكامل لمدينة بنها",
     "short_name": "بنهاوي",
-    "description": "كل حاجة في بنها — أرقام، منيوهات، عروض، دكاترة، صنايعية، بيع وشراء.",
-    "start_url": "/launch.html",
+    "description": "كل حاجة في بنها — أرقام، منيوهات، عروض، دكاترة، صنايعية، حجز مواعيد، بيع وشراء.",
+    "start_url": "/launch.html?source=pwa",
     "scope": "/",
     "id": "/?source=pwa",
     "display": "standalone",
-    "display_override": ["window-controls-overlay", "standalone"],
+    "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
     "orientation": "portrait-primary",
-    "background_color": "#2D5BFF",
-    "theme_color": "#2D5BFF",
-    "lang": "ar",
+    "background_color": "#FFF7F1",
+    "theme_color": "#FFF7F1",
+    "lang": "ar-EG",
     "dir": "rtl",
-    "categories": ["lifestyle", "shopping", "social"],
+    "categories": ["lifestyle", "shopping", "social", "food", "travel"],
     "prefer_related_applications": false,
+    "related_applications": [
+        {
+            "platform": "play",
+            "url": "https://play.google.com/store/apps/details?id=com.banhawy.app",
+            "id": "com.banhawy.app"
+        }
+    ],
+    "launch_handler": {
+        "client_mode": ["navigate-existing", "auto"]
+    },
+    "edge_side_panel": {
+        "preferred_width": 480
+    },
+    "handle_links": "preferred",
     "icons": [
         {
-            "src": "/icons/icon.svg?v=2",
+            "src": "/icons/icon.svg?v=3",
             "sizes": "any",
             "type": "image/svg+xml",
             "purpose": "any"
         },
         {
-            "src": "/icons/icon-192.png?v=2",
+            "src": "/icons/icon-192.png?v=3",
             "sizes": "192x192",
             "type": "image/png",
-            "purpose": "any maskable"
+            "purpose": "any"
         },
         {
-            "src": "/icons/icon-512.png?v=2",
+            "src": "/icons/icon-192.png?v=3",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "/icons/icon-512.png?v=3",
             "sizes": "512x512",
             "type": "image/png",
-            "purpose": "any maskable"
+            "purpose": "any"
+        },
+        {
+            "src": "/icons/icon-512.png?v=3",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
         }
     ],
     "shortcuts": [
         {
+            "name": "احجز موعد عند دكاترة وصالونات بنها",
+            "short_name": "احجز موعد",
+            "description": "احجز موعد إلكتروني مع دكتور أو صالون أو مركز خدمات",
+            "url": "/bookings?source=pwa-shortcut",
+            "icons": [{ "src": "/icons/icon-192.png?v=3", "sizes": "192x192" }]
+        },
+        {
             "name": "عروض بنها النهارده",
             "short_name": "عروض",
-            "url": "/offers",
-            "icons": [{ "src": "/icons/icon-192.png?v=2", "sizes": "192x192" }]
+            "description": "أحدث عروض المطاعم والمحلات في بنها",
+            "url": "/offers?source=pwa-shortcut",
+            "icons": [{ "src": "/icons/icon-192.png?v=3", "sizes": "192x192" }]
+        },
+        {
+            "name": "خريطة بنها",
+            "short_name": "الخريطة",
+            "description": "كل النشاطات على خريطة بنها",
+            "url": "/map?source=pwa-shortcut",
+            "icons": [{ "src": "/icons/icon-192.png?v=3", "sizes": "192x192" }]
         },
         {
             "name": "أرقام طوارئ بنها",
             "short_name": "طوارئ",
-            "url": "/emergency",
-            "icons": [{ "src": "/icons/icon-192.png?v=2", "sizes": "192x192" }]
-        },
+            "description": "إسعاف، شرطة، إطفاء، مستشفيات بنها",
+            "url": "/emergency?source=pwa-shortcut",
+            "icons": [{ "src": "/icons/icon-192.png?v=3", "sizes": "192x192" }]
+        }
+    ],
+    "share_target": {
+        "action": "/share-receive",
+        "method": "GET",
+        "params": {
+            "title": "title",
+            "text":  "text",
+            "url":   "url"
+        }
+    },
+    "screenshots": [
         {
-            "name": "دليل جامعة بنها",
-            "short_name": "جامعة بنها",
-            "url": "/benha-university",
-            "icons": [{ "src": "/icons/icon-192.png?v=2", "sizes": "192x192" }]
+            "src": "/icons/icon-512.png?v=3",
+            "sizes": "512x512",
+            "type": "image/png",
+            "form_factor": "narrow",
+            "label": "الصفحة الرئيسية لبنهاوي"
         }
     ]
 }
