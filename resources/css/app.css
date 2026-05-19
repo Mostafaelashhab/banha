@@ -2488,3 +2488,55 @@ body.lb-locked { overflow: hidden; }
     cursor: zoom-in;
     -webkit-tap-highlight-color: transparent;
 }
+
+/* ─── Pull-to-refresh ───────────────────────────────────────
+   The PTR module inserts .ptr-host at the top center on first pull.
+   Translates downward as the user drags, fades in past ~50px,
+   "arms" past the threshold (color shift), and runs an indeterminate
+   spinner during the brief delay before reload. */
+.ptr-host {
+    position: fixed;
+    top: env(safe-area-inset-top);
+    left: 50%;
+    z-index: 9999;
+    transform: translate(-50%, -40px);
+    opacity: 0;
+    pointer-events: none;
+    will-change: transform, opacity;
+}
+.ptr-host.is-animating {
+    transition: transform .22s ease, opacity .18s ease;
+}
+.ptr-pill {
+    width: 44px; height: 44px;
+    border-radius: 999px;
+    background: #fff;
+    color: #2D5BFF;
+    display: grid; place-items: center;
+    box-shadow: 0 10px 24px -6px rgba(11,11,12,.18), 0 0 0 1px rgba(11,11,12,.06);
+    transition: background .15s ease, color .15s ease, transform .12s ease;
+}
+.ptr-spinner {
+    width: 22px; height: 22px;
+    transition: transform .05s linear;
+}
+/* "Armed" — passed the threshold, release will refresh. */
+.ptr-host.is-armed .ptr-pill {
+    background: #2D5BFF;
+    color: #fff;
+    transform: scale(1.08);
+}
+/* During the actual refresh, spin indeterminate. */
+@keyframes ptr-spin { to { transform: rotate(360deg); } }
+.ptr-host.is-refreshing .ptr-spinner {
+    animation: ptr-spin .75s linear infinite;
+}
+.ptr-host.is-refreshing .ptr-pill {
+    background: #2D5BFF;
+    color: #fff;
+}
+/* Lock vertical document scroll while user is pulling — keeps the gesture
+   feeling deliberate and matches native PTR. */
+html.is-ptr-ready, html.is-ptr-ready body {
+    overscroll-behavior-y: none;
+}

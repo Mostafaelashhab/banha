@@ -124,7 +124,14 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('head')
 </head>
-<body class="min-h-screen" data-install-prompt="auto" data-guest="{{ auth()->check() ? '0' : '1' }}" data-login-url="{{ route('login') }}" style="padding-bottom: calc(7rem + env(safe-area-inset-bottom));">
+@php
+    // Unread-notification count, exposed to JS as `body[data-unread]` so the
+    // app-badge module can mirror it to the home-screen icon via setAppBadge().
+    $bodyUnread = auth()->check()
+        ? \App\Models\Notification::where('user_id', auth()->id())->whereNull('read_at')->count()
+        : 0;
+@endphp
+<body class="min-h-screen" data-install-prompt="auto" data-guest="{{ auth()->check() ? '0' : '1' }}" data-login-url="{{ route('login') }}" data-unread="{{ $bodyUnread }}" style="padding-bottom: calc(7rem + env(safe-area-inset-bottom));">
 
     {{-- Top header removed — brand/search/notifications now live within the page itself --}}
 
@@ -156,9 +163,8 @@
         $isNotif  = str_starts_with($route, 'notifications');
         $isAuthPage = in_array($route, ['login', 'login.attempt', 'signup', 'signup.attempt', 'forgot', 'forgot.send', 'forgot.verify', 'forgot.reset', 'verify.show', 'verify.send', 'verify.attempt'], true);
 
-        $navUnread = auth()->check()
-            ? \App\Models\Notification::where('user_id', auth()->id())->whereNull('read_at')->count()
-            : 0;
+        // Reuse the count we already computed for the <body data-unread>.
+        $navUnread = $bodyUnread ?? 0;
     @endphp
     @unless($isAuthPage)
     <nav class="bottom-nav">

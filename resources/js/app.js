@@ -1,6 +1,10 @@
 // Native shell (iOS/Android via Capacitor) — no-op when running in a normal browser.
 import './cap-bridge.js';
 
+// Native-feel modules — no-op when unsupported / desktop.
+import './pull-to-refresh.js';
+import './app-badge.js';
+
 // ─── Guest mode: redirect to login when an action needs auth ─
 // `requireAuth()` returns true if the user is logged in; otherwise it
 // sends them to /login?redirect=<current url> and returns false so the

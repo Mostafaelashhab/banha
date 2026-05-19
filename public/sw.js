@@ -186,8 +186,9 @@ self.addEventListener('push', (event) => {
     let data = { title: 'بنهاوي', body: 'حصلت حاجة جديدة في حيك', url: '/feed' };
     try { if (event.data) data = { ...data, ...event.data.json() }; } catch (e) {}
 
-    event.waitUntil(
-        self.registration.showNotification(data.title, {
+    event.waitUntil((async () => {
+        // 1) Show the notification
+        await self.registration.showNotification(data.title, {
             body: data.body,
             icon: '/icons/icon-192.png',
             badge: '/icons/icon-192.png',
@@ -197,19 +198,38 @@ self.addEventListener('push', (event) => {
             lang: 'ar',
             vibrate: [80, 40, 80],
             renotify: !!data.tag,
-        })
-    );
+        });
+
+        // 2) Bump the home-screen app badge. Prefer the explicit count from
+        //    the push payload (server-authoritative). Otherwise let the page
+        //    increment its own stored counter via postMessage.
+        try {
+            if (typeof data.unread === 'number' && self.navigator?.setAppBadge) {
+                await self.navigator.setAppBadge(Math.max(0, data.unread));
+            } else if (self.navigator?.setAppBadge) {
+                // No count given — bump by 1 via the page if it's open, else
+                // best-effort set to 1 (better than no badge at all).
+                const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+                if (wins.length) {
+                    wins.forEach((w) => w.postMessage({ type: 'BADGE_INCREMENT' }));
+                } else {
+                    await self.navigator.setAppBadge(1);
+                }
+            }
+        } catch (e) {}
+    })());
 });
 
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
     const url = event.notification.data?.url || '/feed';
-    event.waitUntil(
-        clients.matchAll({ type: 'window', includeUncontrolled: true }).then((wins) => {
-            for (const w of wins) {
-                if (w.url.includes(url) && 'focus' in w) return w.focus();
-            }
-            if (clients.openWindow) return clients.openWindow(url);
-        })
-    );
+    event.waitUntil((async () => {
+        // Clearing on click would be premature — the user might not have viewed
+        // the full list yet. We clear when they actually land on /notifications.
+        const wins = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+        for (const w of wins) {
+            if (w.url.includes(url) && 'focus' in w) return w.focus();
+        }
+        if (clients.openWindow) return clients.openWindow(url);
+    })());
 });
