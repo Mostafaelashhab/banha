@@ -572,7 +572,7 @@
     {{-- Verified-badge upsell — shown to the owner of an unverified craftsman.
          Brief, single CTA to the dedicated /verify-badge page. --}}
     @if($isActualOwner && $business->category === 'craftsmen' && ! $business->hasPaidVerified() && ! $business->is_verified)
-        <a href="{{ route('verify.show', $business) }}"
+        <a href="{{ route('business.badge.show', $business) }}"
            class="block mb-3 p-3 rounded-2xl text-center transition hover:scale-[1.01] shadow-md"
            style="background: linear-gradient(135deg, #F5BA12 0%, #FFD440 100%); color: #0B0B0C;">
             <div class="inline-flex items-center gap-2 font-extrabold">

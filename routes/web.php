@@ -244,11 +244,13 @@ Route::middleware('auth')->group(function () {
     Route::delete('/business-photos/{photo}',            [\App\Http\Controllers\BusinessPhotoController::class, 'destroy'])->name('business.photo.destroy');
 
     // ── Verified-badge payments (owner submits proof; admin reviews) ──
-    Route::get('/directory/business/{business}/verify-badge',  [\App\Http\Controllers\VerificationController::class, 'show'])->name('verify.show');
-    Route::post('/directory/business/{business}/verify-badge', [\App\Http\Controllers\VerificationController::class, 'store'])->name('verify.store');
-    Route::get('/admin/verifications',                         [\App\Http\Controllers\VerificationController::class, 'adminIndex'])->name('verify.admin');
-    Route::post('/admin/verifications/{payment}/approve',      [\App\Http\Controllers\VerificationController::class, 'approve'])->name('verify.approve');
-    Route::post('/admin/verifications/{payment}/reject',       [\App\Http\Controllers\VerificationController::class, 'reject'])->name('verify.reject');
+    // Renamed from `verify.*` to avoid colliding with the account-OTP
+    // `verify.show` / `verify.send` / `verify.attempt` group above.
+    Route::get('/directory/business/{business}/verify-badge',  [\App\Http\Controllers\VerificationController::class, 'show'])->name('business.badge.show');
+    Route::post('/directory/business/{business}/verify-badge', [\App\Http\Controllers\VerificationController::class, 'store'])->name('business.badge.store');
+    Route::get('/admin/verifications',                         [\App\Http\Controllers\VerificationController::class, 'adminIndex'])->name('business.badge.admin');
+    Route::post('/admin/verifications/{payment}/approve',      [\App\Http\Controllers\VerificationController::class, 'approve'])->name('business.badge.approve');
+    Route::post('/admin/verifications/{payment}/reject',       [\App\Http\Controllers\VerificationController::class, 'reject'])->name('business.badge.reject');
 
     // Business reviews (logged-in users)
     Route::post('/directory/business/{business}/review',   [\App\Http\Controllers\BusinessReviewController::class, 'store'])->name('business.review.store');

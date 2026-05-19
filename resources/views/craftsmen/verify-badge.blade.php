@@ -92,7 +92,7 @@
 
     {{-- ───── Payment form ───── --}}
     @if(! $pending)
-    <form method="POST" action="{{ route('verify.store', $business) }}" enctype="multipart/form-data" class="space-y-4">
+    <form method="POST" action="{{ route('business.badge.store', $business) }}" enctype="multipart/form-data" class="space-y-4">
         @csrf
 
         <div class="card-light p-4">

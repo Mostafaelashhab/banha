@@ -48,7 +48,7 @@
     {{-- Filter --}}
     <div class="flex gap-2 overflow-x-auto scrollbar-hide mb-3 -mx-4 px-4">
         @foreach(['pending'=>'بانتظار','approved'=>'اتفعّل','rejected'=>'اترفض','all'=>'الكل'] as $key=>$label)
-            <a href="{{ route('verify.admin', ['filter' => $key]) }}"
+            <a href="{{ route('business.badge.admin', ['filter' => $key]) }}"
                class="shrink-0 px-4 py-1.5 rounded-full text-xs font-extrabold transition
                       {{ $filter === $key ? 'bg-coral-500 text-white' : 'bg-white text-ink-950 ring-1 ring-ink-950/8 hover:ring-coral-500/40' }}">
                 {{ $label }}
@@ -124,7 +124,7 @@
 
                 @if($p->status === 'pending')
                     <div class="grid grid-cols-2 gap-2">
-                        <form method="POST" action="{{ route('verify.approve', $p) }}">
+                        <form method="POST" action="{{ route('business.badge.approve', $p) }}">
                             @csrf
                             <button type="submit" class="w-full py-2.5 rounded-full bg-mint-500 text-white text-xs font-extrabold hover:bg-mint-600 transition">
                                 ✓ وافق وفعّل
@@ -136,7 +136,7 @@
                             × ارفض
                         </button>
                     </div>
-                    <form id="reject-{{ $p->id }}" method="POST" action="{{ route('verify.reject', $p) }}" class="hidden mt-2 space-y-2">
+                    <form id="reject-{{ $p->id }}" method="POST" action="{{ route('business.badge.reject', $p) }}" class="hidden mt-2 space-y-2">
                         @csrf
                         <textarea name="reject_reason" rows="2" maxlength="300" required minlength="5"
                                   placeholder="السبب (هيظهر لصاحب النشاط)"

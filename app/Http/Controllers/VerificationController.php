@@ -91,7 +91,7 @@ class VerificationController extends Controller
             'status'         => 'pending',
         ]);
 
-        return redirect()->route('verify.show', $business)
+        return redirect()->route('business.badge.show', $business)
             ->with('flash', '✓ تم استلام طلبك. هنراجعه خلال 24 ساعة وهتوصلك notification لما يتم التفعيل.');
     }
 
