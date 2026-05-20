@@ -127,3 +127,131 @@ export async function nearestArea(payload: { lat: number; lng: number }) {
   const { data } = await api.get<{ area: { id: ID; name: string } }>(`${V1}/areas/nearest`, { params: payload });
   return data.area;
 }
+
+// ─── Community: alerts / events / posts ──────────────────────────────
+import {
+  Alert as AlertT,
+  Event as EventT,
+  Listing,
+  Order,
+  Booking,
+  Review,
+  MenuCategory,
+  Price,
+  Photo,
+} from './types';
+
+export async function fetchAlerts() {
+  const { data } = await api.get<Paginated<AlertT>>(`${V1}/alerts`);
+  return data;
+}
+
+export async function fetchEvents() {
+  const { data } = await api.get<Paginated<EventT>>(`${V1}/events`);
+  return data;
+}
+
+export async function fetchPosts() {
+  const { data } = await api.get<Paginated<Post>>(`${V1}/posts`);
+  return data;
+}
+
+// ─── Marketplace ─────────────────────────────────────────────────────
+export type MarketplaceParams = { page?: number; kind?: string; category?: string; q?: string };
+export async function fetchMarketplace(params: MarketplaceParams = {}) {
+  const { data } = await api.get<Paginated<Listing>>(`${V1}/marketplace`, { params });
+  return data;
+}
+
+export async function fetchListing(id: ID) {
+  const { data } = await api.get<{ listing: Listing }>(`${V1}/marketplace/${id}`);
+  return data.listing;
+}
+
+// ─── Business sub-resources ──────────────────────────────────────────
+export async function fetchMenu(slug: string) {
+  const { data } = await api.get<{ business: { id: ID; name: string; currency: string }; menu: MenuCategory[] }>(
+    `${V1}/biz/${slug}/menu`,
+  );
+  return data;
+}
+
+export async function fetchReviews(slug: string) {
+  const { data } = await api.get<Paginated<Review> & { meta: { rating_avg?: number; ratings_count?: number } }>(
+    `${V1}/biz/${slug}/reviews`,
+  );
+  return data;
+}
+
+export async function submitReview(slug: string, payload: { rating: number; body?: string }) {
+  const { data } = await api.post<{ review: Review }>(`${V1}/biz/${slug}/reviews`, payload);
+  return data.review;
+}
+
+export async function fetchBusinessPhotos(slug: string) {
+  const { data } = await api.get<{ photos: Photo[] }>(`${V1}/biz/${slug}/photos`);
+  return data.photos;
+}
+
+// ─── Prices ──────────────────────────────────────────────────────────
+export async function fetchPrices() {
+  const { data } = await api.get<Paginated<Price>>(`${V1}/prices`);
+  return data;
+}
+
+// ─── Bookmarks ───────────────────────────────────────────────────────
+export async function fetchBookmarks() {
+  const { data } = await api.get<{ data: Business[] }>(`${V1}/bookmarks`);
+  return data;
+}
+
+export async function toggleBookmark(business_id: ID) {
+  const { data } = await api.post<{ bookmarked: boolean }>(`${V1}/bookmarks/toggle`, { business_id });
+  return data.bookmarked;
+}
+
+// ─── Orders ──────────────────────────────────────────────────────────
+export async function fetchMyOrders() {
+  const { data } = await api.get<Paginated<Order>>(`${V1}/orders`);
+  return data;
+}
+
+export async function fetchOrder(id: ID) {
+  const { data } = await api.get<{ order: Order }>(`${V1}/orders/${id}`);
+  return data.order;
+}
+
+export type CreateOrderPayload = {
+  business_id: ID;
+  customer_name: string;
+  customer_phone: string;
+  customer_address: string;
+  notes?: string;
+  area_id?: ID;
+  items: { menu_item_id: ID; qty: number }[];
+};
+
+export async function createOrder(payload: CreateOrderPayload) {
+  const { data } = await api.post<{ order: Order }>(`${V1}/orders`, payload);
+  return data.order;
+}
+
+// ─── Bookings ────────────────────────────────────────────────────────
+export async function fetchMyBookings() {
+  const { data } = await api.get<Paginated<Booking>>(`${V1}/bookings`);
+  return data;
+}
+
+export type CreateBookingPayload = {
+  business_id: ID;
+  name: string;
+  phone: string;
+  starts_at: string;
+  duration_minutes?: number;
+  notes?: string;
+};
+
+export async function createBooking(payload: CreateBookingPayload) {
+  const { data } = await api.post<{ booking: Booking }>(`${V1}/bookings`, payload);
+  return data.booking;
+}

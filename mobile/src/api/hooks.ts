@@ -14,6 +14,19 @@ export const queryKeys = {
   categories: () => ['categories'] as const,
   openNow: (lat?: number, lng?: number) => ['open-now', lat, lng] as const,
   offers: () => ['offers'] as const,
+  alerts: () => ['alerts'] as const,
+  events: () => ['events'] as const,
+  posts: () => ['posts'] as const,
+  marketplace: (params?: endpoints.MarketplaceParams) => ['marketplace', params ?? {}] as const,
+  listing: (id: number | string) => ['listing', String(id)] as const,
+  menu: (slug: string) => ['menu', slug] as const,
+  reviews: (slug: string) => ['reviews', slug] as const,
+  businessPhotos: (slug: string) => ['business-photos', slug] as const,
+  prices: () => ['prices'] as const,
+  bookmarks: () => ['bookmarks'] as const,
+  orders: () => ['orders'] as const,
+  order: (id: number | string) => ['order', String(id)] as const,
+  bookings: () => ['bookings'] as const,
 };
 
 export function useFeed(category?: string) {
@@ -101,6 +114,124 @@ export function useOffers() {
 export function useTrackBusinessClick() {
   return useMutation({
     mutationFn: (id: Business['id']) => endpoints.trackBusinessClick(id),
+  });
+}
+
+// ─── Community ───────────────────────────────────────────────────────
+export function useAlerts() {
+  return useQuery({ queryKey: queryKeys.alerts(), queryFn: endpoints.fetchAlerts });
+}
+
+export function useEvents() {
+  return useQuery({ queryKey: queryKeys.events(), queryFn: endpoints.fetchEvents });
+}
+
+export function usePosts() {
+  return useQuery({ queryKey: queryKeys.posts(), queryFn: endpoints.fetchPosts });
+}
+
+// ─── Marketplace ─────────────────────────────────────────────────────
+export function useMarketplace(params: endpoints.MarketplaceParams = {}) {
+  return useQuery({
+    queryKey: queryKeys.marketplace(params),
+    queryFn: () => endpoints.fetchMarketplace(params),
+  });
+}
+
+export function useListing(id: number | string) {
+  return useQuery({
+    queryKey: queryKeys.listing(id),
+    queryFn: () => endpoints.fetchListing(id),
+    enabled: !!id,
+  });
+}
+
+// ─── Business sub-resources ──────────────────────────────────────────
+export function useMenu(slug: string) {
+  return useQuery({
+    queryKey: queryKeys.menu(slug),
+    queryFn: () => endpoints.fetchMenu(slug),
+    enabled: !!slug,
+  });
+}
+
+export function useReviews(slug: string) {
+  return useQuery({
+    queryKey: queryKeys.reviews(slug),
+    queryFn: () => endpoints.fetchReviews(slug),
+    enabled: !!slug,
+  });
+}
+
+export function useSubmitReview(slug: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { rating: number; body?: string }) =>
+      endpoints.submitReview(slug, payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.reviews(slug) });
+      qc.invalidateQueries({ queryKey: queryKeys.business(slug) });
+    },
+  });
+}
+
+export function useBusinessPhotos(slug: string) {
+  return useQuery({
+    queryKey: queryKeys.businessPhotos(slug),
+    queryFn: () => endpoints.fetchBusinessPhotos(slug),
+    enabled: !!slug,
+  });
+}
+
+// ─── Prices ──────────────────────────────────────────────────────────
+export function usePrices() {
+  return useQuery({ queryKey: queryKeys.prices(), queryFn: endpoints.fetchPrices });
+}
+
+// ─── Bookmarks ───────────────────────────────────────────────────────
+export function useBookmarks() {
+  return useQuery({ queryKey: queryKeys.bookmarks(), queryFn: endpoints.fetchBookmarks });
+}
+
+export function useToggleBookmark() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (business_id: Business['id']) => endpoints.toggleBookmark(business_id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.bookmarks() }),
+  });
+}
+
+// ─── Orders ──────────────────────────────────────────────────────────
+export function useMyOrders() {
+  return useQuery({ queryKey: queryKeys.orders(), queryFn: endpoints.fetchMyOrders });
+}
+
+export function useOrder(id: number | string) {
+  return useQuery({
+    queryKey: queryKeys.order(id),
+    queryFn: () => endpoints.fetchOrder(id),
+    enabled: !!id,
+  });
+}
+
+export function useCreateOrder() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: endpoints.createOrder,
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.orders() }),
+  });
+}
+
+// ─── Bookings ────────────────────────────────────────────────────────
+export function useMyBookings() {
+  return useQuery({ queryKey: queryKeys.bookings(), queryFn: endpoints.fetchMyBookings });
+}
+
+export function useCreateBooking() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: endpoints.createBooking,
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.bookings() }),
   });
 }
 

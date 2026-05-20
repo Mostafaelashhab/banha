@@ -92,7 +92,7 @@ function FeedRow({ item }: { item: FeedItem }) {
   }
   return (
     <Card padding="md" style={{ gap: spacing[2] }}>
-      <Text style={styles.rowTitle}>{item.post.author.name}</Text>
+      <Text style={styles.rowTitle}>{item.post.author?.username ?? 'مجهول'}</Text>
       <Text style={styles.rowSubtitle}>{item.post.body}</Text>
     </Card>
   );

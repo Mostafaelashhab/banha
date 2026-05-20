@@ -4,12 +4,13 @@ import { router, useLocalSearchParams } from 'expo-router';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { Button, Card, IconTile, QueryState } from '@/components';
 import { colors, radius, spacing, typography } from '@/theme';
-import { useBusiness, useTrackBusinessClick } from '@/api/hooks';
+import { useBusiness, useToggleBookmark, useTrackBusinessClick } from '@/api/hooks';
 
 export default function BusinessDetail() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const query = useBusiness(slug ?? '');
   const track = useTrackBusinessClick();
+  const bookmark = useToggleBookmark();
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -37,6 +38,31 @@ export default function BusinessDetail() {
                 </View>
                 {b.address ? <Text style={styles.meta}>{b.address}</Text> : null}
               </Card>
+
+              <View style={styles.ctaRow}>
+                <Button
+                  variant="outline"
+                  icon="menu"
+                  onPress={() => router.push(`/business/${slug}/menu`)}
+                >
+                  المنيو
+                </Button>
+                <Button
+                  variant="outline"
+                  icon="star"
+                  onPress={() => router.push(`/business/${slug}/reviews`)}
+                >
+                  التقييمات
+                </Button>
+                <Button
+                  variant="outline"
+                  icon="bookmark"
+                  loading={bookmark.isPending}
+                  onPress={() => bookmark.mutate(b.id)}
+                >
+                  حفظ
+                </Button>
+              </View>
 
               <View style={styles.ctaRow}>
                 {b.phone && (

@@ -10,3 +10,4 @@ export { Input } from './Input';
 export { Skeleton } from './Skeleton';
 export { Textarea } from './Textarea';
 export { QueryState } from './QueryState';
+export { ScreenHeader } from './ScreenHeader';

@@ -48,6 +48,23 @@ Route::prefix('v1')->group(function () {
 
     Route::get('u/{username}',            [ProfileController::class, 'show']);
 
+    // ─── Community content ───────────────────────────────────────────
+    Route::get('alerts',                  [CommunityController::class, 'alerts']);
+    Route::get('events',                  [CommunityController::class, 'events']);
+    Route::get('posts',                   [CommunityController::class, 'posts']);
+
+    // ─── Marketplace ─────────────────────────────────────────────────
+    Route::get('marketplace',             [MarketplaceController::class, 'index']);
+    Route::get('marketplace/{id}',        [MarketplaceController::class, 'show'])->whereNumber('id');
+
+    // ─── Business sub-resources (menu / reviews / photos) ────────────
+    Route::get('biz/{slug}/menu',         [MenuController::class, 'index']);
+    Route::get('biz/{slug}/reviews',      [ReviewController::class, 'index']);
+    Route::get('biz/{slug}/photos',       [ReviewController::class, 'photos']);
+
+    // ─── Prices (community price tracking) ───────────────────────────
+    Route::get('prices',                  [PriceController::class, 'index']);
+
     // ─── Authenticated (Sanctum token) ───────────────────────────────
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('logout',         [AuthController::class, 'logout']);
@@ -59,5 +76,21 @@ Route::prefix('v1')->group(function () {
         Route::post('notifications/read-all', [NotificationController::class, 'markAllRead']);
 
         Route::get('profile',         [ProfileController::class, 'me']);
+
+        // Bookmarks
+        Route::get('bookmarks',          [BookmarkController::class, 'index']);
+        Route::post('bookmarks/toggle',  [BookmarkController::class, 'toggle']);
+
+        // Orders (customer side)
+        Route::get('orders',             [OrderController::class, 'mine']);
+        Route::get('orders/{id}',        [OrderController::class, 'show'])->whereNumber('id');
+        Route::post('orders',            [OrderController::class, 'store']);
+
+        // Bookings (customer side)
+        Route::get('bookings',           [BookingController::class, 'mine']);
+        Route::post('bookings',          [BookingController::class, 'store']);
+
+        // Reviews
+        Route::post('biz/{slug}/reviews', [ReviewController::class, 'store']);
     });
 });

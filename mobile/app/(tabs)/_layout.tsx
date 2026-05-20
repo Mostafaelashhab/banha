@@ -12,7 +12,7 @@ type TabConfig = {
 const tabs: TabConfig[] = [
   { name: 'feed', title: 'الرئيسية', icon: 'home' },
   { name: 'search', title: 'استكشف', icon: 'search' },
-  { name: 'notifications', title: 'إشعارات', icon: 'bell' },
+  { name: 'more', title: 'المزيد', icon: 'menu' },
   { name: 'profile', title: 'حسابي', icon: 'user' },
 ];
 

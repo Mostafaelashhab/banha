@@ -45,14 +45,18 @@ export type Business = {
 
 export type Post = {
   id: ID;
+  title?: string | null;
   body: string;
+  category?: string | null;
+  image_url?: string | null;
+  is_announcement?: boolean;
+  is_sponsored?: boolean;
+  upvotes: number;
+  downvotes: number;
+  comments_count: number;
+  author?: { id?: ID; username?: string } | null;
+  zone?: string | null;
   created_at: string;
-  author: User;
-  business?: Business | null;
-  images?: string[];
-  likes_count?: number;
-  comments_count?: number;
-  liked?: boolean;
 };
 
 export type FeedItem =
@@ -80,4 +84,137 @@ export type Category = {
   label: string;
   icon?: string;
   count?: number;
+};
+
+export type Alert = {
+  id: ID;
+  type: string;
+  description: string;
+  lat?: number | null;
+  lng?: number | null;
+  confirmations: number;
+  is_verified: boolean;
+  is_resolved: boolean;
+  expires_at?: string | null;
+  created_at: string;
+  zone?: string | null;
+};
+
+export type Event = {
+  id: ID;
+  kind: string;
+  title: string;
+  description?: string | null;
+  location?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+  starts_at: string;
+  ends_at?: string | null;
+  cover_url?: string | null;
+  contact_phone?: string | null;
+  attendees_count: number;
+  status: string;
+};
+
+export type Listing = {
+  id: ID;
+  kind: string;
+  category: string;
+  title: string;
+  description?: string | null;
+  price?: number | null;
+  currency: string;
+  negotiable: boolean;
+  photo_url?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+  contact_phone?: string | null;
+  contact_whatsapp?: string | null;
+  status: string;
+  is_featured: boolean;
+  views: number;
+  expires_at?: string | null;
+  created_at: string;
+};
+
+export type OrderItem = {
+  id: ID;
+  name: string;
+  qty: number;
+  unit_price: number;
+  line_total: number;
+};
+
+export type Order = {
+  id: ID;
+  business_id: ID;
+  business?: Business;
+  customer_name: string;
+  customer_phone: string;
+  customer_address: string;
+  delivery_fee: number;
+  subtotal: number;
+  currency: string;
+  notes?: string | null;
+  status: string;
+  items?: OrderItem[];
+  created_at: string;
+};
+
+export type Booking = {
+  id: ID;
+  business_id: ID;
+  business?: Business;
+  name: string;
+  phone: string;
+  starts_at: string;
+  duration_minutes: number;
+  status: string;
+  notes?: string | null;
+  created_at: string;
+};
+
+export type Review = {
+  id: ID;
+  rating: number;
+  body?: string | null;
+  author_name?: string | null;
+  source?: string | null;
+  reviewed_at: string;
+  created_at: string;
+};
+
+export type MenuItem = {
+  id: ID;
+  name: string;
+  description?: string | null;
+  price: number;
+  photo_url?: string | null;
+  is_available: boolean;
+};
+
+export type MenuCategory = {
+  id: ID;
+  name: string;
+  sort: number;
+  items: MenuItem[];
+};
+
+export type Price = {
+  id: ID;
+  product?: string | null;
+  product_id?: ID | null;
+  price: number;
+  shop_name?: string | null;
+  photo_url?: string | null;
+  notes?: string | null;
+  zone?: string | null;
+  reporter?: string | null;
+  created_at: string;
+};
+
+export type Photo = {
+  id: ID;
+  url: string;
+  created_at: string;
 };
