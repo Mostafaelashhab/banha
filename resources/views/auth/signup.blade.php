@@ -37,7 +37,7 @@
 
             <div>
                 <input type="text" name="username" required minlength="3" maxlength="30"
-                       value="{{ old('username') }}" placeholder="اليوزر نيم"
+                       value="{{ old('username') }}" placeholder="الأسم"
                        class="auth-input">
                 @error('username') <p class="auth-error">{{ $message }}</p> @enderror
             </div>

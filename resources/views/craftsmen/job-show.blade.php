@@ -92,7 +92,33 @@
             @if($myEligibleBusinesses->isNotEmpty())
                 <div class="card-light p-4 mb-3 ring-2 ring-coral-500/30 bg-coral-50/40">
                     <h3 class="text-sm font-extrabold text-ink-950 mb-1">📨 رد على الطلب ده</h3>
-                    <p class="text-[11px] text-ink-500 mb-3">رد بسعر مبدأي وملاحظة قصيرة، هتتنقل لواتساب العميل بمسج جاهز فيه تفاصيل الطلب.</p>
+                    <p class="text-[11px] text-ink-500 mb-3 leading-relaxed">
+                        رد بسعر مبدأي وملاحظة قصيرة. <strong>بنها.shop</strong> يبعت ردك للعميل تلقائياً
+                        على واتساب ونوتيفيكيشن، ويبعتلك بيانات العميل في نفس الوقت.
+                    </p>
+
+                    @if($existingResponse)
+                        {{-- After-response success card --}}
+                        <div class="bg-mint-50 ring-1 ring-mint-500/30 rounded-2xl p-3 mb-3">
+                            <div class="flex items-start gap-2">
+                                <span class="w-6 h-6 rounded-full bg-mint-500 text-white grid place-items-center text-xs shrink-0 font-black">✓</span>
+                                <div class="flex-1">
+                                    <div class="text-sm font-extrabold text-mint-700">تم إرسال ردك للعميل</div>
+                                    <div class="text-[11px] text-ink-600 mt-1 leading-relaxed">
+                                        رقم العميل: <code class="font-bold text-coral-700" dir="ltr">{{ $jobRequest->phone }}</code>
+                                        — اتصل بيه دلوقتي قبل ما حد يسبقك.
+                                    </div>
+                                    <a href="https://wa.me/{{ \App\Services\WaapiService::toIntl($jobRequest->phone) }}"
+                                       target="_blank" rel="noopener"
+                                       class="mt-2 inline-flex items-center gap-1.5 py-1.5 px-3 rounded-full text-white text-[11px] font-extrabold"
+                                       style="background: linear-gradient(135deg, #25D366, #128C7E)">
+                                        <x-icon name="whatsapp" class="w-3.5 h-3.5"/>
+                                        افتح واتساب العميل
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
 
                     <form method="POST" action="{{ route('craft-jobs.respond', $jobRequest) }}" class="space-y-3">
                         @csrf
@@ -118,14 +144,16 @@
                                   class="w-full bg-cream-100 rounded-xl px-4 py-2.5 text-sm outline-0 border border-ink-950/8 resize-none">{{ $existingResponse->note ?? '' }}</textarea>
 
                         <button type="submit"
-                                class="w-full inline-flex items-center justify-center gap-2 py-3 rounded-full font-extrabold text-white text-sm shadow-lg"
-                                style="background: linear-gradient(135deg, #25D366, #128C7E)">
-                            <x-icon name="whatsapp" class="w-4 h-4"/>
-                            تواصل على واتساب
+                                class="w-full inline-flex items-center justify-center gap-2 py-3 rounded-full font-extrabold text-white text-sm shadow-lg bg-coral-500 hover:bg-coral-600 transition">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                                <line x1="22" y1="2" x2="11" y2="13"/>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                            </svg>
+                            {{ $existingResponse ? 'حدّث ردك' : 'أرسل ردك للعميل' }}
                         </button>
-                        @if($existingResponse)
-                            <p class="text-[10px] text-ink-400 text-center">✓ كنت رديت قبل كده — التواصل ده تحديث للرد.</p>
-                        @endif
+                        <p class="text-[10px] text-ink-400 text-center leading-relaxed">
+                            بنها.shop هيبعت للعميل واتساب + نوتيفيكيشن فيهم بياناتك، وبنبعتلك واتساب فيه بيانات العميل.
+                        </p>
                     </form>
                 </div>
             @else

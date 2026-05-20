@@ -174,65 +174,101 @@
 
             {{-- Home --}}
             <a href="{{ route('feed') }}" aria-label="الرئيسية" class="nav-item {{ $isHome ? 'is-active' : '' }}">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6">
-                    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                    <polyline points="9 22 9 12 15 12 15 22"/>
+                {{-- Inactive: stroke outline --}}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon nav-icon--outline">
+                    <path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-7h-6v7H4a1 1 0 0 1-1-1z"/>
                 </svg>
+                {{-- Active: solid filled variant --}}
+                <svg viewBox="0 0 24 24" fill="currentColor" class="nav-icon nav-icon--solid">
+                    <path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-7h-6v7H4a1 1 0 0 1-1-1z"/>
+                </svg>
+                <span class="nav-label">الرئيسية</span>
             </a>
 
             {{-- Categories (directory index) --}}
-            <a href="{{ route('directory.index') }}" aria-label="الفئات" class="nav-item {{ $isDir ? 'is-active' : '' }}">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6">
-                    <rect x="3" y="3" width="7" height="7" rx="1.5"/>
-                    <rect x="14" y="3" width="7" height="7" rx="1.5"/>
-                    <rect x="3" y="14" width="7" height="7" rx="1.5"/>
-                    <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+            <a href="{{ route('directory.index') }}" aria-label="الدليل" class="nav-item {{ $isDir ? 'is-active' : '' }}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon nav-icon--outline">
+                    <rect x="3"  y="3"  width="7.5" height="7.5" rx="1.6"/>
+                    <rect x="13.5" y="3"  width="7.5" height="7.5" rx="1.6"/>
+                    <rect x="3"  y="13.5" width="7.5" height="7.5" rx="1.6"/>
+                    <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.6"/>
                 </svg>
+                <svg viewBox="0 0 24 24" fill="currentColor" class="nav-icon nav-icon--solid">
+                    <rect x="3"  y="3"  width="7.5" height="7.5" rx="1.6"/>
+                    <rect x="13.5" y="3"  width="7.5" height="7.5" rx="1.6"/>
+                    <rect x="3"  y="13.5" width="7.5" height="7.5" rx="1.6"/>
+                    <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.6"/>
+                </svg>
+                <span class="nav-label">الدليل</span>
             </a>
 
-            {{-- Map --}}
+            {{-- Map (pin + circle — cleaner than the multi-fold polygon) --}}
             <a href="{{ route('directory.map') }}" aria-label="الخريطة" class="nav-item {{ $isMap ? 'is-active' : '' }}">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6">
-                    <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
-                    <line x1="9" y1="3" x2="9" y2="18"/>
-                    <line x1="15" y1="6" x2="15" y2="21"/>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon nav-icon--outline">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 1 1 18 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
                 </svg>
+                <svg viewBox="0 0 24 24" fill="currentColor" class="nav-icon nav-icon--solid">
+                    <path d="M12 23s9-6 9-13a9 9 0 1 0-18 0c0 7 9 13 9 13z"/>
+                    <circle cx="12" cy="10" r="2.5" fill="#fff"/>
+                </svg>
+                <span class="nav-label">الخريطة</span>
             </a>
 
             {{-- Notifications --}}
             @auth
                 <a href="{{ route('notifications.index') }}" aria-label="إشعارات" class="nav-item nav-item--bell {{ $isNotif ? 'is-active' : '' }}">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon nav-icon--outline">
                         <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
                         <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
                     </svg>
+                    <svg viewBox="0 0 24 24" fill="currentColor" class="nav-icon nav-icon--solid">
+                        <path d="M18 16c0-7-3-9-3-9V6a3 3 0 0 0-6 0v1s-3 2-3 9c0 1-1 2-1 2h14s-1-1-1-2z"/>
+                        <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0z"/>
+                    </svg>
+                    <span class="nav-label">تنبيهات</span>
                     @if($navUnread > 0)
                         <span class="nav-badge">{{ $navUnread > 9 ? '9+' : $navUnread }}</span>
                     @endif
                 </a>
             @else
                 <a href="{{ route('login') }}" aria-label="إشعارات" class="nav-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon nav-icon--outline">
                         <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
                         <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
                     </svg>
+                    <svg viewBox="0 0 24 24" fill="currentColor" class="nav-icon nav-icon--solid">
+                        <path d="M18 16c0-7-3-9-3-9V6a3 3 0 0 0-6 0v1s-3 2-3 9c0 1-1 2-1 2h14s-1-1-1-2z"/>
+                        <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0z"/>
+                    </svg>
+                    <span class="nav-label">تنبيهات</span>
                 </a>
             @endauth
 
             {{-- Profile --}}
             @auth
                 <a href="{{ route('profile.me') }}" aria-label="حسابي" class="nav-item {{ $isMe ? 'is-active' : '' }}">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                        <circle cx="12" cy="7" r="4"/>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon nav-icon--outline">
+                        <path d="M20 21v-1.5A4.5 4.5 0 0 0 15.5 15h-7A4.5 4.5 0 0 0 4 19.5V21"/>
+                        <circle cx="12" cy="8" r="4"/>
                     </svg>
+                    <svg viewBox="0 0 24 24" fill="currentColor" class="nav-icon nav-icon--solid">
+                        <circle cx="12" cy="8" r="4.5"/>
+                        <path d="M4 21c0-3.5 3.5-6 8-6s8 2.5 8 6z"/>
+                    </svg>
+                    <span class="nav-label">حسابي</span>
                 </a>
             @else
                 <a href="{{ route('login') }}" aria-label="دخول" class="nav-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                        <circle cx="12" cy="7" r="4"/>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon nav-icon--outline">
+                        <path d="M20 21v-1.5A4.5 4.5 0 0 0 15.5 15h-7A4.5 4.5 0 0 0 4 19.5V21"/>
+                        <circle cx="12" cy="8" r="4"/>
                     </svg>
+                    <svg viewBox="0 0 24 24" fill="currentColor" class="nav-icon nav-icon--solid">
+                        <circle cx="12" cy="8" r="4.5"/>
+                        <path d="M4 21c0-3.5 3.5-6 8-6s8 2.5 8 6z"/>
+                    </svg>
+                    <span class="nav-label">دخول</span>
                 </a>
             @endauth
         </div>
