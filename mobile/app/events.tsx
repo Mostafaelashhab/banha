@@ -19,22 +19,32 @@ export default function Events() {
           emptyHint="هنبلغك أول ما حد يضيف"
           isEmpty={(d) => !d?.data?.length}
         >
-          {(d) => (
-            <View style={{ gap: spacing[3] }}>
-              {d.data.map((e) => (
-                <Card key={String(e.id)} padding="none" style={{ overflow: 'hidden' }}>
-                  <SmartImage uri={e.cover_url} fallbackText={e.title} style={styles.cover} radius={0} />
-                  <View style={{ padding: spacing[4], gap: spacing[1] }}>
-                    <Text style={styles.title}>{e.title}</Text>
-                    <Text style={styles.meta}>
-                      {new Date(e.starts_at).toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' })}
-                    </Text>
-                    {e.location ? <Text style={styles.subtitle}>{e.location}</Text> : null}
-                  </View>
-                </Card>
-              ))}
-            </View>
-          )}
+          {(d) => {
+            const covers = d.data.map((e) => e.cover_url).filter(Boolean) as string[];
+            return (
+              <View style={{ gap: spacing[3] }}>
+                {d.data.map((e) => (
+                  <Card key={String(e.id)} padding="none" style={{ overflow: 'hidden' }}>
+                    <SmartImage
+                      uri={e.cover_url}
+                      fallbackText={e.title}
+                      style={styles.cover}
+                      radius={0}
+                      previewUris={e.cover_url ? covers : undefined}
+                      previewIndex={Math.max(0, covers.indexOf(e.cover_url ?? ''))}
+                    />
+                    <View style={{ padding: spacing[4], gap: spacing[1] }}>
+                      <Text style={styles.title}>{e.title}</Text>
+                      <Text style={styles.meta}>
+                        {new Date(e.starts_at).toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' })}
+                      </Text>
+                      {e.location ? <Text style={styles.subtitle}>{e.location}</Text> : null}
+                    </View>
+                  </Card>
+                ))}
+              </View>
+            );
+          }}
         </QueryState>
       </ScrollView>
     </SafeAreaView>

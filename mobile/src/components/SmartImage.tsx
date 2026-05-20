@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { Image, ImageStyle, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
+import { Pressable, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
+import { Image, ImageStyle } from 'expo-image';
 import { colors, radius, typography } from '../theme';
 import { colorFromName, imageUrl } from '../lib/image';
+import { PhotoViewer } from './PhotoViewer';
 
 type Props = {
   uri?: string | null;
@@ -10,33 +12,66 @@ type Props = {
   imageStyle?: StyleProp<ImageStyle>;
   radius?: number;
   shape?: 'square' | 'circle';
+  /**
+   * When provided, tapping the image opens a full-screen viewer with pinch
+   * zoom + horizontal swipe between the URIs in the array.
+   */
+  previewUris?: (string | null | undefined)[];
+  /** Which index in `previewUris` to start the viewer on (defaults to 0). */
+  previewIndex?: number;
 };
 
-export function SmartImage({ uri, fallbackText, style, imageStyle, radius: r, shape = 'square' }: Props) {
+export function SmartImage({
+  uri,
+  fallbackText,
+  style,
+  imageStyle,
+  radius: r,
+  shape = 'square',
+  previewUris,
+  previewIndex = 0,
+}: Props) {
   const resolved = imageUrl(uri);
   const [failed, setFailed] = useState(false);
+  const [viewerOpen, setViewerOpen] = useState(false);
   const borderRadius = shape === 'circle' ? 9999 : r ?? radius.lg;
 
-  if (resolved && !failed) {
-    return (
-      <View style={[styles.wrap, { borderRadius }, style]}>
-        <Image
-          source={{ uri: resolved }}
-          style={[StyleSheet.absoluteFillObject, { borderRadius }, imageStyle]}
-          resizeMode="cover"
-          onError={() => setFailed(true)}
-        />
-      </View>
-    );
-  }
+  const previewable = !!previewUris && previewUris.some((u) => !!imageUrl(u));
 
-  const initial = (fallbackText ?? '').trim().slice(0, 1) || '·';
-  const bg = colorFromName(fallbackText);
+  const content = resolved && !failed ? (
+    <View style={[styles.wrap, { borderRadius }, style]}>
+      <Image
+        source={{ uri: resolved }}
+        style={[StyleSheet.absoluteFillObject, { borderRadius }, imageStyle]}
+        contentFit="cover"
+        transition={150}
+        cachePolicy="memory-disk"
+        recyclingKey={resolved}
+        onError={() => setFailed(true)}
+      />
+    </View>
+  ) : (
+    <View style={[styles.wrap, styles.fallback, { backgroundColor: colorFromName(fallbackText), borderRadius }, style]}>
+      <Text style={styles.initial}>
+        {(fallbackText ?? '').trim().slice(0, 1) || '·'}
+      </Text>
+    </View>
+  );
+
+  if (!previewable) return content;
 
   return (
-    <View style={[styles.wrap, styles.fallback, { backgroundColor: bg, borderRadius }, style]}>
-      <Text style={styles.initial}>{initial}</Text>
-    </View>
+    <>
+      <Pressable onPress={() => setViewerOpen(true)} style={({ pressed }) => (pressed ? { opacity: 0.92 } : null)}>
+        {content}
+      </Pressable>
+      <PhotoViewer
+        visible={viewerOpen}
+        uris={previewUris!}
+        initialIndex={previewIndex}
+        onClose={() => setViewerOpen(false)}
+      />
+    </>
   );
 }
 

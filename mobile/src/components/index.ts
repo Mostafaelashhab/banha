@@ -14,3 +14,4 @@ export { ScreenHeader } from './ScreenHeader';
 export { Select } from './Select';
 export { SmartImage } from './SmartImage';
 export { RequireAuth } from './RequireAuth';
+export { PhotoViewer } from './PhotoViewer';

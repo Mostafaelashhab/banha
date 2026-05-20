@@ -124,13 +124,15 @@ export default function BusinessDetail() {
                       showsHorizontalScrollIndicator={false}
                       contentContainerStyle={styles.photosRow}
                     >
-                      {b.photos.map((p) => (
+                      {b.photos.map((p, i) => (
                         <SmartImage
                           key={String(p.id)}
                           uri={p.url}
                           fallbackText={b.name}
                           style={styles.photoTile}
                           radius={radius.xl}
+                          previewUris={b.photos!.map((x) => x.url)}
+                          previewIndex={i}
                         />
                       ))}
                     </ScrollView>
@@ -231,6 +233,7 @@ export default function BusinessDetail() {
 
 // ─── Hero ────────────────────────────────────────────────────────────
 function Hero({ business: b, onBack }: { business: Business; onBack: () => void }) {
+  const previewUris = [b.cover_url, ...(b.photos?.map((p) => p.url) ?? [])].filter(Boolean) as string[];
   return (
     <View style={styles.hero}>
       <SmartImage
@@ -238,6 +241,7 @@ function Hero({ business: b, onBack }: { business: Business; onBack: () => void 
         fallbackText={b.name}
         radius={0}
         style={styles.heroImage}
+        previewUris={previewUris.length > 0 ? previewUris : undefined}
       />
       <LinearGradient
         colors={['rgba(11,11,12,0.55)', 'transparent', 'rgba(11,11,12,0.55)']}
@@ -378,20 +382,24 @@ function PrimaryCtaRow({ business: b, slug }: { business: Business; slug: string
   return (
     <View style={styles.ctaRow}>
       {b.has_menu ? (
-        <Button block icon="menu" onPress={() => router.push(`/business/${slug}/menu`)} size="lg">
-          افتح المنيو
-        </Button>
+        <View style={styles.ctaSlot}>
+          <Button block icon="menu" onPress={() => router.push(`/business/${slug}/menu`)} size="lg">
+            افتح المنيو
+          </Button>
+        </View>
       ) : null}
       {b.booking_enabled ? (
-        <Button
-          block
-          variant={b.has_menu ? 'outline' : 'primary'}
-          icon="clock"
-          onPress={() => {/* booking sheet coming next */}}
-          size="lg"
-        >
-          احجز موعد
-        </Button>
+        <View style={styles.ctaSlot}>
+          <Button
+            block
+            variant={b.has_menu ? 'outline' : 'primary'}
+            icon="clock"
+            size="lg"
+            onPress={() => {/* booking sheet coming next */}}
+          >
+            احجز موعد
+          </Button>
+        </View>
       ) : null}
     </View>
   );
@@ -431,25 +439,44 @@ function InfoRow({ icon, label, value, isLast }: { icon: IconName; label: string
 }
 
 // ─── Sticky bottom CTA ───────────────────────────────────────────────
+type StickyAction = { key: string; label: string; icon: IconName; bg: string; fg: string; onPress: () => void };
+
 function StickyBar({ business: b, onCall, onWhatsApp, onDirections }: {
   business: Business;
   onCall: () => void;
   onWhatsApp: () => void;
   onDirections: () => void;
 }) {
-  if (!b.phone && !b.whatsapp && (typeof b.lat !== 'number' || typeof b.lng !== 'number')) return null;
+  const actions: StickyAction[] = [];
+  if (b.phone) {
+    actions.push({ key: 'call', label: 'اتصال', icon: 'phone', bg: colors.coral[500], fg: colors.white, onPress: onCall });
+  }
+  if (b.whatsapp) {
+    actions.push({ key: 'wa', label: 'واتساب', icon: 'whatsapp', bg: '#25D366', fg: colors.white, onPress: onWhatsApp });
+  }
+  if (typeof b.lat === 'number' && typeof b.lng === 'number') {
+    actions.push({ key: 'dir', label: 'الاتجاهات', icon: 'compass', bg: colors.cream[200], fg: colors.ink[950], onPress: onDirections });
+  }
+  if (actions.length === 0) return null;
+
   return (
     <SafeAreaView edges={['bottom']} style={styles.stickyWrap}>
       <View style={styles.sticky}>
-        {b.phone ? (
-          <Button block variant="primary" icon="phone" onPress={onCall}>اتصال</Button>
-        ) : null}
-        {b.whatsapp ? (
-          <Button block variant="whatsapp" icon="whatsapp" onPress={onWhatsApp}>واتساب</Button>
-        ) : null}
-        {typeof b.lat === 'number' && typeof b.lng === 'number' ? (
-          <Button block variant="outline" icon="compass" onPress={onDirections}>الاتجاهات</Button>
-        ) : null}
+        {actions.map((a) => (
+          <Pressable
+            key={a.key}
+            onPress={a.onPress}
+            android_ripple={{ color: 'rgba(0,0,0,0.12)' }}
+            style={({ pressed }) => [
+              styles.stickyBtn,
+              { backgroundColor: a.bg },
+              pressed && { opacity: 0.85 },
+            ]}
+          >
+            <Icon name={a.icon} size={18} color={a.fg} />
+            <Text style={[styles.stickyLabel, { color: a.fg }]} numberOfLines={1}>{a.label}</Text>
+          </Pressable>
+        ))}
       </View>
     </SafeAreaView>
   );
@@ -547,6 +574,7 @@ const styles = StyleSheet.create({
 
   // CTA row
   ctaRow: { flexDirection: 'row', gap: spacing[2] },
+  ctaSlot: { flex: 1 },
 
   // Sections
   sectionHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
@@ -600,16 +628,28 @@ const styles = StyleSheet.create({
   stickyWrap: {
     position: 'absolute',
     bottom: 0,
-    insetInlineStart: 0,
-    insetInlineEnd: 0,
+    left: 0,
+    right: 0,
     backgroundColor: colors.white,
     borderTopWidth: 1,
     borderTopColor: 'rgba(11,11,12,0.06)',
+    ...shadows.soft,
   },
   sticky: {
     flexDirection: 'row',
     gap: spacing[2],
-    padding: spacing[3],
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[3],
   },
+  stickyBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing[1.5],
+    height: 48,
+    borderRadius: radius.xl,
+  },
+  stickyLabel: { fontSize: 14, fontWeight: '900' },
 });
 
