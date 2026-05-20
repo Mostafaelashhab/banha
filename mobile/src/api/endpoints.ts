@@ -22,12 +22,44 @@ export async function login(payload: { phone: string; password: string }) {
   return data;
 }
 
-export async function signup(payload: { name: string; phone: string; password: string; password_confirmation: string }) {
+export type SignupPayload = {
+  phone: string;
+  username: string;
+  password: string;
+  password_confirmation: string;
+  zone_id: number;
+  agree: 1 | 0 | true | false;
+};
+
+export async function signup(payload: SignupPayload) {
   const { data } = await api.post<AuthResponse>(`${V1}/signup`, {
     ...payload,
+    agree: payload.agree ? 1 : 0,
     device: 'mobile',
   });
   return data;
+}
+
+export async function sendOtp() {
+  const { data } = await api.post<{ sent: boolean; simulated: boolean; debug_code?: string | null }>(
+    `${V1}/verify/send`,
+  );
+  return data;
+}
+
+export async function verifyOtp(code: string) {
+  const { data } = await api.post<{ user: User; needs_verification: boolean }>(`${V1}/verify`, { code });
+  return data;
+}
+
+export async function fetchZones() {
+  const { data } = await api.get<{ zones: { id: ID; name: string; slug: string }[] }>(`${V1}/zones`);
+  return data.zones;
+}
+
+export async function fetchHomeFeed() {
+  const { data } = await api.get(`${V1}/home`);
+  return data as import('./types').HomeFeed;
 }
 
 export async function logout() {

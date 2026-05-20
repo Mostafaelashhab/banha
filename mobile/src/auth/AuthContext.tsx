@@ -11,9 +11,10 @@ type AuthState =
   | { status: 'guest'; user: null };
 
 type AuthValue = AuthState & {
-  login: (payload: { phone: string; password: string }) => Promise<void>;
-  signup: (payload: { name: string; phone: string; password: string; password_confirmation: string }) => Promise<void>;
+  login: (payload: { phone: string; password: string }) => Promise<{ needs_verification: boolean }>;
+  signup: (payload: endpoints.SignupPayload) => Promise<{ needs_verification: boolean; debug_code?: string | null }>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthValue | undefined>(undefined);
@@ -72,13 +73,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (res.token) await setAuthToken(res.token);
     await writeStoredUser(res.user);
     setState({ status: 'authenticated', user: res.user });
+    return { needs_verification: !!res.needs_verification };
   }, []);
 
-  const signup = useCallback(async (payload: { name: string; phone: string; password: string; password_confirmation: string }) => {
+  const signup = useCallback(async (payload: endpoints.SignupPayload) => {
     const res = await endpoints.signup(payload);
     if (res.token) await setAuthToken(res.token);
     await writeStoredUser(res.user);
     setState({ status: 'authenticated', user: res.user });
+    return {
+      needs_verification: !!res.needs_verification,
+      debug_code: res.debug_code ?? null,
+    };
   }, []);
 
   const logout = useCallback(async () => {
@@ -92,9 +98,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setState({ status: 'guest', user: null });
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    try {
+      const user = await endpoints.me();
+      await writeStoredUser(user);
+      setState({ status: 'authenticated', user });
+    } catch {
+      // ignore
+    }
+  }, []);
+
   const value = useMemo<AuthValue>(
-    () => ({ ...state, login, signup, logout }),
-    [state, login, signup, logout],
+    () => ({ ...state, login, signup, logout, refreshUser }),
+    [state, login, signup, logout, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -77,6 +77,43 @@ export type Notification = {
 export type AuthResponse = {
   token?: string;
   user: User;
+  needs_verification?: boolean;
+  otp_sent?: boolean;
+  debug_code?: string | null;
+};
+
+export type Zone = {
+  id: ID;
+  name: string;
+  slug: string;
+};
+
+export type HomeShortcut = {
+  key: string;
+  label: string;
+  icon: string;
+  href: string;
+};
+
+export type HomeBanner = {
+  id: ID;
+  title?: string | null;
+  desc?: string | null;
+  cta?: string | null;
+  image?: string | null;
+  href?: string | null;
+  bg_from?: string | null;
+  bg_to?: string | null;
+};
+
+export type HomeFeed = {
+  shortcuts: HomeShortcut[];
+  popular_searches: string[];
+  categories: (Category & { color?: string | null })[];
+  promoted: Business[];
+  top_rated: Business[];
+  banners: HomeBanner[];
+  unread_count: number;
 };
 
 export type Category = {

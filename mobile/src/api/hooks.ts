@@ -27,6 +27,8 @@ export const queryKeys = {
   orders: () => ['orders'] as const,
   order: (id: number | string) => ['order', String(id)] as const,
   bookings: () => ['bookings'] as const,
+  home: () => ['home'] as const,
+  zones: () => ['zones'] as const,
 };
 
 export function useFeed(category?: string) {
@@ -233,6 +235,15 @@ export function useCreateBooking() {
     mutationFn: endpoints.createBooking,
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.bookings() }),
   });
+}
+
+// ─── Home + Zones ────────────────────────────────────────────────────
+export function useHomeFeed() {
+  return useQuery({ queryKey: queryKeys.home(), queryFn: endpoints.fetchHomeFeed });
+}
+
+export function useZones() {
+  return useQuery({ queryKey: queryKeys.zones(), queryFn: endpoints.fetchZones, staleTime: 60 * 60_000 });
 }
 
 // Re-exports for shorter imports

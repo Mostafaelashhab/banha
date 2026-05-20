@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\BookmarkController;
 use App\Http\Controllers\Api\CommunityController;
 use App\Http\Controllers\Api\DirectoryController;
 use App\Http\Controllers\Api\FeedController;
+use App\Http\Controllers\Api\HomeController;
 use App\Http\Controllers\Api\MarketplaceController;
 use App\Http\Controllers\Api\MenuController;
 use App\Http\Controllers\Api\NotificationController;
@@ -15,6 +16,7 @@ use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\UtilityController;
+use App\Http\Controllers\Api\ZoneController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -32,6 +34,8 @@ Route::prefix('v1')->group(function () {
     Route::post('login',  [AuthController::class, 'login']);
     Route::post('signup', [AuthController::class, 'signup']);
 
+    Route::get('zones',                   [ZoneController::class, 'index']);
+    Route::get('home',                    [HomeController::class, 'index']);
     Route::get('feed',                    [FeedController::class, 'index']);
 
     Route::get('directory',               [DirectoryController::class, 'index']);
@@ -69,6 +73,10 @@ Route::prefix('v1')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('logout',         [AuthController::class, 'logout']);
         Route::get('me',              [AuthController::class, 'me']);
+
+        // Activation OTP (WhatsApp)
+        Route::post('verify/send',    [AuthController::class, 'sendOtp'])->middleware('throttle:5,1');
+        Route::post('verify',         [AuthController::class, 'verifyOtp'])->middleware('throttle:10,1');
 
         Route::get('following',       [FeedController::class, 'following']);
 

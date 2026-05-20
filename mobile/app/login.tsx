@@ -22,8 +22,12 @@ export default function Login() {
     setError(null);
     setSubmitting(true);
     try {
-      await auth.login({ phone, password });
-      router.replace('/(tabs)/feed');
+      const res = await auth.login({ phone, password });
+      if (res.needs_verification) {
+        router.replace('/verify');
+      } else {
+        router.replace('/(tabs)/feed');
+      }
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'حصل خطأ، حاول تاني');
     } finally {
