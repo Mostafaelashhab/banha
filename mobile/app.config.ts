@@ -24,6 +24,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     infoPlist: {
       NSLocationWhenInUseUsageDescription:
         'علشان نوريك الأماكن القريبة منك في بنها',
+      NSAppTransportSecurity: {
+        // Dev convenience: allow plaintext for local API. Tighten before
+        // shipping by removing this and serving production over HTTPS.
+        NSAllowsArbitraryLoads: true,
+      },
     },
   },
   android: {
@@ -34,6 +39,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
     edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
+    // For production native builds that need cleartext HTTP (dev API on LAN),
+    // add 'expo-build-properties' with android.usesCleartextTraffic = true.
+    // Expo Go already permits cleartext, so it works during development.
     permissions: ['ACCESS_FINE_LOCATION', 'ACCESS_COARSE_LOCATION'],
     config: {
       googleMaps: {

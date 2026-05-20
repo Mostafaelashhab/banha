@@ -1,7 +1,7 @@
-import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
-import { Card, QueryState, ScreenHeader } from '@/components';
+import { Card, QueryState, ScreenHeader, SmartImage } from '@/components';
 import { colors, radius, spacing, typography } from '@/theme';
 import { useMenu } from '@/api/hooks';
 
@@ -36,11 +36,7 @@ export default function BusinessMenu() {
                         key={String(item.id)}
                         style={[styles.itemRow, i < cat.items.length - 1 && styles.divider]}
                       >
-                        {item.photo_url ? (
-                          <Image source={{ uri: item.photo_url }} style={styles.photo} />
-                        ) : (
-                          <View style={[styles.photo, styles.photoFallback]} />
-                        )}
+                        <SmartImage uri={item.photo_url} fallbackText={item.name} style={styles.photo} radius={8} />
                         <View style={{ flex: 1, gap: 2 }}>
                           <Text style={styles.itemName}>{item.name}</Text>
                           {item.description ? (
@@ -69,8 +65,7 @@ const styles = StyleSheet.create({
   categoryLabel: { ...typography.nano, color: colors.coral[600] },
   itemRow: { flexDirection: 'row', alignItems: 'center', gap: spacing[3], padding: spacing[3] },
   divider: { borderBottomWidth: 1, borderBottomColor: 'rgba(11,11,12,0.04)' },
-  photo: { width: 64, height: 64, borderRadius: radius.lg, backgroundColor: colors.cream[200] },
-  photoFallback: {},
+  photo: { width: 64, height: 64 },
   itemName: { ...typography.bodyStrong, color: colors.ink[950] },
   itemDesc: { ...typography.body, color: colors.ink[500] },
   itemPrice: { ...typography.meta, color: colors.coral[600], marginTop: 2 },

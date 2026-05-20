@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
   title: { ...typography.h2, color: colors.ink[950] },
   scroll: {
     paddingHorizontal: spacing[4],
-    paddingBottom: spacing[10],
+    paddingBottom: 120,
     gap: spacing[3],
   },
   sectionLabel: { ...typography.nano, color: colors.coral[600], marginTop: spacing[2] },

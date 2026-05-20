@@ -12,3 +12,5 @@ export { Textarea } from './Textarea';
 export { QueryState } from './QueryState';
 export { ScreenHeader } from './ScreenHeader';
 export { Select } from './Select';
+export { SmartImage } from './SmartImage';
+export { RequireAuth } from './RequireAuth';

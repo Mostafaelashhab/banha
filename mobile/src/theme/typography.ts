@@ -68,11 +68,9 @@ export const typography: Record<string, TextStylePreset> = {
     lineHeight: 14,
   },
   nano: {
-    fontSize: 10,
+    fontSize: 11,
     fontFamily: fontFamily.extrabold,
     fontWeight: fontWeight.extrabold,
-    lineHeight: 12,
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
+    lineHeight: 14,
   },
 };

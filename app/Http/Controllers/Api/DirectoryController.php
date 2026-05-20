@@ -76,7 +76,11 @@ class DirectoryController extends Controller
 
     public function show(string $slug): JsonResponse
     {
-        $business = Business::where('slug', $slug)
+        $business = Business::with([
+                'photos:id,business_id,url',
+                'reviews' => fn ($q) => $q->orderByDesc('reviewed_at')->orderByDesc('created_at')->limit(3),
+            ])
+            ->where('slug', $slug)
             ->orWhere('id', $slug)
             ->firstOrFail();
 

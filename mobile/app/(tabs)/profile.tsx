@@ -1,13 +1,19 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
-import { Button, Card, IconTile, QueryState } from '@/components';
+import { Href, router } from 'expo-router';
+import { Button, Card, Icon, IconTile, QueryState } from '@/components';
 import { IconName } from '@/components';
 import { colors, spacing, typography } from '@/theme';
 import { useMyProfile } from '@/api/hooks';
 import { useAuth } from '@/auth/AuthContext';
 
-type Row = { icon: IconName; tone: 'coral' | 'mint' | 'honey' | 'blush' | 'cream'; label: string; onPress?: () => void };
+type Row = {
+  icon: IconName;
+  tone: 'coral' | 'mint' | 'honey' | 'blush' | 'cream';
+  label: string;
+  href?: Href;
+  onPress?: () => void;
+};
 
 export default function Profile() {
   const auth = useAuth();
@@ -43,13 +49,24 @@ export default function Profile() {
           refetch={query.refetch}
         >
           {(d) => {
+            const confirmLogout = () =>
+              Alert.alert(
+                'تسجيل الخروج',
+                'متأكد إنك عاوز تطلع؟',
+                [
+                  { text: 'إلغاء', style: 'cancel' },
+                  { text: 'خروج', style: 'destructive', onPress: () => auth.logout() },
+                ],
+              );
             const settings: Row[] = [
-              { icon: 'edit', tone: 'coral', label: 'تعديل البروفايل' },
-              { icon: 'bookmark', tone: 'honey', label: 'محفوظاتي' },
-              { icon: 'cart', tone: 'mint', label: 'طلباتي' },
-              { icon: 'lock', tone: 'cream', label: 'الخصوصية والأمان' },
-              { icon: 'settings', tone: 'cream', label: 'الإعدادات' },
-              { icon: 'logout', tone: 'blush', label: 'تسجيل الخروج', onPress: () => auth.logout() },
+              { icon: 'edit', tone: 'coral', label: 'تعديل البروفايل', href: '/settings/profile' },
+              { icon: 'bookmark', tone: 'honey', label: 'محفوظاتي', href: '/bookmarks' },
+              { icon: 'cart', tone: 'mint', label: 'طلباتي', href: '/orders' },
+              { icon: 'clock', tone: 'honey', label: 'حجوزاتي', href: '/bookings' },
+              { icon: 'bell', tone: 'cream', label: 'الإشعارات', href: '/notifications' },
+              { icon: 'lock', tone: 'cream', label: 'الخصوصية والأمان', href: '/settings/privacy' },
+              { icon: 'settings', tone: 'cream', label: 'الإعدادات', href: '/settings/app' },
+              { icon: 'logout', tone: 'blush', label: 'تسجيل الخروج', onPress: confirmLogout },
             ];
             return (
               <View style={{ gap: spacing[3] }}>
@@ -66,27 +83,36 @@ export default function Profile() {
                       {d.user.username ? `@${d.user.username}` : ''}
                     </Text>
                   </View>
-                  <Button variant="outline" size="sm" pill>
+                  <Button variant="outline" size="sm" pill onPress={() => router.push('/settings/profile')}>
                     تعديل
                   </Button>
                 </Card>
 
                 <View style={styles.statsRow}>
-                  <Stat label="محفوظات" value={d.stats?.saves ?? 0} />
-                  <Stat label="طلبات" value={d.stats?.orders ?? 0} />
+                  <Stat label="محفوظات" value={d.stats?.saves ?? 0} href="/bookmarks" />
+                  <Stat label="طلبات" value={d.stats?.orders ?? 0} href="/orders" />
                   <Stat label="نشاطاتي" value={d.stats?.listings ?? 0} />
                 </View>
 
                 <Card padding="none">
                   {settings.map((r, i) => (
-                    <View
+                    <Pressable
                       key={r.label}
-                      style={[styles.settingRow, i < settings.length - 1 && styles.divider]}
-                      onTouchEnd={r.onPress}
+                      android_ripple={{ color: 'rgba(0,0,0,0.06)' }}
+                      style={({ pressed }) => [
+                        styles.settingRow,
+                        i < settings.length - 1 && styles.divider,
+                        pressed && { backgroundColor: 'rgba(0,0,0,0.03)' },
+                      ]}
+                      onPress={() => {
+                        if (r.onPress) return r.onPress();
+                        if (r.href) router.push(r.href);
+                      }}
                     >
                       <IconTile icon={r.icon} tone={r.tone} size="md" />
                       <Text style={styles.settingLabel}>{r.label}</Text>
-                    </View>
+                      <Icon name="chevron-left" size={18} color={colors.ink[400]} />
+                    </Pressable>
                   ))}
                 </Card>
               </View>
@@ -98,9 +124,13 @@ export default function Profile() {
   );
 }
 
-function Stat({ label, value }: { label: string; value: number }) {
+function Stat({ label, value, href }: { label: string; value: number; href?: Href }) {
   return (
-    <Card padding="md" style={styles.statCard}>
+    <Card
+      padding="md"
+      style={styles.statCard}
+      onPress={href ? () => router.push(href) : undefined}
+    >
       <Text style={styles.statValue}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
     </Card>
@@ -109,7 +139,7 @@ function Stat({ label, value }: { label: string; value: number }) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.cream[100] },
-  scroll: { padding: spacing[4], paddingBottom: spacing[10] },
+  scroll: { padding: spacing[4], paddingBottom: 120 },
   signedOut: {
     flex: 1,
     alignItems: 'center',

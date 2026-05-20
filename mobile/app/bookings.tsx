@@ -1,10 +1,18 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Card, IconTile, QueryState, ScreenHeader } from '@/components';
+import { Card, IconTile, QueryState, RequireAuth, ScreenHeader } from '@/components';
 import { colors, spacing, typography } from '@/theme';
 import { useMyBookings } from '@/api/hooks';
 
 export default function Bookings() {
+  return (
+    <RequireAuth title="حجوزاتي">
+      <BookingsContent />
+    </RequireAuth>
+  );
+}
+
+function BookingsContent() {
   const query = useMyBookings();
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>

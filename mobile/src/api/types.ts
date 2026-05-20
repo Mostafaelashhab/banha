@@ -26,7 +26,10 @@ export type Business = {
   slug: string;
   name: string;
   subtitle?: string | null;
+  description?: string | null;
   category?: string;
+  category_label?: string | null;
+  sub_type?: string | null;
   cover_url?: string | null;
   logo_url?: string | null;
   lat?: number | null;
@@ -34,13 +37,24 @@ export type Business = {
   address?: string | null;
   phone?: string | null;
   whatsapp?: string | null;
-  is_open?: boolean;
+  hotline?: string | null;
+  is_open?: boolean | null;
+  is_24h?: boolean;
+  hours_text?: string | null;
+  hours_schedule?: Record<string, string | null> | null;
   rating?: number | null;
   reviews_count?: number;
   is_verified?: boolean;
   tier?: 'silver' | 'gold' | null;
   is_sponsored?: boolean;
   distance_m?: number | null;
+  has_menu?: boolean;
+  menu_currency?: string | null;
+  booking_enabled?: boolean;
+  features?: string[];
+  photos?: { id: ID; url: string }[];
+  photos_count?: number;
+  reviews?: { id: ID; rating: number; body?: string | null; author_name?: string | null; reviewed_at: string }[];
 };
 
 export type Post = {

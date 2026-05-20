@@ -1,6 +1,6 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Card, IconTile, QueryState, ScreenHeader } from '@/components';
+import { Card, IconTile, QueryState, RequireAuth, ScreenHeader } from '@/components';
 import { colors, radius, spacing, typography } from '@/theme';
 import { useMyOrders } from '@/api/hooks';
 
@@ -14,6 +14,14 @@ const statusLabels: Record<string, { label: string; tone: 'coral' | 'mint' | 'ho
 };
 
 export default function Orders() {
+  return (
+    <RequireAuth title="طلباتي">
+      <OrdersContent />
+    </RequireAuth>
+  );
+}
+
+function OrdersContent() {
   const query = useMyOrders();
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>

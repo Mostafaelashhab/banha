@@ -1,11 +1,19 @@
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Card, IconTile, QueryState } from '@/components';
+import { Button, Card, IconTile, QueryState, RequireAuth } from '@/components';
 import { colors, spacing, typography } from '@/theme';
 import { useMarkAllRead, useNotifications } from '@/api/hooks';
 import { Notification } from '@/api/types';
 
 export default function NotificationsScreen() {
+  return (
+    <RequireAuth title="إشعاراتك">
+      <NotificationsContent />
+    </RequireAuth>
+  );
+}
+
+function NotificationsContent() {
   const query = useNotifications();
   const markAll = useMarkAllRead();
 

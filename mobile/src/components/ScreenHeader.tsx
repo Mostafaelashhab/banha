@@ -39,12 +39,13 @@ const styles = StyleSheet.create({
   wrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing[2],
-    paddingTop: spacing[1],
-    paddingBottom: spacing[2],
+    paddingHorizontal: spacing[3],
+    paddingTop: spacing[2],
+    paddingBottom: spacing[3],
     gap: spacing[2],
+    minHeight: 56,
   },
   iconBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  title: { ...typography.h3, color: colors.ink[950] },
-  subtitle: { ...typography.meta, color: colors.ink[500], marginTop: 2 },
+  title: { ...typography.h3, color: colors.ink[950], fontSize: 17 },
+  subtitle: { ...typography.meta, color: colors.ink[500], marginTop: 2, fontSize: 12 },
 });
