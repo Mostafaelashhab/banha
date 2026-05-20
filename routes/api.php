@@ -1,10 +1,18 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BookingController;
+use App\Http\Controllers\Api\BookmarkController;
+use App\Http\Controllers\Api\CommunityController;
 use App\Http\Controllers\Api\DirectoryController;
 use App\Http\Controllers\Api\FeedController;
+use App\Http\Controllers\Api\MarketplaceController;
+use App\Http\Controllers\Api\MenuController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\PriceController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\UtilityController;
 use Illuminate\Support\Facades\Route;
