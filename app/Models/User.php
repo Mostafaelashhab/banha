@@ -11,13 +11,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 #[Fillable(['phone', 'username', 'password', 'zone_id', 'avatar_seed', 'avatar_url', 'persona', 'reputation', 'level', 'is_banned', 'is_verified', 'verification_tier', 'verified_at', 'is_admin', 'last_seen_at', 'prayer_notify', 'referred_by', 'referral_settled'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasApiTokens;
 
     public const TIERS = [
         'none'   => ['label' => 'غير مفعّل',  'short' => '',        'color' => '#84848E'],
